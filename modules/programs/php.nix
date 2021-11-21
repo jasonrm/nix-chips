@@ -1,0 +1,59 @@
+{ system, pkgs, lib, config, ... }:
+with lib;
+
+let
+  inherit (pkgs.writers) writeBashBin;
+  inherit (pkgs) terraform symlinkJoin mkShell;
+
+  cfg = config.programs.php;
+
+  flamegraph = writeBashBin "flamegraph-php" ''
+    ${cfg.pkg}/bin/php ${pkgs.flamegraph.src}/stackcollapse-xdebug.php $1 | ${pkgs.flamegraph}/bin/flamegraph.pl > $2
+  '';
+
+  php = cfg.pkg.buildEnv {
+    inherit (cfg) extraConfig extensions;
+  };
+in
+{
+  options = with lib.types; {
+    programs.php = {
+      enable = mkEnableOption "PHP support";
+
+      pkg = mkOption {
+        type = package;
+        default = pkgs.php;
+      };
+
+      extensions = mkOption {
+        type = functionTo (listOf package);
+        default = { enabled, all, ... }: with all; enabled ++ [ ];
+      };
+
+      extraConfig = mkOption {
+        type = lines;
+        default = "";
+      };
+    };
+  };
+
+  config = {
+    shell = mkIf cfg.enable {
+      shellHooks = [
+        ''echo php: ${php}/bin/php''
+      ];
+      contents = [
+        flamegraph
+        php
+        php.packages.composer
+      ];
+    };
+
+    outputs.apps.php = {
+      program = "${php}/bin/php";
+    };
+    outputs.apps.flamegraph-php = {
+      program = "${flamegraph}/bin/flamegraph-php";
+    };
+  };
+}
