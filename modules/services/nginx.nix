@@ -1,0 +1,144 @@
+{ lib, pkgs, config, ... }:
+let
+  inherit (lib) mkOption;
+
+  cfg = config.services.nginx;
+
+  nginxConfig = pkgs.writeText "nginx.conf" ''
+    daemon off;
+    worker_processes ${toString cfg.workerProcesses};
+
+    error_log "${cfg.logDir}/error.log";
+    pid "${cfg.runDir}/nginx.pid";
+
+    events {
+        worker_connections ${toString cfg.workerConnections};
+    }
+
+    http {
+        map_hash_bucket_size 128;
+
+        access_log "${cfg.logDir}/access.log";
+
+        map $http_upgrade $connection_upgrade {
+            default upgrade;
+            ""      close;
+        }
+
+        client_body_temp_path "${cfg.runDir}/client-body" 1 2;
+        proxy_temp_path "${cfg.runDir}/nginx-proxy";
+        fastcgi_temp_path "${cfg.runDir}/nginx-fastcgi";
+        uwsgi_temp_path "${cfg.runDir}/nginx-uwsgi";
+        scgi_temp_path "${cfg.runDir}/nginx-scgi";
+
+        include            ${pkgs.nginx}/conf/mime.types;
+        default_type       application/octet-stream;
+        sendfile           on;
+        tcp_nopush         on;
+        keepalive_timeout  65;
+        index              index.html index.htm;
+
+        chunked_transfer_encoding off;
+
+        types_hash_max_size 2048;
+        types_hash_bucket_size 128;
+
+        # Private IPs
+        set_real_ip_from 127.0.0.1;
+        set_real_ip_from 10.0.0.0/8;
+        set_real_ip_from 172.16.0.0/12;
+        set_real_ip_from 192.168.0.0/16;
+
+        real_ip_header X-Forwarded-For;
+        real_ip_recursive on;
+
+        fastcgi_keep_conn on;
+        fastcgi_index index.php;
+        fastcgi_intercept_errors off;
+        fastcgi_ignore_client_abort off;
+        fastcgi_connect_timeout 5;
+        fastcgi_send_timeout 180;
+        fastcgi_read_timeout 180;
+        fastcgi_buffers 16 4k;
+        fastcgi_buffer_size 32k;
+        fastcgi_busy_buffers_size 32k;
+
+        ${lib.concatStringsSep "\n" cfg.servers}
+    }
+  '';
+in
+{
+  imports = [
+  ];
+
+  options = with lib.types;{
+    services.nginx = {
+      enable = lib.mkEnableOption "enable nginx";
+      workerProcesses = mkOption {
+        type = int;
+        default = 4;
+      };
+      workerConnections = mkOption {
+        type = int;
+        default = 1024;
+      };
+      # user = mkOption {
+      #   type = nullOr str;
+      #   default = config.default.user;
+      # };
+      # group = mkOption {
+      #   type =  nullOr str;
+      #   default = config.default.group;
+      # };
+      runDir = mkOption {
+        type = str;
+        default = "${config.dir.run}/nginx";
+      };
+      logDir = mkOption {
+        type = str;
+        default = "${config.dir.log}/nginx";
+      };
+      servers = mkOption {
+        type = listOf str;
+        default = [ ];
+      };
+      extraConfig = mkOption {
+        type = str;
+        default = "";
+      };
+    };
+  };
+
+  config = lib.mkIf cfg.enable {
+    dir.ensureExists = [
+      cfg.runDir
+      cfg.logDir
+    ];
+    services.promtail.scrapeConfigs = [
+      {
+        job_name = "nginx";
+        static_configs = [
+          {
+            labels = {
+              service = "nginx";
+              job = "access";
+              "__path__" = "${cfg.logDir}/access.log";
+            };
+          }
+          {
+            labels = {
+              service = "nginx";
+              job = "error";
+              "__path__" = "${cfg.logDir}/error.log";
+            };
+          }
+        ];
+      }
+    ];
+    programs.supervisord.programs.nginx = {
+      # user = cfg.user;
+      # group = cfg.group;
+      command = "${pkgs.nginx}/bin/nginx -c ${nginxConfig}";
+    };
+  };
+}
