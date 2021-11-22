@@ -61,7 +61,7 @@ in
       };
       port = lib.mkOption {
         type = lib.types.int;
-        default = 6379;
+        default = config.ports.redis;
       };
     };
   };
