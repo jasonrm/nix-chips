@@ -3,11 +3,11 @@ with lib;
 let
   inherit (pkgs.writers) writeBashBin;
 
-  cfg = config.nodejs;
+  cfg = config.programs.nodejs;
 in
 {
   options = with lib.types; {
-    nodejs = {
+    programs.nodejs = {
       enable = mkEnableOption "nodejs support";
 
       pkg = mkOption {
