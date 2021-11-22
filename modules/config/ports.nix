@@ -8,6 +8,7 @@ let
     http = 8080;
     mysql = 3306;
     redis = 6379;
+    memcached = 11211;
 
     # traefik = 8281;
     # rabbitmq_amqp = 2007;
