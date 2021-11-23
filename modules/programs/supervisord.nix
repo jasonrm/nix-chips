@@ -105,7 +105,6 @@ let
   '');
 
   supervisord = (pkgs.writeShellScriptBin "supervisord" ''
-    echo supervisord config: ${configuration}
     mkdir -p ${lib.concatStringsSep " " (map escapeShellArg config.dir.ensureExists)}
     ${pkgs.staging.supervisord-go}/bin/supervisord --configuration=${configuration} $*
   '');
