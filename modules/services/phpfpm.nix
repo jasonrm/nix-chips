@@ -63,7 +63,10 @@ in
       };
       settings = lib.mkOption {
         type = with lib.types; attrsOf (oneOf [ str int bool ]);
-        default = { };
+        default = {
+          daemonize = false;
+          error_log = "${cfg.logDir}/error.log";
+        };
       };
       # user = lib.mkOption {
       #   type = with lib.types; nullOr str;
