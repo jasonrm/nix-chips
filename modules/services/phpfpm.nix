@@ -37,12 +37,12 @@ let
         socket = lib.mkOption {
           type = lib.types.str;
           readOnly = true;
-          example = "${config.dir.run}/phpfpm/<name>.sock";
+          example = "${config.dir.run}/php-fpm/<name>.sock";
         };
 
       };
       config = {
-        socket = "${config.dir.run}/phpfpm/${name}.sock";
+        socket = "${config.dir.run}/php-fpm/${name}.sock";
 
         settings = lib.mapAttrs (name: lib.mkDefault) {
           listen = poolOpts.socket;
@@ -75,9 +75,11 @@ in
       # };
       runDir = lib.mkOption {
         type = lib.types.str;
+        default = "${config.dir.run}/php-fpm";
       };
       logDir = lib.mkOption {
         type = lib.types.str;
+        default = "${config.dir.log}/php-fpm";
       };
       pools = lib.mkOption {
         default = { };
