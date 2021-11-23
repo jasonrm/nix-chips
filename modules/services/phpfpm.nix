@@ -65,14 +65,14 @@ in
         type = with lib.types; attrsOf (oneOf [ str int bool ]);
         default = { };
       };
-      user = lib.mkOption {
-        type = with lib.types; nullOr str;
-        default = config.default.user;
-      };
-      group = lib.mkOption {
-        type = with lib.types; nullOr str;
-        default = config.default.group;
-      };
+      # user = lib.mkOption {
+      #   type = with lib.types; nullOr str;
+      #   default = config.default.user;
+      # };
+      # group = lib.mkOption {
+      #   type = with lib.types; nullOr str;
+      #   default = config.default.group;
+      # };
       runDir = lib.mkOption {
         type = lib.types.str;
       };
@@ -104,8 +104,8 @@ in
     # };
     programs.supervisord.programs = lib.mapAttrs'
       (pool: poolOpts: lib.nameValuePair "phpfpm-${pool}" {
-        user = cfg.user;
-        group = cfg.group;
+        # user = cfg.user;
+        # group = cfg.group;
         command =
           let
             cfgFile = fpmCfgFile pool poolOpts;
