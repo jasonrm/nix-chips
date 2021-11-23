@@ -97,7 +97,7 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    shell.directories = [
+    dir.ensureExists = [
       cfg.runDir
       cfg.logDir
     ] ++ lib.optionals cfg.xdebug.enable [
