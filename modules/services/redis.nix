@@ -1,6 +1,6 @@
 { lib, pkgs, config, ... }:
 let
-  cfg = config.services.redis;
+  cfg = config.mod.services.redis;
 
   configFile = pkgs.writeText "redis.conf" ''
     bind ${cfg.host}
@@ -30,7 +30,7 @@ let
 in
 {
   options = {
-    services.redis = {
+    mod.services.redis = {
       enable = lib.mkEnableOption "enable redis";
 
       user = lib.mkOption {
@@ -90,10 +90,10 @@ in
     #   "REDIS_HOST=${if (cfg.host == "0.0.0.0") then "127.0.0.1" else cfg.host}"
     #   "REDIS_PORT=${toString cfg.port}"
     # ];
-    programs.supervisord.programs.redis = {
-      # user = cfg.user;
-      # group = cfg.group;
-      command = "${pkgs.redis}/bin/redis-server ${configFile}";
-    };
+    # programs.supervisord.programs.redis = {
+    #   # user = cfg.user;
+    #   # group = cfg.group;
+    #   # command = "${pkgs.redis}/bin/redis-server ${configFile}";
+    # };
   };
 }
