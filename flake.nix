@@ -2,7 +2,7 @@
   description = "dev.mcneil.nix.nix-chips";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     utils.url = "github:numtide/flake-utils";
     nixpkgs-staging.url = "github:jasonrm/nixpkgs-staging";
   };
@@ -16,11 +16,7 @@
       onlyNix = baseName: (hasSuffix ".nix" baseName);
 
       nixosModule = {
-        imports = [
-          (nixpkgs + "/nixos/modules/misc/assertions.nix")
-          (nixpkgs + "/nixos/modules/services/databases/redis.nix")
-          (nixpkgs + "/nixos/modules/services/web-servers/tomcat.nix")
-        ] ++ (builtins.filter onlyNix (listFilesRecursive ./modules));
+        imports = builtins.filter onlyNix (listFilesRecursive ./modules);
       };
 
       outputs = (eachDefaultSystem (system: (evalModules {

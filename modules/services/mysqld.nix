@@ -37,11 +37,11 @@ let
   '';
 
   mysql = pkgs.writeShellScriptBin "mysql" ''
-    ${cfg.pkg}/bin/mysql -h$MYSQL_HOST -u$MYSQL_USER -p$MYSQL_PWD -P$MYSQL_TCP_PORT --protocol tcp $@
+    exec ${cfg.pkg}/bin/mysql -h$MYSQL_HOST -u$MYSQL_USER -p$MYSQL_PWD -P$MYSQL_TCP_PORT --protocol tcp $@
   '';
 
   mysqldump = pkgs.writeShellScriptBin "mysqldump" ''
-    ${cfg.pkg}/bin/mysqldump -h${envHost} -u${cfg.mysql_user} -p${cfg.password} -P${toString cfg.port} --protocol tcp $@
+    exec ${cfg.pkg}/bin/mysqldump -h${envHost} -u${cfg.mysql_user} -p${cfg.password} -P${toString cfg.port} --protocol tcp $@
   '';
 
   mysqlsnap = pkgs.writeShellScriptBin "mysqlsnap" ''

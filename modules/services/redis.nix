@@ -1,6 +1,7 @@
 { lib, pkgs, config, ... }:
 let
-  cfg = config.mod.services.redis;
+  inherit (lib) mkOption types;
+  cfg = config.services.redis;
 
   configFile = pkgs.writeText "redis.conf" ''
     bind ${cfg.host}
@@ -11,7 +12,6 @@ let
     loglevel notice
     logfile "${cfg.logDir}/redis.log"
     databases 16
-
     save 900 1
     save 300 10
     save 60 10000
@@ -25,42 +25,42 @@ let
   '';
 
   redis-cli = pkgs.writeShellScriptBin "redis-cli" ''
-    ${pkgs.redis}/bin/redis-cli -h $REDIS_HOST -p $REDIS_PORT $@
+    exec ${pkgs.redis}/bin/redis-cli -h $REDIS_HOST -p $REDIS_PORT $@
   '';
 in
 {
-  options = {
-    mod.services.redis = {
+  options = with types; {
+    services.redis = {
       enable = lib.mkEnableOption "enable redis";
 
-      user = lib.mkOption {
-        type = with lib.types; nullOr str;
+      user = mkOption {
+        type = nullOr str;
         default = config.default.user;
       };
-      group = lib.mkOption {
-        type = with lib.types; nullOr str;
+      group = mkOption {
+        type = nullOr str;
         default = config.default.group;
       };
 
-      runDir = lib.mkOption {
-        type = lib.types.str;
+      runDir = mkOption {
+        type = str;
         default = "${config.dir.run}/redis";
       };
-      logDir = lib.mkOption {
-        type = lib.types.str;
+      logDir = mkOption {
+        type = str;
         default = "${config.dir.log}/redis";
       };
-      dataDir = lib.mkOption {
-        type = lib.types.str;
+      dataDir = mkOption {
+        type = str;
         default = "${config.dir.lib}/redis";
       };
 
-      host = lib.mkOption {
-        type = lib.types.str;
+      host = mkOption {
+        type = str;
         default = "0.0.0.0";
       };
-      port = lib.mkOption {
-        type = lib.types.int;
+      port = mkOption {
+        type = int;
         default = config.ports.redis;
       };
     };
@@ -72,13 +72,6 @@ in
       cfg.logDir
       cfg.dataDir
     ];
-    # docker.preCommand = [
-    #   "mkdir -p ${lib.escapeShellArg cfg.runDir} ${lib.escapeShellArg cfg.logDir} ${lib.escapeShellArg cfg.dataDir}"
-    #   "chown ${cfg.user}:${cfg.group} ${lib.escapeShellArg cfg.runDir} ${lib.escapeShellArg cfg.logDir} ${lib.escapeShellArg cfg.dataDir}"
-    # ];
-    # docker.contents = [
-    #   redis-cli
-    # ];
     shell.contents = [
       redis-cli
     ];
@@ -86,14 +79,8 @@ in
       "REDIS_HOST=${if (cfg.host == "0.0.0.0") then "127.0.0.1" else cfg.host}"
       "REDIS_PORT=${toString cfg.port}"
     ];
-    # docker.environment = [
-    #   "REDIS_HOST=${if (cfg.host == "0.0.0.0") then "127.0.0.1" else cfg.host}"
-    #   "REDIS_PORT=${toString cfg.port}"
-    # ];
-    # programs.supervisord.programs.redis = {
-    #   # user = cfg.user;
-    #   # group = cfg.group;
-    #   # command = "${pkgs.redis}/bin/redis-server ${configFile}";
-    # };
+    programs.supervisord.programs.redis = {
+      command = "${pkgs.redis}/bin/redis-server ${configFile}";
+    };
   };
 }

@@ -5,12 +5,16 @@
   config = {
     dir.root = "/opt/projects/nix-chips";
 
-    services.mysqld = {
-      enable = true;
-    };
+    # services.mysqld = {
+    #   enable = true;
+    # };
 
     services.redis = {
-      enable = true;
+      servers = {
+        "" = {
+          enable = true;
+        };
+      };
     };
 
     # services.nginx = {
