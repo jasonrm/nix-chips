@@ -127,13 +127,15 @@ let
       done
     '') cfg.virtualHosts)}
 
-    exec ${pkgs.tomcat9}/bin/catalina.sh run
+    exec ${pkgs.tomcat9}/bin/catalina.sh ${if cfg.enableDebug then "jpda run" else "run"}
   '';
 in
 {
   options = with types; {
     services.tomcat = {
       enable = lib.mkEnableOption "enable tomcat";
+
+      enableDebug = lib.mkEnableOption "enable jpda debugging";
 
       package = mkOption {
         type = package;

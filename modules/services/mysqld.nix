@@ -158,7 +158,7 @@ in
         command = "${command}/bin/mysqld";
       };
     })
-    (lib.mkIf true {
+    (lib.mkIf cfg.enable {
       shell.contents = [
         mysqldump
         mysqlinit
