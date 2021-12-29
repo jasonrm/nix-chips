@@ -29,8 +29,8 @@ in
   config = lib.mkMerge [
     (lib.mkIf cfg.enable {
       shell.environment = [
-        "SMTP_HOST=${serviceAddress}"
-        "SMTP_PORT=${toString cfg.smtpPort}"
+        "MAIL_HOST=${serviceAddress}"
+        "MAIL_PORT=${toString cfg.smtpPort}"
       ];
       services.traefik = {
         routers.mailhog = {
