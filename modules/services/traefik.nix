@@ -7,7 +7,14 @@ let
 
   innerConfig = {
     http = lib.filterAttrs (n: v: v != { }) {
-      inherit (cfg) middlewares routers services;
+      inherit (cfg) middlewares services;
+      routers = {
+        traefik = {
+          entryPoints = [ "http" ];
+          service = "api@internal";
+          rule = "Host(`traefik.${cfg.domain}`)";
+        };
+      } // cfg.routers;
     };
   };
 
