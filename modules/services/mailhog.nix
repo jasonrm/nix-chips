@@ -40,7 +40,7 @@ in
         };
         services.mailhog = {
           loadBalancer.servers = [
-            { url = "http://${serviceAddress}:${toString cfg.httpPort}"; }
+            { url = "http://${serviceAddress}${":"}${toString cfg.httpPort}"; }
           ];
         };
       };

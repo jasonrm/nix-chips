@@ -1,16 +1,18 @@
 { lib, pkgs, config, ... }:
 let
-  inherit (lib) mkEnableOption mkOption types mkMerge mkIf filterAttrs;
+  inherit (lib) mkEnableOption mkOption types mkMerge mkIf filterAttrs optionals mapAttrs;
   inherit (pkgs) writeText;
 
   cfg = config.services.traefik;
+
+  httpsEnabled = cfg.certificatesResolvers != {};
 
   innerConfig = {
     http = lib.filterAttrs (n: v: v != { }) {
       inherit (cfg) middlewares services;
       routers = {
         traefik = {
-          entryPoints = [ "http" ];
+          entryPoints = [ "http" ] ++ optionals httpsEnabled [ "https" ];
           service = "api@internal";
           rule = "Host(`traefik.${cfg.domain}`)";
         };
@@ -27,9 +29,9 @@ let
   serverConfig = lib.filterAttrs (n: v: v != { }) {
     inherit (cfg) certificatesResolvers;
 
-    entryPoints.http = {
-      address = ":${toString cfg.port}";
-    };
+    entryPoints = mapAttrs (k: v: {
+      address = ":${toString v.port}";
+    }) cfg.entryPoints;
 
     api = { dashboard = true; };
 
@@ -64,9 +66,19 @@ in
         type = attrs;
         default = {};
       };
-      port = mkOption {
-        type = int;
-        default = config.ports.traefik;
+      entryPoints = {
+        http = {
+          port = mkOption {
+            type = int;
+            default = config.ports.http;
+          };
+        };
+        https = {
+          port = mkOption {
+            type = int;
+            default = config.ports.https;
+          };
+        };
       };
     };
   };

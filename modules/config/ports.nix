@@ -14,7 +14,8 @@ let
     mailhogSmtp = 2004;
     mailhogHttp = 2005;
 
-    traefik = 80;
+    http = 80;
+    https = 443;
     # rabbitmq_amqp = 2007;
     # rabbitmq_mgmt = 2011;
     # sphinx = 2012;
