@@ -37,7 +37,7 @@ let
   '';
 
   mysql = pkgs.writeShellScriptBin "mysql" ''
-    exec ${cfg.pkg}/bin/mysql -h$MYSQL_HOST -u$MYSQL_USER -p$MYSQL_PWD -P$MYSQL_TCP_PORT --protocol tcp $@
+    exec ${cfg.pkg}/bin/mysql -h${envHost} -u${cfg.mysql_user} -p${cfg.password} -P${toString cfg.port} --protocol tcp $@
   '';
 
   mysqldump = pkgs.writeShellScriptBin "mysqldump" ''
