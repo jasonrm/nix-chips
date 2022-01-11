@@ -63,6 +63,8 @@ let
         fastcgi_buffer_size 32k;
         fastcgi_busy_buffers_size 32k;
 
+        ${cfg.extraConfig}
+
         ${lib.concatStringsSep "\n" cfg.servers}
     }
   '';
