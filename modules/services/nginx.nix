@@ -68,6 +68,31 @@ let
         ${lib.concatStringsSep "\n" cfg.servers}
     }
   '';
+
+  dockerConfig = pkgs.writeText "nginx.conf" ''
+    user nobody nobody;
+    daemon off;
+    error_log /dev/stdout info;
+    pid /dev/null;
+    events {}
+    http {
+      access_log /dev/stdout;
+      ${cfg.extraConfig}
+      ${lib.concatStringsSep "\n" cfg.servers}
+    }
+  '';
+  dockerDefaultServer = ''
+    server {
+      listen 8080;
+      index index.html;
+      location / {
+        root ${nginxWebRoot};
+      }
+    }
+  '';
+  nginxWebRoot = pkgs.writeTextDir "index.html" ''
+    <html><body><h1>Hello from NGINX</h1></body></html>
+  '';
 in
 {
   imports = [
@@ -102,7 +127,7 @@ in
       };
       servers = mkOption {
         type = listOf str;
-        default = [ ];
+        default = [ defaultServerDocker ];
       };
       extraConfig = mkOption {
         type = str;
@@ -141,6 +166,22 @@ in
       # user = cfg.user;
       # group = cfg.group;
       command = "${pkgs.nginx}/bin/nginx -c ${nginxConfig}";
+    };
+    dockerImages.images.nginx = {
+      contents = with pkgs; [
+        pkgs.dockerTools.fakeNss
+      ];
+
+      extraCommands = ''
+        # nginx still tries to read this directory even if error_log
+        # directive is specifying another file :/
+        mkdir -p var/log/nginx
+        mkdir -p var/cache/nginx
+      '';
+
+      config = {
+        Cmd = [ "${pkgs.nginx}/bin/nginx" "-T" "-c" dockerConfig ];
+      };
     };
   };
 }

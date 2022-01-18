@@ -8,55 +8,59 @@ let
 
   cfg = config.dockerImages;
 
-  dockerImageOption = with lib.types; { name, ... }:
-    let
-      dockerImageOption = cfg.dockerImage.${name};
-    in
-    {
-      options = {
-        config = mkOption {
-          type = attrs;
-          default = {};
-        };
-        contents = mkOption {
-          type = listOf package;
-          default = [ ];
-        };
-        environment = mkOption {
-          type = listOf str;
-          default = [ ];
-        };
-      };
+  baseImage = dockerTools.buildImage {
+    name = "baseContents";
+    contents = cfg.baseContents;
+  };
 
-      config = {
-        # environment = if lib.isAttrs envVars then () else envVars;
+  dockerImageOption = with types; {
+    options = {
+      config = mkOption {
+        type = attrs;
+        default = {};
+      };
+      contents = mkOption {
+        type = listOf package;
+        default = [ ];
+      };
+      extraCommands = mkOption {
+        type = str;
+        default = "";
+      };
+      environment = mkOption {
+        type = listOf str;
+        default = [ ];
       };
     };
+  };
 in
 {
   imports = [
     # paths to other modules
   ];
 
-  options = with lib.types; {
-    dockerImages = mkOption {
-      default = { };
-      type = attrsOf (submodule dockerImageOption);
+  options = with types; {
+    dockerImages = {
+      baseContents = mkOption {
+        type = listOf package;
+        default = [ ];
+      };
+      images = mkOption {
+        default = { };
+        type = attrsOf (submodule dockerImageOption);
+      };
     };
 
     outputs.legacyPackages = mkOption { type = attrsOf package; };
   };
 
   config = {
-    # shell.shellHooks = [
-    #   ''
-    #     export ${lib.concatStringsSep " " (map escapeShellArg cfg.environment)}
-    # ];
     outputs.legacyPackages = mapAttrs (k: v: (
       dockerTools.buildImage {
           name = k;
-          config = v.config;
+          # fromImage = baseImage;
+          inherit (v) extraCommands contents config;
         }
-    )) config.dockerImages;
+    )) config.dockerImages.images;
   };
 }
