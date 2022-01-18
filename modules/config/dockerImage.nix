@@ -1,11 +1,37 @@
 { system, pkgs, lib, config, ... }:
 with lib;
 let
+  inherit (lib) mapAttrs types;
   inherit (pkgs.writers) writeBashBin;
   inherit (pkgs.stdenv) isDarwin;
-  inherit (pkgs) symlinkJoin mkShell;
+  inherit (pkgs) symlinkJoin mkShell dockerTools;
 
-  cfg = config.dockerImage;
+  cfg = config.dockerImages;
+
+  dockerImageOption = with lib.types; { name, ... }:
+    let
+      dockerImageOption = cfg.dockerImage.${name};
+    in
+    {
+      options = {
+        config = mkOption {
+          type = attrs;
+          default = {};
+        };
+        contents = mkOption {
+          type = listOf package;
+          default = [ ];
+        };
+        environment = mkOption {
+          type = listOf str;
+          default = [ ];
+        };
+      };
+
+      config = {
+        # environment = if lib.isAttrs envVars then () else envVars;
+      };
+    };
 in
 {
   imports = [
@@ -13,61 +39,24 @@ in
   ];
 
   options = with lib.types; {
-    dockerImage = {
-      enable = mkEnableOption "use shell";
-
-      # environment = mkOption {
-      #   type = listOf str;
-      #   default = [ ];
-      # };
-
-      # shellHooks = mkOption {
-      #   type = listOf lines;
-      #   default = [ ];
-      # };
-
-      # directories = mkOption {
-      #   type = listOf str;
-      #   default = [ ];
-      # };
-
-      # contents = mkOption {
-      #   type = listOf package;
-      #   default = [ ];
-      # };
-
+    dockerImages = mkOption {
+      default = { };
+      type = attrsOf (submodule dockerImageOption);
     };
 
-    outputs.legacyPackages.hello-docker = mkOption { type = package; };
+    outputs.legacyPackages = mkOption { type = attrsOf package; };
   };
 
   config = {
     # shell.shellHooks = [
     #   ''
     #     export ${lib.concatStringsSep " " (map escapeShellArg cfg.environment)}
-
-    #     if [ -f local.env ]; then
-    #         set -o allexport
-    #         source local.env
-    #         set +o allexport
-    #     fi
-    #   ''
     # ];
-    outputs.legacyPackages = {
-      hello-docker = pkgs.dockerTools.buildImage {
-        name = "hello-docker";
-        config = {
-          Cmd = [ "${pkgs.hello}/bin/hello" ];
-        };
-      };
-    };
-    # outputs.devShell = (pkgs.mkShell {
-    #   buildInputs = cfg.contents
-    #     ++ lib.optionals isDarwin (with pkgs.darwin.apple_sdk.frameworks; [
-    #     CoreServices
-    #   ]);
-
-    #   shellHook = lib.concatStringsSep "\n" cfg.shellHooks;
-    # });
+    outputs.legacyPackages = mapAttrs (k: v: (
+      dockerTools.buildImage {
+          name = k;
+          config = v.config;
+        }
+    )) config.dockerImages;
   };
 }
