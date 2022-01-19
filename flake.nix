@@ -2,7 +2,7 @@
   description = "dev.mcneil.nix.nix-chips";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-21.11";
     utils.url = "github:numtide/flake-utils";
     nixpkgs-staging.url = "github:jasonrm/nixpkgs-staging";
   };
@@ -15,19 +15,17 @@
 
       onlyNix = baseName: (hasSuffix ".nix" baseName);
 
-      nixosModule = {
-        imports = builtins.filter onlyNix (listFilesRecursive ./modules);
-      };
+      localModules = directory: builtins.filter onlyNix (listFilesRecursive directory);
+      nixChipModules = localModules ./modules;
 
-      outputs = (eachDefaultSystem (system: (evalModules {
+      evalNixChip = modules: (eachDefaultSystem (system: (evalModules {
         specialArgs = { inherit nixpkgs system nixpkgs-staging; };
-        modules = [
-          nixosModule
-          # ./examples/nginx-php-mysql.nix
-        ];
+        modules = [{ imports = nixChipModules ++ modules; }];
       }).config.outputs));
+
     in
-    outputs // {
-      inherit nixosModule;
+    (evalNixChip []) // {
+      use = dir: evalNixChip (localModules dir);
+      nixosModule = { imports = nixChipModules; };
     };
 }

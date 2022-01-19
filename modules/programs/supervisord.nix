@@ -137,7 +137,6 @@ in
       };
 
       out = mkOption {
-        default = { };
         type = package;
       };
     };
