@@ -5,7 +5,7 @@ let
 
   cfg = config.services.traefik;
 
-  httpsEnabled = cfg.certificatesResolvers != {};
+  httpsEnabled = cfg.certificatesResolvers != { };
 
   innerConfig = {
     http = lib.filterAttrs (n: v: v != { }) {
@@ -29,9 +29,11 @@ let
   serverConfig = lib.filterAttrs (n: v: v != { }) {
     inherit (cfg) certificatesResolvers;
 
-    entryPoints = mapAttrs (k: v: {
-      address = ":${toString v.port}";
-    }) cfg.entryPoints;
+    entryPoints = mapAttrs
+      (k: v: {
+        address = ":${toString v.port}";
+      })
+      cfg.entryPoints;
 
     api = { dashboard = true; };
 
@@ -52,19 +54,19 @@ in
       };
       certificatesResolvers = mkOption {
         type = attrs;
-        default = {};
+        default = { };
       };
       middlewares = mkOption {
         type = attrs;
-        default = {};
+        default = { };
       };
       routers = mkOption {
         type = attrs;
-        default = {};
+        default = { };
       };
       services = mkOption {
         type = attrs;
-        default = {};
+        default = { };
       };
       entryPoints = {
         http = {

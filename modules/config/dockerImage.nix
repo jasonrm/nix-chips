@@ -17,7 +17,7 @@ let
     options = {
       config = mkOption {
         type = attrs;
-        default = {};
+        default = { };
       };
       contents = mkOption {
         type = listOf package;
@@ -51,16 +51,20 @@ in
       };
     };
 
-    outputs.legacyPackages = mkOption { type = attrsOf package; };
+    outputs.legacyPackages.dockerImages = mkOption {
+      type = attrsOf package;
+    };
   };
 
   config = {
-    outputs.legacyPackages = mapAttrs (k: v: (
-      dockerTools.buildImage {
+    outputs.legacyPackages.dockerImages = mapAttrs
+      (k: v: (
+        dockerTools.buildImage {
           name = k;
-          # fromImage = baseImage;
+          fromImage = baseImage;
           inherit (v) extraCommands contents config;
         }
-    )) config.dockerImages.images;
+      ))
+      config.dockerImages.images;
   };
 }

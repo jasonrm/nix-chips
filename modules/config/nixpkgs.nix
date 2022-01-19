@@ -3,7 +3,7 @@ let
 
   defaultOverlay = self: super: {
     mysql80 = super.mysql80.overrideAttrs (old: rec {
-      
+
       patches = [
         (super.fetchpatch {
           url = "https://raw.githubusercontent.com/Homebrew/formula-patches/fcbea58e245ea562fbb749bfe6e1ab178fd10025/mysql/monterey.diff";

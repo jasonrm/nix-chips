@@ -135,21 +135,35 @@ in
         default = { };
         type = attrsOf (submodule programOption);
       };
-    };
-  };
 
-  config = {
-    shell = lib.mkIf cfg.enable {
-      contents = [
-        supervisord
-        supervisord-debug
-      ];
-    };
-
-    outputs.apps = {
-      supervisord = {
-        program = "${supervisord}/bin/supervisord";
+      out = mkOption {
+        default = { };
+        type = package;
       };
     };
   };
+
+  config = lib.mkMerge [
+    (lib.mkIf cfg.enable {
+      programs.supervisord.out = supervisord;
+      shell = {
+        contents = [
+          supervisord
+          supervisord-debug
+        ];
+      };
+      dockerImages.images.supervisord = {
+        contents = [
+          supervisord
+        ];
+      };
+    })
+    {
+      outputs.apps = {
+        supervisord = {
+          program = "${supervisord}/bin/supervisord";
+        };
+      };
+    }
+  ];
 }
