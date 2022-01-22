@@ -5,6 +5,7 @@ let
   cfg = config.services.nginx;
 
   nginxConfig = pkgs.writeText "nginx.conf" ''
+    user nobody nobody;
     daemon off;
     worker_processes ${toString cfg.workerProcesses};
 

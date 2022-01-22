@@ -13,6 +13,13 @@ let
     contents = cfg.baseContents;
   };
 
+  preEntry = (pkgs.writeShellScriptBin "pre-entry" ''
+    echo ensureExists: ${lib.concatStringsSep " " (map escapeShellArg config.dir.ensureExists)}
+    ${pkgs.coreutils}/bin/mkdir -p ${lib.concatStringsSep " " (map escapeShellArg config.dir.ensureExists)}
+    mkdir -p tmp/ && chmod 1777 tmp/
+    exec $*
+  '');
+
   dockerImageOption = with types; {
     options = {
       config = mkOption {
@@ -23,9 +30,17 @@ let
         type = listOf package;
         default = [ ];
       };
+      entrypoint = mkOption {
+        type = listOf str;
+        default = [ ];
+      };
+      command = mkOption {
+        type = listOf str;
+        default = [ ];
+      };
       extraCommands = mkOption {
-        type = str;
-        default = "";
+        type = listOf str;
+        default = [ ];
       };
       environment = mkOption {
         type = listOf str;
@@ -62,7 +77,12 @@ in
         dockerTools.buildImage {
           name = k;
           fromImage = baseImage;
-          inherit (v) extraCommands contents config;
+          extraCommands = lib.concatStringsSep "\n" v.extraCommands;
+          inherit (v) contents;
+          config = v.config // {
+            # TODO: Support Entrypoint from v.config
+            Entrypoint = ["${preEntry}/bin/pre-entry"];
+          };
         }
       ))
       config.dockerImages.images;

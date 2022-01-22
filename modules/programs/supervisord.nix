@@ -66,11 +66,13 @@ let
         };
         stdout_logfile = mkOption {
           type = path;
-          default = "${config.dir.log}/${name}.stdout.log";
+          default = "/dev/stdout";
+          # default = "${config.dir.log}/${name}.stdout.log";
         };
         stderr_logfile = mkOption {
           type = path;
-          default = "${config.dir.log}/${name}.stderr.log";
+          default = "/dev/stderr";
+          # default = "${config.dir.log}/${name}.stderr.log";
         };
         stopasgroup = mkOption {
           type = bool;
@@ -105,7 +107,9 @@ let
   '');
 
   supervisord = (pkgs.writeShellScriptBin "supervisord" ''
-    mkdir -p ${lib.concatStringsSep " " (map escapeShellArg config.dir.ensureExists)}
+    echo ensureExists: ${lib.concatStringsSep " " (map escapeShellArg config.dir.ensureExists)}
+    ${pkgs.coreutils}/bin/mkdir -p ${lib.concatStringsSep " " (map escapeShellArg config.dir.ensureExists)}
+    cat ${configuration}
     ${pkgs.staging.supervisord-go}/bin/supervisord --configuration=${configuration} $*
   '');
 

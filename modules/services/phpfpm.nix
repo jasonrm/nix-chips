@@ -1,5 +1,7 @@
 { lib, pkgs, config, ... }:
 let
+  inherit (lib) mkOption;
+
   cfg = config.services.phpfpm;
 
   toStr = value:
@@ -25,27 +27,39 @@ let
       poolOpts = cfg.pools.${name};
     in
     {
-      options = {
-        settings = lib.mkOption {
-          type = with lib.types; attrsOf (oneOf [ str int bool ]);
+      options = with lib.types; {
+        settings = mkOption {
+          type = attrsOf (oneOf [ str int bool ]);
           default = { };
         };
-        phpPackage = lib.mkOption {
-          type = lib.types.package;
+        phpPackage = mkOption {
+          type = package;
           default = cfg.phpPackage;
         };
-        socket = lib.mkOption {
-          type = lib.types.str;
+        socket = mkOption {
+          type = str;
           readOnly = true;
-          example = "${config.dir.run}/php-fpm/<name>.sock";
+          example = "${cfg.runDir}/<name>.sock";
+        };
+        user = mkOption {
+          type = str;
+          default = "nobody";
+        };
+        group = mkOption {
+          type = str;
+          default = "nobody";
         };
 
       };
       config = {
-        socket = "${config.dir.run}/php-fpm/${name}.sock";
+        socket = "${cfg.runDir}/${name}.sock";
 
         settings = lib.mapAttrs (name: lib.mkDefault) {
+          inherit (poolOpts) user group;
           listen = poolOpts.socket;
+          "listen.owner" = poolOpts.user;
+          "listen.group" = poolOpts.group;
+          "listen.mode" = 0660;
           "access.log" = "${cfg.logDir}/${name}.log";
         };
       };
@@ -58,9 +72,11 @@ in
   options = {
     services.phpfpm = {
       enable = lib.mkEnableOption "enable php-fpm";
+
       xdebug = {
         enable = lib.mkEnableOption "enable xdebug";
       };
+
       settings = lib.mkOption {
         type = with lib.types; attrsOf (oneOf [ str int bool ]);
         default = {
@@ -68,22 +84,17 @@ in
           error_log = "${cfg.logDir}/error.log";
         };
       };
-      # user = lib.mkOption {
-      #   type = with lib.types; nullOr str;
-      #   default = config.default.user;
-      # };
-      # group = lib.mkOption {
-      #   type = with lib.types; nullOr str;
-      #   default = config.default.group;
-      # };
+
       runDir = lib.mkOption {
         type = lib.types.str;
         default = "${config.dir.run}/php-fpm";
       };
+
       logDir = lib.mkOption {
         type = lib.types.str;
         default = "${config.dir.log}/php-fpm";
       };
+
       pools = lib.mkOption {
         default = { };
         type = with lib.types; attrsOf (submodule poolOpts);
@@ -103,19 +114,10 @@ in
     ] ++ lib.optionals cfg.xdebug.enable [
       "${cfg.logDir}/xdebug"
     ];
-    # services.phpfpm.settings = {
-    #   error_log = "${cfg.logDir}/daemon.error";
-    #   daemonize = false;
-    # };
+
     programs.supervisord.programs = lib.mapAttrs'
       (pool: poolOpts: lib.nameValuePair "phpfpm-${pool}" {
-        # user = cfg.user;
-        # group = cfg.group;
-        command =
-          let
-            cfgFile = fpmCfgFile pool poolOpts;
-          in
-          "${poolOpts.phpPackage}/bin/php-fpm --fpm-config=${cfgFile}";
+        command = "${poolOpts.phpPackage}/bin/php-fpm --fpm-config=${fpmCfgFile pool poolOpts}";
       })
       cfg.pools;
   };
