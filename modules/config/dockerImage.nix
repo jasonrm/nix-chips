@@ -13,10 +13,17 @@ let
     contents = cfg.baseContents;
   };
 
-  preEntry = (pkgs.writeShellScriptBin "pre-entry" ''
-    echo ensureExists: ${lib.concatStringsSep " " (map escapeShellArg config.dir.ensureExists)}
+  preEntry = image: (pkgs.writeShellScriptBin "pre-entry" ''
+    echo preEntry: ensureExists
     ${pkgs.coreutils}/bin/mkdir -p ${lib.concatStringsSep " " (map escapeShellArg config.dir.ensureExists)}
-    mkdir -p tmp/ && chmod 1777 tmp/
+
+    echo preEntry: entryCommands
+    ${lib.concatStringsSep "\n" image.entryCommands}
+
+    echo preEntry: tmp
+    mkdir -p /tmp/ && chmod 1777 /tmp/
+
+    echo preEntry: done
     exec $*
   '');
 
@@ -30,7 +37,7 @@ let
         type = listOf package;
         default = [ ];
       };
-      entrypoint = mkOption {
+      entryCommands = mkOption {
         type = listOf str;
         default = [ ];
       };
@@ -73,15 +80,15 @@ in
 
   config = {
     outputs.legacyPackages.dockerImages = mapAttrs
-      (k: v: (
+      (k: image: (
         dockerTools.buildImage {
           name = k;
           fromImage = baseImage;
-          extraCommands = lib.concatStringsSep "\n" v.extraCommands;
-          inherit (v) contents;
-          config = v.config // {
+          extraCommands = lib.concatStringsSep "\n" image.extraCommands;
+          inherit (image) contents;
+          config = image.config // {
             # TODO: Support Entrypoint from v.config
-            Entrypoint = ["${preEntry}/bin/pre-entry"];
+            Entrypoint = ["${preEntry image}/bin/pre-entry"];
           };
         }
       ))
