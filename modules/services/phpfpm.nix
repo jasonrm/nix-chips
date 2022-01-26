@@ -42,11 +42,11 @@ let
           example = "${cfg.runDir}/<name>.sock";
         };
         user = mkOption {
-          type = str;
+          type = nullOr str;
           default = "nobody";
         };
         group = mkOption {
-          type = str;
+          type = nullOr str;
           default = "nobody";
         };
 
