@@ -110,6 +110,7 @@ let
     echo ensureExists: ${lib.concatStringsSep " " (map escapeShellArg config.dir.ensureExists)}
     ${pkgs.coreutils}/bin/mkdir -p ${lib.concatStringsSep " " (map escapeShellArg config.dir.ensureExists)}
     cat ${configuration}
+    export ${lib.concatStringsSep " " (map escapeShellArg cfg.environment)}
     ${pkgs.staging.supervisord-go}/bin/supervisord --configuration=${configuration} $*
   '');
 
@@ -139,7 +140,10 @@ in
         default = { };
         type = attrsOf (submodule programOption);
       };
-
+      environment = mkOption {
+        type = listOf str;
+        default = [ ];
+      };
       out = mkOption {
         type = package;
       };
