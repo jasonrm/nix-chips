@@ -32,7 +32,7 @@ let
         uwsgi_temp_path "${cfg.runDir}/nginx-uwsgi";
         scgi_temp_path "${cfg.runDir}/nginx-scgi";
 
-        include            ${pkgs.nginx}/conf/mime.types;
+        include            ${cfg.package}/conf/mime.types;
         default_type       application/octet-stream;
         sendfile           on;
         tcp_nopush         on;
@@ -102,6 +102,13 @@ in
   options = with lib.types;{
     services.nginx = {
       enable = lib.mkEnableOption "enable nginx";
+      package = mkOption {
+        default = pkgs.nginxMainline;
+        type = types.package;
+        apply = p: p.override {
+          modules = p.modules ++ cfg.additionalModules;
+        };
+      };
       workerProcesses = mkOption {
         type = int;
         default = 4;
@@ -117,6 +124,10 @@ in
       errorLog = mkOption {
         type = str;
         default = "${logDir}/error.log";
+      };
+      additionalModules = mkOption {
+        default = [];
+        type = listOf (attrsOf anything);
       };
       # user = mkOption {
       #   type = nullOr str;
@@ -174,7 +185,7 @@ in
     programs.supervisord.programs.nginx = {
       # user = cfg.user;
       # group = cfg.group;
-      command = "${pkgs.nginx}/bin/nginx -c ${nginxConfig}";
+      command = "${cfg.package}/bin/nginx -c ${nginxConfig}";
     };
     dockerImages.images.nginx = {
       contents = with pkgs; [
@@ -189,7 +200,7 @@ in
       '';
 
       config = {
-        Cmd = [ "${pkgs.nginx}/bin/nginx" "-T" "-c" dockerConfig ];
+        Cmd = [ "${cfg.package}/bin/nginx" "-T" "-c" dockerConfig ];
       };
     };
   };
