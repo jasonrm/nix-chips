@@ -9,7 +9,7 @@ let
     daemon off;
     worker_processes ${toString cfg.workerProcesses};
 
-    error_log "${cfg.logDir}/error.log";
+    error_log "${cfg.errorLog}";
     pid "${cfg.runDir}/nginx.pid";
 
     events {
@@ -19,7 +19,7 @@ let
     http {
         map_hash_bucket_size 128;
 
-        access_log "${cfg.logDir}/access.log";
+        access_log "${cfg.accessLog}";
 
         map $http_upgrade $connection_upgrade {
             default upgrade;
@@ -109,6 +109,14 @@ in
       workerConnections = mkOption {
         type = int;
         default = 1024;
+      };
+      accessLog = mkOption {
+        type = str;
+        default = "${logDir}/access.log";
+      };
+      errorLog = mkOption {
+        type = str;
+        default = "${logDir}/error.log";
       };
       # user = mkOption {
       #   type = nullOr str;
