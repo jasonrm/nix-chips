@@ -51,7 +51,9 @@ let
       };
       environment = mkOption {
         type = listOf str;
-        default = [ ];
+        default = [
+          "SSL_CERT_FILE=${pkgs.cacert.out}/etc/ssl/certs/ca-bundle.crt"
+        ];
       };
     };
   };
