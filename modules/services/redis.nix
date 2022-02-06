@@ -72,6 +72,15 @@ in
       cfg.logDir
       cfg.dataDir
     ];
+    dockerImages = {
+      images = {
+        redis = {
+          config = {
+            Cmd = "${pkgs.redis}/bin/redis-server ${configFile}";
+          };
+        };
+      };
+    };
     shell.contents = [
       redis-cli
     ];
