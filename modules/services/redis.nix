@@ -66,30 +66,34 @@ in
     };
   };
 
-  config = lib.mkIf cfg.enable {
-    dir.ensureExists = [
-      cfg.runDir
-      cfg.logDir
-      cfg.dataDir
-    ];
-    dockerImages = {
-      images = {
-        redis = {
-          config = {
-            Cmd = "${pkgs.redis}/bin/redis-server ${configFile}";
+  config = lib.mkMerkge [
+    (lib.mkIf cfg.enable {
+      dir.ensureExists = [
+        cfg.runDir
+        cfg.logDir
+        cfg.dataDir
+      ];
+      shell.contents = [
+        redis-cli
+      ];
+      shell.environment = [
+        "REDIS_HOST=${if (cfg.host == "0.0.0.0") then "127.0.0.1" else cfg.host}"
+        "REDIS_PORT=${toString cfg.port}"
+      ];
+      programs.supervisord.programs.redis = {
+        command = "${pkgs.redis}/bin/redis-server ${configFile}";
+      };
+    })
+    {
+      dockerImages = {
+        images = {
+          redis = {
+            config = {
+              Cmd = "${pkgs.redis}/bin/redis-server ${configFile}";
+            };
           };
         };
       };
-    };
-    shell.contents = [
-      redis-cli
-    ];
-    shell.environment = [
-      "REDIS_HOST=${if (cfg.host == "0.0.0.0") then "127.0.0.1" else cfg.host}"
-      "REDIS_PORT=${toString cfg.port}"
-    ];
-    programs.supervisord.programs.redis = {
-      command = "${pkgs.redis}/bin/redis-server ${configFile}";
-    };
-  };
+    }
+  ];
 }
