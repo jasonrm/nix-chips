@@ -66,7 +66,7 @@ in
     };
   };
 
-  config = lib.mkMerkge [
+  config = lib.mkMerge [
     (lib.mkIf cfg.enable {
       dir.ensureExists = [
         cfg.runDir
