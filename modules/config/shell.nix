@@ -45,12 +45,6 @@ in
     shell.shellHooks = [
       ''
         export ${lib.concatStringsSep " " (map escapeShellArg cfg.environment)}
-
-        if [ -f local.env ]; then
-            set -o allexport
-            source local.env
-            set +o allexport
-        fi
       ''
     ];
     outputs.devShell = (pkgs.mkShell {
