@@ -30,6 +30,14 @@ in
         default = { };
         type = attrsOf (submodule appOption);
       };
+      packages = mkOption {
+        default = { };
+        type = attrsOf package;
+      };
+      defaultPackage = mkOption {
+        default = null;
+        type = nullOr package;
+      };
     };
   };
 
