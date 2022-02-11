@@ -119,11 +119,11 @@ in
       };
       accessLog = mkOption {
         type = str;
-        default = "${logDir}/access.log";
+        default = "${cfg.logDir}/access.log";
       };
       errorLog = mkOption {
         type = str;
-        default = "${logDir}/error.log";
+        default = "${cfg.logDir}/error.log";
       };
       additionalModules = mkOption {
         default = [];
