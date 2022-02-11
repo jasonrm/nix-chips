@@ -35,7 +35,11 @@ let
         innerElementsForVirtualHost = virtualHost:
           (map (alias: ''
             <Alias>${alias}</Alias>
-          '') virtualHost.aliases);
+          '') virtualHost.aliases)
+          ++ (optional cfg.logPerVirtualHost ''
+            <Valve className="org.apache.catalina.valves.AccessLogValve" directory="logs/${virtualHost.name}"
+                   prefix="${virtualHost.name}_access_log." pattern="combined" resolveHosts="false"/>
+          '');
         hostElementsString = concatMapStringsSep "\n" hostElementForVirtualHost cfg.virtualHosts;
         hostElementsSedString = replaceStrings ["\n"] ["\\\n"] hostElementsString;
       in ''
@@ -170,6 +174,12 @@ in
       dataDir = mkOption {
         type = str;
         default = "${config.dir.lib}/tomcat";
+      };
+
+      logPerVirtualHost = mkOption {
+        type = types.bool;
+        default = false;
+        description = "Whether to enable logging per virtual host.";
       };
 
       serverXml = mkOption {
