@@ -270,8 +270,8 @@ in
         "CATALINA_BASE=${cfg.dataDir}"
         "CATALINA_PID=${config.dir.run}/tomcat.pid"
         "JAVA_HOME=${cfg.jdk}"
-        "JAVA_OPTS=\"${builtins.toString cfg.javaOpts}\""
-        "CATALINA_OPTS=\"${builtins.toString cfg.catalinaOpts}\""
+        ''JAVA_OPTS="${builtins.toString cfg.javaOpts}"''
+        ''CATALINA_OPTS="${builtins.toString cfg.catalinaOpts}"''
       ] ++ cfg.extraEnvironment;
     };
   };
