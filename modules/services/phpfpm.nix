@@ -102,7 +102,7 @@ in
 
       phpPackage = lib.mkOption {
         type = lib.types.package;
-        default = pkgs.php;
+        default = config.programs.php.pkg;
       };
     };
   };
