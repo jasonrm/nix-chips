@@ -25,6 +25,12 @@ in
         default = pkgs.php;
       };
 
+      env = mkOption {
+        type = package;
+        readOnly = true;
+        default = php;
+      };
+
       extensions = mkOption {
         type = functionTo (listOf package);
         default = { enabled, all, ... }: with all; enabled ++ [ ];
