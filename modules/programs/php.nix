@@ -11,6 +11,20 @@ let
     ${cfg.pkg}/bin/php ${pkgs.flamegraph.src}/stackcollapse-xdebug.php $1 | ${pkgs.flamegraph}/bin/flamegraph.pl > $2
   '';
 
+  php-xdebug = writeBashBin "php-xdebug" ''
+    ${cfg.pkg}/bin/php \
+      -d zend_extension=${cfg.pkg.extensions.xdebug}/lib/php/extensions/xdebug.so \
+      -d xdebug.start_with_request=yes \
+      -d xdebug.mode=debug \
+      $*
+  '';
+
+  php-spx = writeBashBin "php-spx" ''
+    SPX_ENABLED=1 ${cfg.pkg}/bin/php \
+      -d extension=${pkgs.staging.php-packages.spx}/lib/php/extensions/spx.so \
+      $*
+  '';
+
   php = cfg.pkg.buildEnv {
     inherit (cfg) extraConfig extensions;
   };
@@ -50,6 +64,8 @@ in
       ];
       contents = [
         flamegraph
+        php-spx
+        php-xdebug
         php
         php.packages.composer
       ];
@@ -60,6 +76,12 @@ in
     };
     outputs.apps.flamegraph-php = {
       program = "${flamegraph}/bin/flamegraph-php";
+    };
+    outputs.apps.php-xdebug = {
+      program = "${php-xdebug}/bin/php-xdebug";
+    };
+    outputs.apps.php-spx = {
+      program = "${php-spx}/bin/php-spx";
     };
   };
 }
