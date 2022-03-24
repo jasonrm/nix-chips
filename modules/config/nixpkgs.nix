@@ -2,14 +2,6 @@
 let
 
   defaultOverlay = self: super: {
-    mysql80 = super.mysql80.overrideAttrs (old: rec {
-      postPatch = ''
-       substituteInPlace cmake/fido2.cmake \
-         --replace ''$\{MY_PKG_CONFIG_EXECUTABLE\} \
-         "${pkg-config}/bin/pkg-config"
-     '';
-    });
-
     # watchexec = super.watchexec.overrideAttrs (old: rec {
     #   version = "1.15.1";
     #   src = super.fetchFromGitHub {
