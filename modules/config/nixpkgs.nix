@@ -2,14 +2,13 @@
 let
 
   defaultOverlay = self: super: {
-    # mysql80 = super.mysql80.overrideAttrs (old: rec {
-    #   patches = [
-    #     (super.fetchpatch {
-    #       url = "https://raw.githubusercontent.com/Homebrew/formula-patches/fcbea58e245ea562fbb749bfe6e1ab178fd10025/mysql/monterey.diff";
-    #       sha256 = "sha256-K1NBjaPRSftgsCRWN+JBZjNTeljkLmxCBSPJW4nSgkg=";
-    #     })
-    #   ];
-    # });
+    mysql80 = super.mysql80.overrideAttrs (old: rec {
+      postPatch = ''
+       substituteInPlace cmake/fido2.cmake \
+         --replace ''$\{MY_PKG_CONFIG_EXECUTABLE\} \
+         "${pkg-config}/bin/pkg-config"
+     '';
+    });
 
     # watchexec = super.watchexec.overrideAttrs (old: rec {
     #   version = "1.15.1";
