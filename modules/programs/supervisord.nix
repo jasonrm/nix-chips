@@ -164,6 +164,21 @@ in
           supervisord
         ];
       };
+      services.traefik = {
+        routers = {
+          supervisord = {
+            service = "supervisord";
+            rule = "Host(`supervisord.localhost`)";
+          };
+        };
+        services = {
+          supervisord = {
+              loadBalancer.servers = [
+                { url = "http://127.0.0.1:${toString cfg.port}"; }
+              ];
+            };        
+          };
+      };
     })
     {
       outputs.apps = {
