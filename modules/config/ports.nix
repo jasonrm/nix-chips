@@ -16,6 +16,7 @@ let
 
     http = 80;
     https = 443;
+    tomcat = 9191;
     # rabbitmq_amqp = 2007;
     # rabbitmq_mgmt = 2011;
     # sphinx = 2012;
