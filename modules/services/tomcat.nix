@@ -46,6 +46,7 @@ let
         # Create a modified server.xml which also includes all virtual hosts
         sed -e "/<Engine name=\"Catalina\" defaultHost=\"localhost\">/a\\"${escapeShellArg hostElementsSedString} \
               ${tomcat}/conf/server.xml > ${cfg.dataDir}/conf/server.xml
+        sed -i "s/8080/${toString cfg.port}/g" ${cfg.dataDir}/conf/server.xml
       ''
     }
 
@@ -247,10 +248,10 @@ in
       #   type = str;
       #   default = "0.0.0.0";
       # };
-      # port = mkOption {
-      #   type = int;
-      #   default = config.ports.tomcat;
-      # };
+      port = mkOption {
+        type = int;
+        default = config.ports.tomcat;
+      };
     };
   };
 
