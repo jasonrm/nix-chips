@@ -90,7 +90,7 @@ in
           inherit (image) contents;
           config = image.config // {
             # TODO: Support Entrypoint from v.config
-            Entrypoint = ["${preEntry image}/bin/pre-entry"];
+            Entrypoint = [ "${preEntry image}/bin/pre-entry" ];
           };
         }
       ))
