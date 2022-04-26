@@ -111,7 +111,7 @@ let
     ${pkgs.coreutils}/bin/mkdir -p ${lib.concatStringsSep " " (map escapeShellArg config.dir.ensureExists)}
     cat ${configuration}
     export ${lib.concatStringsSep " " (map escapeShellArg cfg.environment)}
-    ${pkgs.staging.supervisord-go}/bin/supervisord --configuration=${configuration} $*
+    ${pkgs.supervisord-go}/bin/supervisord --configuration=${configuration} $*
   '');
 
 in
@@ -173,11 +173,11 @@ in
         };
         services = {
           supervisord = {
-              loadBalancer.servers = [
-                { url = "http://127.0.0.1:${toString cfg.port}"; }
-              ];
-            };        
+            loadBalancer.servers = [
+              { url = "http://127.0.0.1:${toString cfg.port}"; }
+            ];
           };
+        };
       };
     })
     {
