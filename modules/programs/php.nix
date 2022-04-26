@@ -21,7 +21,7 @@ let
 
   php-spx = writeBashBin "php-spx" ''
     SPX_ENABLED=1 ${cfg.pkg}/bin/php \
-      -d extension=${pkgs.staging.php-packages.spx}/lib/php/extensions/spx.so \
+      -d extension=${cfg.pkg.extensions.spx}/lib/php/extensions/spx.so \
       $*
   '';
 

@@ -3,11 +3,12 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-21.11";
-    utils.url = "github:numtide/flake-utils";
     nixpkgs-staging.url = "github:jasonrm/nixpkgs-staging";
+
+    utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs, utils, nixpkgs-staging }:
+  outputs = { self, nixpkgs, nixpkgs-staging, utils }:
     let
       inherit (nixpkgs.lib) evalModules hasSuffix;
       inherit (nixpkgs.lib.filesystem) listFilesRecursive;
@@ -18,14 +19,19 @@
       localModules = directory: builtins.filter onlyNix (listFilesRecursive directory);
       nixChipModules = localModules ./modules;
 
-      evalNixChip = modules: (eachDefaultSystem (system: (evalModules {
-        specialArgs = { inherit nixpkgs system nixpkgs-staging; };
-        modules = [{ imports = nixChipModules ++ modules; }];
-      }).config.outputs));
+      evalNixChip = modules: args: (eachDefaultSystem (system:
+        (evalModules {
+          specialArgs = {
+            overlays = (args.overlay or []) ++ [ nixpkgs-staging.overlay ];
+            inherit nixpkgs;
+            inherit system;
+          };
+          modules = (args.nixosModules or []) ++ [{ imports = nixChipModules ++ modules; }];
+        }).config.outputs));
 
     in
-    (evalNixChip []) // {
-      use = dir: evalNixChip (localModules dir);
+    (evalNixChip [ ] { }) // {
+      use = dir: args: evalNixChip (localModules dir) args;
       nixosModule = { imports = nixChipModules; };
     };
 }
