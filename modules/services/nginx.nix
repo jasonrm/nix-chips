@@ -126,7 +126,7 @@ in
         default = "${cfg.logDir}/error.log";
       };
       additionalModules = mkOption {
-        default = [];
+        default = [ ];
         type = listOf (attrsOf anything);
       };
       # user = mkOption {
