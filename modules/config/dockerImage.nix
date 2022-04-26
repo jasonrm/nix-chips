@@ -27,6 +27,33 @@ let
     exec $*
   '');
 
+  nonRootShadowSetup = { user, uid, gid ? uid }: with pkgs; [
+    (
+      writeTextDir "etc/shadow" ''
+        root:!x:::::::
+        ${user}:!:::::::
+      ''
+    )
+    (
+      writeTextDir "etc/passwd" ''
+        root:x:0:0::/root:${runtimeShell}
+        ${user}:x:${toString uid}:${toString gid}::/home/${user}:
+      ''
+    )
+    (
+      writeTextDir "etc/group" ''
+        root:x:0:
+        ${user}:x:${toString gid}:
+      ''
+    )
+    (
+      writeTextDir "etc/gshadow" ''
+        root:x::
+        ${user}:x::
+      ''
+    )
+  ];
+
   dockerImageOption = with types; {
     options = {
       config = mkOption {
@@ -87,7 +114,9 @@ in
           name = k;
           fromImage = baseImage;
           extraCommands = lib.concatStringsSep "\n" image.extraCommands;
-          inherit (image) contents;
+          contents = image.contents;
+          # WIP for users
+          # (nonRootShadowSetup { user = "sshd"; uid = 999; });
           config = image.config // {
             # TODO: Support Entrypoint from v.config
             Entrypoint = [ "${preEntry image}/bin/pre-entry" ];
