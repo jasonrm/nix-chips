@@ -21,7 +21,7 @@
 
       evalNixChip = modules: args: (eachDefaultSystem (system:
         (evalModules {
-          specialArgs = {
+          specialArgs = (args.specialArgs or {}) // {
             overlays = (args.overlay or []) ++ [ nixpkgs-staging.overlay ];
             inherit nixpkgs;
             inherit system;
