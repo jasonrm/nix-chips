@@ -21,7 +21,7 @@ let
     dbfilename dump.rdb
     dir "${cfg.dataDir}"
 
-    loadmodule ${pkgs.staging.redis-cell}/lib/${if pkgs.stdenv.isDarwin then "libredis_cell.dylib" else "libredis_cell.so"}
+    loadmodule ${pkgs.redis-cell}/lib/${if pkgs.stdenv.isDarwin then "libredis_cell.dylib" else "libredis_cell.so"}
   '';
 
   redis-cli = pkgs.writeShellScriptBin "redis-cli" ''
