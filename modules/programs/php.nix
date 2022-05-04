@@ -64,7 +64,7 @@ in
       ];
       contents = [
         flamegraph
-        php-spx
+        # php-spx
         php-xdebug
         php
         php.packages.composer
