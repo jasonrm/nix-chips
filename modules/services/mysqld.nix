@@ -20,7 +20,7 @@ let
       --long_query_time=1 \
       --port=${toString cfg.port} \
       --slow_query_log=ON \
-      --socket="${cfg.socket}/mysqld.sock"
+      --socket="${cfg.socket}"
   '';
 
   createdb = pkgs.writeText "createdb.sql" ''
@@ -111,7 +111,7 @@ in
       socket = mkOption {
         type = str;
         readOnly = true;
-        default = "${config.dir.run}/mysql/mysql.sock";
+        default = "${cfg.runDir}/mysql/mysql.sock";
       };
 
       host = mkOption {
