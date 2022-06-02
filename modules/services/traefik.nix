@@ -30,7 +30,8 @@ let
     inherit (cfg) certificatesResolvers;
 
     entryPoints = mapAttrs
-      (k: v: {
+      (k: v: lib.filterAttrs (n: v: v != { }) {
+        http = v.http or {};
         address = ":${toString v.port}";
       })
       cfg.entryPoints;
@@ -48,6 +49,7 @@ in
   options = with types; {
     services.traefik = {
       enable = mkEnableOption "enable traefik";
+      debug = mkEnableOption "debug";
       domain = mkOption {
         type = str;
         default = "localhost";
@@ -80,6 +82,10 @@ in
             type = int;
             default = config.ports.https;
           };
+          http = mkOption {
+            type = attrs;
+            default = {};
+          };
         };
       };
     };
@@ -90,7 +96,10 @@ in
       programs.supervisord.programs.traefik = {
         command = "${pkgs.traefik}/bin/traefik --configfile=${traefikConf} --log=true --log.level=error";
       };
+    })
+    (mkIf cfg.debug {
       shell.shellHooks = [
+        ''echo traefik config: ${traefikConf}''
         ''echo traefik static config: ${staticConfDir}/static.yaml''
       ];
     })
