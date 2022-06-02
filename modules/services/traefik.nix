@@ -14,7 +14,7 @@ let
         traefik = {
           entryPoints = [ "http" ] ++ optionals httpsEnabled [ "https" ];
           service = "api@internal";
-          rule = "Host(`traefik.${cfg.domain}`)";
+          rule = "Host(`traefik.localhost`, `traefik.${cfg.domain}`)";
         };
       } // cfg.routers;
     };
@@ -90,6 +90,9 @@ in
       programs.supervisord.programs.traefik = {
         command = "${pkgs.traefik}/bin/traefik --configfile=${traefikConf} --log=true --log.level=error";
       };
+      shell.shellHooks = [
+        ''echo traefik static config: ${staticConfDir}/static.yaml''
+      ];
     })
   ];
 }
