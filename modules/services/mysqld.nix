@@ -111,7 +111,7 @@ in
       socket = mkOption {
         type = str;
         readOnly = true;
-        default = "${cfg.runDir}/mysql/mysql.sock";
+        default = "${cfg.runDir}/mysql.sock";
       };
 
       host = mkOption {
