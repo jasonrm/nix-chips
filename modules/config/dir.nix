@@ -46,5 +46,10 @@ in
       cfg.run
       cfg.lib
     ];
+    shell.shellHooks = [
+      ''
+        mkdir -p ${lib.concatStringsSep " " (map lib.escapeShellArg cfg.ensureExists)}
+      ''
+    ];
   };
 }
