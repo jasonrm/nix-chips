@@ -107,9 +107,7 @@ let
   '');
 
   supervisord = (pkgs.writeShellScriptBin "supervisord" ''
-    echo ensureExists: ${lib.concatStringsSep " " (map escapeShellArg config.dir.ensureExists)}
     ${pkgs.coreutils}/bin/mkdir -p ${lib.concatStringsSep " " (map escapeShellArg config.dir.ensureExists)}
-    cat ${configuration}
     export ${lib.concatStringsSep " " (map escapeShellArg cfg.environment)}
     ${pkgs.supervisord-go}/bin/supervisord --configuration=${configuration} $*
   '');
