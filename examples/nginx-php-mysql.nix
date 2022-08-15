@@ -9,12 +9,15 @@
     #   enable = true;
     # };
 
-    services.redis = {
-      servers = {
-        "" = {
-          enable = true;
-        };
-      };
+    # services.redis = {
+    #   enable = true;
+    # };
+
+    programs.supervisord.enable = true;
+
+    services.tomcat = {
+      enable = true;
+      package = pkgs.tomcat9;
     };
 
     # services.nginx = {
