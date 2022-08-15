@@ -2,7 +2,7 @@
   description = "dev.mcneil.nix.nix-chips";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-21.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-22.05";
     nixpkgs-staging.url = "github:jasonrm/nixpkgs-staging";
 
     utils.url = "github:numtide/flake-utils";
