@@ -63,17 +63,6 @@ in
         type = attrs;
         default = { };
       };
-      routerDefault = mkOption {
-        type = attrs;
-        readOnly = true;
-        default = { 
-          entryPoints = [
-              "http"
-            ] ++ optionals cfg.enableHttps [
-              "https"
-            ];
-        };
-      };
       routers = mkOption {
         type = attrs;
         default = { };
