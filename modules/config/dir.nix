@@ -3,6 +3,8 @@ let
   inherit (lib) mkOption assertMsg;
   cfg = config.dir;
 
+  impureChipsRootDir = builtins.getEnv "CHIPS_ROOT";
+
   impureWorkingDirectory = _: let
       projectDir = builtins.getEnv "PWD";
     in
@@ -23,7 +25,7 @@ in
 
       root = mkOption {
         type = str;
-        default = "/usr/local";
+        default = if (builtins.stringLength impureChipsRootDir > 0) then impureChipsRootDir else "/usr/local";
       };
 
       log = mkOption {
