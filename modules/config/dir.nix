@@ -1,7 +1,14 @@
 { lib, pkgs, config, ... }:
 let
-  inherit (lib) mkOption;
+  inherit (lib) mkOption assertMsg;
   cfg = config.dir;
+
+  impureWorkingDirectory = _: let
+      projectDir = builtins.getEnv "PWD";
+    in
+        assert assertMsg (builtins.stringLength projectDir > 0)
+        "Using `dir.project` requires the --impure flag to be used";
+        projectDir;
 in
 {
   imports = [
@@ -9,6 +16,11 @@ in
 
   options = with lib.types; {
     dir = {
+      project = mkOption {
+        type = str;
+        default = impureWorkingDirectory "PWD";
+      };
+
       root = mkOption {
         type = str;
         default = "/usr/local";
