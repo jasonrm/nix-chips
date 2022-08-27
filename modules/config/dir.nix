@@ -3,14 +3,6 @@ let
   inherit (lib) mkOption assertMsg;
   cfg = config.dir;
 
-  impureChipsRootDir = builtins.getEnv "CHIPS_ROOT";
-
-  impureWorkingDirectory = _: let
-      projectDir = builtins.getEnv "PWD";
-    in
-        assert assertMsg (builtins.stringLength projectDir > 0)
-        "Using `dir.project` requires the --impure flag to be used";
-        projectDir;
 in
 {
   imports = [
@@ -20,12 +12,12 @@ in
     dir = {
       project = mkOption {
         type = str;
-        default = impureWorkingDirectory "PWD";
+        default = "/libexec/${config.project.name}";
       };
 
       root = mkOption {
         type = str;
-        default = if (builtins.stringLength impureChipsRootDir > 0) then impureChipsRootDir else "/usr/local";
+        default = "/usr/local";
       };
 
       log = mkOption {

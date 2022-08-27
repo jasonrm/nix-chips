@@ -12,7 +12,7 @@
     let
       inherit (nixpkgs.lib) evalModules hasSuffix;
       inherit (nixpkgs.lib.filesystem) listFilesRecursive;
-      inherit (utils.lib) eachDefaultSystem;
+      inherit (utils.lib) eachSystem eachDefaultSystem;
 
       onlyNix = baseName: (hasSuffix ".nix" baseName);
 
@@ -29,10 +29,11 @@
           };
           modules = (args.nixosModules or [ ]) ++ [{ imports = nixChipModules ++ modules; }];
         }).config.outputs));
-
     in
     (evalNixChip [ ] { }) // {
-      use = dir: args: evalNixChip (localModules dir) args;
+      use = modulesDir: args: evalNixChip (localModules modulesDir) args;
+      useProfile = modulesDir: profile: evalNixChip (localModules modulesDir) { nixosModules = [profile]; };
+      lib = import ./lib { lib = nixpkgs.lib; };
       nixosModule = { imports = nixChipModules; };
     };
 }

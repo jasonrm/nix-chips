@@ -1,4 +1,5 @@
-{ lib }: let
+{ lib }:
+let
   inherit (lib) assertMsg;
 
   impureEnv = env:
@@ -6,9 +7,10 @@
       value = builtins.getEnv env;
     in
     assert assertMsg (builtins.stringLength value > 0)
-      "Using ${env} requires the --impure flag to be used";
+      "Either ${env} is unset, or the --impure flag was not used with nix.";
     value;
-in {
+in
+{
   inherit impureEnv;
-	traefik = import ./traefik.nix { inherit lib; };
+  traefik = import ./traefik.nix { inherit lib; };
 }

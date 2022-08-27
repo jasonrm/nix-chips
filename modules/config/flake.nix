@@ -30,6 +30,10 @@ in
         default = { };
         type = attrsOf (submodule appOption);
       };
+      devShell = mkOption {
+        default = null;
+        type = nullOr package;
+      };
       packages = mkOption {
         default = { };
         type = attrsOf package;

@@ -37,8 +37,6 @@ in
       };
 
     };
-
-    outputs.devShell = mkOption { type = package; };
   };
 
   config = {

@@ -31,7 +31,7 @@ let
 
     entryPoints = mapAttrs
       (k: v: lib.filterAttrs (n: v: v != { }) {
-        http = v.http or {};
+        http = v.http or { };
         address = ":${toString v.port}";
       })
       cfg.entryPoints;
@@ -85,7 +85,7 @@ in
           };
           http = mkOption {
             type = attrs;
-            default = {};
+            default = { };
           };
         };
       };
