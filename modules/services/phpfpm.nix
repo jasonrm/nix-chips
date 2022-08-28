@@ -121,7 +121,7 @@ in
     programs.supervisord.programs = lib.mapAttrs'
       (pool: poolOpts: lib.nameValuePair "phpfpm-${pool}" {
         command = "${poolOpts.phpPackage}/bin/php-fpm --fpm-config=${fpmCfgFile pool poolOpts}";
-        environment = poolOpts.environment;
+        environment = config.shell.environment ++ poolOpts.environment;
       })
       cfg.pools;
   };
