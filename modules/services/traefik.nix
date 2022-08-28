@@ -38,6 +38,8 @@ let
 
     api = { dashboard = true; };
 
+    pilot.dashboard = false;
+
     providers.file = {
       filename = "${staticConfDir}/static.yaml";
     };
