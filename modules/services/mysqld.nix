@@ -170,6 +170,9 @@ in
         mysqlinit
         mysqlsnap
       ];
+      outputs.apps.mysqlinit = {
+        program = "${mysqlinit}/bin/mysqlinit";
+      };      
     })
   ];
 }
