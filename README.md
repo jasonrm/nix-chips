@@ -4,37 +4,30 @@
 ```nix
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-    utils.url = "github:numtide/flake-utils";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-22.05";
+    nixpkgs-staging.url = "github:jasonrm/nixpkgs-staging";
 
-    chips.url = "github:jasonrm/nix-chips";
+    chips.url = "git+ssh://git@github.com/jasonrm/nix-chips.git";
     chips.inputs.nixpkgs.follows = "nixpkgs";
-    chips.inputs.utils.follows = "utils";
+    chips.inputs.nixpkgs-staging.follows = "nixpkgs-staging";
   };
 
-  outputs = { self, nixpkgs, utils, chips, ... }:
-    let
-      inherit (nixpkgs.lib) evalModules;
-      inherit (utils.lib) eachDefaultSystem;
-
-      projectModule = { system, pkgs, lib, config, ... }: {
-        config = {
-          nodejs = {
-            enable = true;
-            pkg = pkgs.nodejs-14_x;
-          };
-          php = {
-            enable = true;
-            extensions = { enabled, all, ... }: with all; enabled ++ [
-              pcov
-            ];
-          };
-        };
+  outputs = { nixpkgs, chips, ... }: chips.useProfile ../../modules {
+    config = with chips.lib; {
+      dir.project = requireImpureEnv "PWD";
+      dir.root = requireImpureEnv "CHIPS_ROOT";
+      nodejs = {
+        enable = true;
+        pkg = pkgs.nodejs-14_x;
       };
-    in
-    (eachDefaultSystem (system: (evalModules {
-      specialArgs = { inherit nixpkgs system; };
-      modules = [ chips.nixosModule projectModule ];
-    }).config.outputs));
+      php = {
+        enable = true;
+        extensions = { enabled, all, ... }: with all; enabled ++ [
+          pcov
+        ];
+      };
+    };
+  };
 }
+
 ```
