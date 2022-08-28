@@ -2,7 +2,9 @@
 let
   inherit (lib) assertMsg;
 
-  impureEnv = env:
+  impureEnv = builtins.getEnv env;
+
+  requireImpureEnv = env:
     let
       value = builtins.getEnv env;
     in
@@ -12,5 +14,6 @@ let
 in
 {
   inherit impureEnv;
+  inherit requireImpureEnv;
   traefik = import ./traefik.nix { inherit lib; };
 }
