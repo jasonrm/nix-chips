@@ -49,7 +49,10 @@ let
           type = nullOr str;
           default = "nobody";
         };
-
+        environment = mkOption {
+          type = listOf str;
+          default = [ ];
+        };
       };
       config = {
         socket = "${cfg.runDir}/${name}.sock";
@@ -118,6 +121,7 @@ in
     programs.supervisord.programs = lib.mapAttrs'
       (pool: poolOpts: lib.nameValuePair "phpfpm-${pool}" {
         command = "${poolOpts.phpPackage}/bin/php-fpm --fpm-config=${fpmCfgFile pool poolOpts}";
+        environment = poolOpts.environment;
       })
       cfg.pools;
   };
