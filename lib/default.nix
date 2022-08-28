@@ -2,7 +2,7 @@
 let
   inherit (lib) assertMsg;
 
-  impureEnv = builtins.getEnv env;
+  impureEnv = builtins.getEnv;
 
   requireImpureEnv = env:
     let
