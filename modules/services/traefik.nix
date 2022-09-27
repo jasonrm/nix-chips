@@ -53,6 +53,10 @@ in
       enable = mkEnableOption "enable traefik";
       enableHttps = mkEnableOption "enable HTTPS entry point";
       debug = mkEnableOption "debug";
+      logLevel = mkOption {
+        type = str;
+        default = "error";
+      };
       environment = mkOption {
         type = listOf str;
         default = [ ];
@@ -101,7 +105,7 @@ in
   config = mkMerge [
     (mkIf cfg.enable {
       programs.supervisord.programs.traefik = {
-        command = "${pkgs.traefik}/bin/traefik --configfile=${traefikConf} --log=true --log.level=error";
+        command = "${pkgs.traefik}/bin/traefik --configfile=${traefikConf} --log=true --log.level=${cfg.logLevel}";
         environment = cfg.environment;
       };
     })
