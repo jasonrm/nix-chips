@@ -8,6 +8,9 @@ let
   httpsEnabled = cfg.certificatesResolvers != { };
 
   innerConfig = {
+    log = {
+      level = cfg.logLevel;
+    };
     http = lib.filterAttrs (n: v: v != { }) {
       inherit (cfg) middlewares services;
       routers = {
@@ -105,7 +108,7 @@ in
   config = mkMerge [
     (mkIf cfg.enable {
       programs.supervisord.programs.traefik = {
-        command = "${pkgs.traefik}/bin/traefik --configfile=${traefikConf} --log=true --log.level=${cfg.logLevel}";
+        command = "${pkgs.traefik}/bin/traefik --configfile=${traefikConf}";
         environment = cfg.environment;
       };
     })
