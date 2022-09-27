@@ -53,6 +53,10 @@ in
       enable = mkEnableOption "enable traefik";
       enableHttps = mkEnableOption "enable HTTPS entry point";
       debug = mkEnableOption "debug";
+      environment = mkOption {
+        type = listOf str;
+        default = [ ];
+      };
       domains = mkOption {
         type = listOf str;
         default = [ "localhost" ];
@@ -98,6 +102,7 @@ in
     (mkIf cfg.enable {
       programs.supervisord.programs.traefik = {
         command = "${pkgs.traefik}/bin/traefik --configfile=${traefikConf} --log=true --log.level=error";
+        environment = cfg.environment;
       };
     })
     (mkIf cfg.debug {
