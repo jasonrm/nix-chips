@@ -8,9 +8,6 @@ let
   httpsEnabled = cfg.certificatesResolvers != { };
 
   innerConfig = {
-    log = {
-      level = cfg.logLevel;
-    };
     http = lib.filterAttrs (n: v: v != { }) {
       inherit (cfg) middlewares services;
       routers = {
@@ -40,6 +37,10 @@ let
       cfg.entryPoints;
 
     api = { dashboard = true; };
+
+    log = {
+      level = cfg.logLevel;
+    };
 
     pilot.dashboard = false;
 
