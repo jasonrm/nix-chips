@@ -64,6 +64,22 @@ let
         fastcgi_buffer_size 32k;
         fastcgi_busy_buffers_size 32k;
 
+        gzip on;
+        gzip_proxied any;
+        gzip_comp_level 5;
+        gzip_types
+          application/atom+xml
+          application/javascript
+          application/json
+          application/xml
+          application/xml+rss
+          image/svg+xml
+          text/css
+          text/javascript
+          text/plain
+          text/xml;
+        gzip_vary on;
+
         ${cfg.extraConfig}
 
         ${lib.concatStringsSep "\n" cfg.servers}
