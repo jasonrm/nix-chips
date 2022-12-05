@@ -33,7 +33,7 @@
     (evalNixChip [ ] { }) // {
       use = modulesDir: args: evalNixChip (localModules modulesDir) args;
       useProfile = modulesDir: profile: evalNixChip (localModules modulesDir) { nixosModules = [profile]; };
-      lib = import ./lib { lib = nixpkgs.lib; };
+      lib = import ./lib { pkgs = nixpkgs; lib = nixpkgs.lib; };
       nixosModule = { imports = nixChipModules; };
     };
 }
