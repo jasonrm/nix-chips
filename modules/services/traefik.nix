@@ -60,9 +60,9 @@
   traefikConf = writeText "traefik.yaml" (builtins.toJSON serverConfig);
 
   traefikExec = pkgs.writeShellScriptBin "traefik-exec" ''
-    if [[ -f "${cfg.environmentFilePath}" ]]; then
+    if [[ -f "${cfg.environmentFile}" ]]; then
       set -o allexport
-      source "${cfg.environmentFilePath}"
+      source "${cfg.environmentFile}"
       set +o allexport
     fi
     exec ${pkgs.traefik}/bin/traefik --configfile=${traefikConf}
@@ -82,7 +82,7 @@ in {
         type = listOf str;
         default = [];
       };
-      environmentFilePath = mkOption {
+      environmentFile = mkOption {
         type = str;
         default = "";
       };
