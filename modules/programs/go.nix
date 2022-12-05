@@ -1,9 +1,13 @@
-{ system, pkgs, lib, config, ... }:
-with lib;
-let
-  cfg = config.programs.go;
-in
 {
+  system,
+  pkgs,
+  lib,
+  config,
+  ...
+}:
+with lib; let
+  cfg = config.programs.go;
+in {
   options = with lib.types; {
     programs.go = {
       enable = mkEnableOption "go support";

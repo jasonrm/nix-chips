@@ -1,7 +1,11 @@
-{ lib, pkgs, config, ... }:
 {
-  imports = [ ];
-  options = { };
+  lib,
+  pkgs,
+  config,
+  ...
+}: {
+  imports = [];
+  options = {};
   config = {
     dir.root = "/opt/projects/nix-chips";
 

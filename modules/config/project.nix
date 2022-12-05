@@ -1,9 +1,12 @@
-{ lib, pkgs, config, ... }:
-let
+{
+  lib,
+  pkgs,
+  config,
+  ...
+}: let
   inherit (lib) mkOption types;
   cfg = config.project;
-in
-{
+in {
   imports = [
   ];
 
@@ -15,5 +18,5 @@ in
     };
   };
 
-  config = { };
+  config = {};
 }

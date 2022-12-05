@@ -1,5 +1,9 @@
-{ lib, pkgs, config, ... }:
-let
+{
+  lib,
+  pkgs,
+  config,
+  ...
+}: let
   inherit (lib) mkOption;
 
   cfg = config.services.nginx;
@@ -110,20 +114,20 @@ let
   nginxWebRoot = pkgs.writeTextDir "index.html" ''
     <html><body><h1>Hello from NGINX</h1></body></html>
   '';
-in
-{
+in {
   imports = [
   ];
 
-  options = with lib.types;{
+  options = with lib.types; {
     services.nginx = {
       enable = lib.mkEnableOption "enable nginx";
       package = mkOption {
         default = pkgs.nginxMainline;
         type = types.package;
-        apply = p: p.override {
-          modules = p.modules ++ cfg.additionalModules;
-        };
+        apply = p:
+          p.override {
+            modules = p.modules ++ cfg.additionalModules;
+          };
       };
       workerProcesses = mkOption {
         type = int;
@@ -142,7 +146,7 @@ in
         default = "${cfg.logDir}/error.log";
       };
       additionalModules = mkOption {
-        default = [ ];
+        default = [];
         type = listOf (attrsOf anything);
       };
       # user = mkOption {
@@ -163,7 +167,7 @@ in
       };
       servers = mkOption {
         type = listOf str;
-        default = [ defaultServerDocker ];
+        default = [defaultServerDocker];
       };
       extraConfig = mkOption {
         type = str;
@@ -216,7 +220,7 @@ in
       '';
 
       config = {
-        Cmd = [ "${cfg.package}/bin/nginx" "-T" "-c" dockerConfig ];
+        Cmd = ["${cfg.package}/bin/nginx" "-T" "-c" dockerConfig];
       };
     };
   };

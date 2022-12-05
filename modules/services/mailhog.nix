@@ -1,9 +1,15 @@
-{ lib, pkgs, config, ... }:
-let
-  cfg = config.services.mailhog;
-  serviceAddress = if (cfg.bindAddress == "0.0.0.0") then "127.0.0.1" else cfg.bindAddress;
-in
 {
+  lib,
+  pkgs,
+  config,
+  ...
+}: let
+  cfg = config.services.mailhog;
+  serviceAddress =
+    if (cfg.bindAddress == "0.0.0.0")
+    then "127.0.0.1"
+    else cfg.bindAddress;
+in {
   options = {
     services.mailhog = {
       enable = lib.mkEnableOption "enable mailhog";
@@ -34,13 +40,13 @@ in
       ];
       services.traefik = {
         routers.mailhog = {
-          entryPoints = [ "http" ];
+          entryPoints = ["http"];
           service = "mailhog";
           rule = "HostRegexp(`mailhog.${config.services.traefik.domain}`)";
         };
         services.mailhog = {
           loadBalancer.servers = [
-            { url = "http://${serviceAddress}${":"}${toString cfg.httpPort}"; }
+            {url = "http://${serviceAddress}${":"}${toString cfg.httpPort}";}
           ];
         };
       };

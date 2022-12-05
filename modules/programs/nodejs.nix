@@ -1,11 +1,15 @@
-{ system, pkgs, lib, config, ... }:
-with lib;
-let
+{
+  system,
+  pkgs,
+  lib,
+  config,
+  ...
+}:
+with lib; let
   inherit (pkgs.writers) writeBashBin;
 
   cfg = config.programs.nodejs;
-in
-{
+in {
   options = with lib.types; {
     programs.nodejs = {
       enable = mkEnableOption "nodejs support";

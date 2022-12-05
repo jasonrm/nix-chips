@@ -1,9 +1,10 @@
-{ pkgs, lib }:
-let
+{
+  pkgs,
+  lib,
+}: let
   inherit (pkgs) symlinkJoin writeShellScriptBin;
   inherit (lib) mapAttrsToList;
-in
-{
+in {
   # Takes an attribute set and converts into shell scripts to act as "global aliases"
   # Ex.
   # aliasToPackage {
@@ -19,4 +20,4 @@ in
         alias
       );
     };
-  }
+}

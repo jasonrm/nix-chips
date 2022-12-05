@@ -1,5 +1,9 @@
-{ lib, pkgs, config, ... }:
-let
+{
+  lib,
+  pkgs,
+  config,
+  ...
+}: let
   inherit (lib) mkOption mapAttrs types;
 
   defaults = {
@@ -36,8 +40,7 @@ let
       type = types.int;
       default = port;
     };
-in
-{
+in {
   options = {
     ports = mapAttrs mkPortOption defaults;
   };

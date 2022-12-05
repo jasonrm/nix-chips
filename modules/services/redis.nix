@@ -1,5 +1,9 @@
-{ lib, pkgs, config, ... }:
-let
+{
+  lib,
+  pkgs,
+  config,
+  ...
+}: let
   inherit (lib) mkOption types;
   cfg = config.services.redis;
 
@@ -21,14 +25,17 @@ let
     dbfilename dump.rdb
     dir "${cfg.dataDir}"
 
-    loadmodule ${pkgs.redis-cell}/lib/${if pkgs.stdenv.isDarwin then "libredis_cell.dylib" else "libredis_cell.so"}
+    loadmodule ${pkgs.redis-cell}/lib/${
+      if pkgs.stdenv.isDarwin
+      then "libredis_cell.dylib"
+      else "libredis_cell.so"
+    }
   '';
 
   redis-cli = pkgs.writeShellScriptBin "redis-cli" ''
     exec ${pkgs.redis}/bin/redis-cli -h $REDIS_HOST -p $REDIS_PORT $@
   '';
-in
-{
+in {
   options = with types; {
     services.redis = {
       enable = lib.mkEnableOption "enable redis";
@@ -77,7 +84,11 @@ in
         redis-cli
       ];
       shell.environment = [
-        "REDIS_HOST=${if (cfg.host == "0.0.0.0") then "127.0.0.1" else cfg.host}"
+        "REDIS_HOST=${
+          if (cfg.host == "0.0.0.0")
+          then "127.0.0.1"
+          else cfg.host
+        }"
         "REDIS_PORT=${toString cfg.port}"
       ];
       programs.supervisord.programs.redis = {

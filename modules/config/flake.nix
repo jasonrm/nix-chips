@@ -1,33 +1,34 @@
-{ lib, pkgs, config, ... }:
-let
+{
+  lib,
+  pkgs,
+  config,
+  ...
+}: let
   inherit (lib) mkOption;
 
   cfg = config.flake;
 
-  appOption = with lib.types; { name, ... }:
-    let
-      appOption = outputs.apps.${name};
-    in
-    {
-      options = {
-        type = mkOption {
-          type = str;
-          default = "app";
-        };
-        program = mkOption {
-          type = oneOf [ path str ];
-        };
+  appOption = with lib.types; {name, ...}: let
+    appOption = outputs.apps.${name};
+  in {
+    options = {
+      type = mkOption {
+        type = str;
+        default = "app";
+      };
+      program = mkOption {
+        type = oneOf [path str];
       };
     };
-in
-{
+  };
+in {
   imports = [
   ];
 
   options = with lib.types; {
     outputs = {
       apps = mkOption {
-        default = { };
+        default = {};
         type = attrsOf (submodule appOption);
       };
       devShell = mkOption {
@@ -35,7 +36,7 @@ in
         type = nullOr package;
       };
       packages = mkOption {
-        default = { };
+        default = {};
         type = attrsOf package;
       };
       defaultPackage = mkOption {
@@ -45,5 +46,5 @@ in
     };
   };
 
-  config = { };
+  config = {};
 }

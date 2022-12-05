@@ -1,10 +1,12 @@
-{ lib, pkgs, config, ... }:
-let
+{
+  lib,
+  pkgs,
+  config,
+  ...
+}: let
   inherit (lib) mkOption assertMsg;
   cfg = config.dir;
-
-in
-{
+in {
   imports = [
   ];
 
@@ -40,7 +42,7 @@ in
 
       ensureExists = mkOption {
         type = listOf str;
-        default = [ ];
+        default = [];
       };
     };
   };

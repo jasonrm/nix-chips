@@ -1,8 +1,11 @@
-{ lib, pkgs, config, ... }:
-let
-  cfg = config.services.memcached;
-in
 {
+  lib,
+  pkgs,
+  config,
+  ...
+}: let
+  cfg = config.services.memcached;
+in {
   options = {
     services.memcached = {
       enable = lib.mkEnableOption "enable memcached";
@@ -20,7 +23,11 @@ in
   config = lib.mkMerge [
     (lib.mkIf cfg.enable {
       shell.environment = [
-        "MEMCACHED_HOST=${if (cfg.host == "0.0.0.0") then "127.0.0.1" else cfg.host}"
+        "MEMCACHED_HOST=${
+          if (cfg.host == "0.0.0.0")
+          then "127.0.0.1"
+          else cfg.host
+        }"
         "MEMCACHED_PORT=${toString cfg.port}"
       ];
       programs.supervisord.programs.memcached = {
@@ -29,12 +36,12 @@ in
         command = "${pkgs.memcached}/bin/memcached";
       };
     })
-    ({
+    {
       outputs.apps.memcached = {
         # user = cfg.user;
         # group = cfg.group;
         program = "${pkgs.memcached}/bin/memcached";
       };
-    })
+    }
   ];
 }

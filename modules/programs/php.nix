@@ -1,7 +1,11 @@
-{ system, pkgs, lib, config, ... }:
-with lib;
-
-let
+{
+  system,
+  pkgs,
+  lib,
+  config,
+  ...
+}:
+with lib; let
   inherit (pkgs.writers) writeBashBin;
   inherit (pkgs) terraform symlinkJoin mkShell;
 
@@ -28,8 +32,7 @@ let
   php = cfg.pkg.buildEnv {
     inherit (cfg) extraConfig extensions;
   };
-in
-{
+in {
   options = with lib.types; {
     programs.php = {
       enable = mkEnableOption "PHP support";
@@ -47,7 +50,12 @@ in
 
       extensions = mkOption {
         type = functionTo (listOf package);
-        default = { enabled, all, ... }: with all; enabled ++ [ ];
+        default = {
+          enabled,
+          all,
+          ...
+        }:
+          with all; enabled ++ [];
       };
 
       extraConfig = mkOption {

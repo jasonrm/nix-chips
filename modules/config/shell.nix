@@ -1,13 +1,17 @@
-{ system, pkgs, lib, config, ... }:
-with lib;
-let
+{
+  system,
+  pkgs,
+  lib,
+  config,
+  ...
+}:
+with lib; let
   inherit (pkgs.writers) writeBashBin;
   inherit (pkgs.stdenv) isDarwin;
   inherit (pkgs) symlinkJoin mkShell;
 
   cfg = config.shell;
-in
-{
+in {
   imports = [
     # paths to other modules
   ];
@@ -18,24 +22,23 @@ in
 
       environment = mkOption {
         type = listOf str;
-        default = [ ];
+        default = [];
       };
 
       shellHooks = mkOption {
         type = listOf lines;
-        default = [ ];
+        default = [];
       };
 
       directories = mkOption {
         type = listOf str;
-        default = [ ];
+        default = [];
       };
 
       contents = mkOption {
         type = listOf package;
-        default = [ ];
+        default = [];
       };
-
     };
   };
 
@@ -45,13 +48,14 @@ in
         export ${lib.concatStringsSep " " (map escapeShellArg cfg.environment)}
       ''
     ];
-    outputs.devShell = (pkgs.mkShell {
-      buildInputs = cfg.contents
+    outputs.devShell = pkgs.mkShell {
+      buildInputs =
+        cfg.contents
         ++ lib.optionals isDarwin (with pkgs.darwin.apple_sdk.frameworks; [
-        CoreServices
-      ]);
+          CoreServices
+        ]);
 
       shellHook = lib.concatStringsSep "\n" cfg.shellHooks;
-    });
+    };
   };
 }

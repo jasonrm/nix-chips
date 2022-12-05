@@ -1,42 +1,50 @@
-{ lib, pkgs, config, ... }:
-let
+{
+  lib,
+  pkgs,
+  config,
+  ...
+}: let
   inherit (lib) mkEnableOption mkOption types mkMerge mkIf filterAttrs optionals mapAttrs elemAt;
   inherit (pkgs) writeText;
 
   cfg = config.services.traefik;
 
-  httpsEnabled = cfg.certificatesResolvers != { };
+  httpsEnabled = cfg.certificatesResolvers != {};
 
   innerConfig = {
-    http = lib.filterAttrs (n: v: v != { }) {
+    http = lib.filterAttrs (n: v: v != {}) {
       inherit (cfg) middlewares services;
-      routers = {
-        traefik = {
-          entryPoints = [ "http" ] ++ optionals httpsEnabled [ "https" ];
-          service = "api@internal";
-          rule = "Host(`traefik.localhost`, `traefik.${elemAt cfg.domains 0}`)";
-        };
-      } // cfg.routers;
+      routers =
+        {
+          traefik = {
+            entryPoints = ["http"] ++ optionals httpsEnabled ["https"];
+            service = "api@internal";
+            rule = "Host(`traefik.localhost`, `traefik.${elemAt cfg.domains 0}`)";
+          };
+        }
+        // cfg.routers;
     };
   };
 
   staticConfDir = pkgs.writeTextFile {
     name = "traefik-conf";
     destination = "/static.yaml";
-    text = (builtins.toJSON innerConfig);
+    text = builtins.toJSON innerConfig;
   };
 
-  serverConfig = lib.filterAttrs (n: v: v != { }) {
+  serverConfig = lib.filterAttrs (n: v: v != {}) {
     inherit (cfg) certificatesResolvers;
 
-    entryPoints = mapAttrs
-      (k: v: lib.filterAttrs (n: v: v != { }) {
-        http = v.http or { };
-        address = ":${toString v.port}";
-      })
+    entryPoints =
+      mapAttrs
+      (k: v:
+        lib.filterAttrs (n: v: v != {}) {
+          http = v.http or {};
+          address = ":${toString v.port}";
+        })
       cfg.entryPoints;
 
-    api = { dashboard = true; };
+    api = {dashboard = true;};
 
     log = {
       level = cfg.logLevel;
@@ -50,8 +58,7 @@ let
   };
 
   traefikConf = writeText "traefik.yaml" (builtins.toJSON serverConfig);
-in
-{
+in {
   options = with types; {
     services.traefik = {
       enable = mkEnableOption "enable traefik";
@@ -63,27 +70,27 @@ in
       };
       environment = mkOption {
         type = listOf str;
-        default = [ ];
+        default = [];
       };
       domains = mkOption {
         type = listOf str;
-        default = [ "localhost" ];
+        default = ["localhost"];
       };
       certificatesResolvers = mkOption {
         type = attrs;
-        default = { };
+        default = {};
       };
       middlewares = mkOption {
         type = attrs;
-        default = { };
+        default = {};
       };
       routers = mkOption {
         type = attrs;
-        default = { };
+        default = {};
       };
       services = mkOption {
         type = attrs;
-        default = { };
+        default = {};
       };
       entryPoints = {
         http = {
@@ -99,7 +106,7 @@ in
           };
           http = mkOption {
             type = attrs;
-            default = { };
+            default = {};
           };
         };
       };

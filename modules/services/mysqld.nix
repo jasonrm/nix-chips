@@ -1,10 +1,17 @@
-{ lib, pkgs, config, ... }:
-let
+{
+  lib,
+  pkgs,
+  config,
+  ...
+}: let
   inherit (lib) mkOption;
 
   cfg = config.services.mysqld;
 
-  envHost = if (cfg.host == "0.0.0.0") then "127.0.0.1" else cfg.host;
+  envHost =
+    if (cfg.host == "0.0.0.0")
+    then "127.0.0.1"
+    else cfg.host;
 
   command = pkgs.writeShellScriptBin "mysqld" ''
     if [ ! -d "${cfg.dataDir}/data" ]; then
@@ -81,8 +88,7 @@ let
 
     cat "${createdb}" | ${cfg.pkg}/bin/mysql -h${envHost} -uroot --skip-password -P${toString cfg.port} --protocol tcp || true
   '';
-in
-{
+in {
   imports = [
   ];
 
@@ -135,7 +141,6 @@ in
         type = str;
         default = "";
       };
-
     };
   };
 
@@ -172,7 +177,7 @@ in
       ];
       outputs.apps.mysqlinit = {
         program = "${mysqlinit}/bin/mysqlinit";
-      };      
+      };
     })
   ];
 }

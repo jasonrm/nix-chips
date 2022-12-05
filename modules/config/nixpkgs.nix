@@ -1,5 +1,9 @@
-{ system, nixpkgs, overlays ? [ ], ... }:
 {
+  system,
+  nixpkgs,
+  overlays ? [],
+  ...
+}: {
   _module.args = {
     pkgs = import nixpkgs {
       inherit system;

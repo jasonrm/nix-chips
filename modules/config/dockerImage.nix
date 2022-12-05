@@ -1,6 +1,11 @@
-{ system, pkgs, lib, config, ... }:
-with lib;
-let
+{
+  system,
+  pkgs,
+  lib,
+  config,
+  ...
+}:
+with lib; let
   inherit (lib) mapAttrs types;
   inherit (pkgs.writers) writeBashBin;
   inherit (pkgs.stdenv) isDarwin;
@@ -27,54 +32,59 @@ let
     exec $*
   '');
 
-  nonRootShadowSetup = { user, uid, gid ? uid }: with pkgs; [
-    (
-      writeTextDir "etc/shadow" ''
-        root:!x:::::::
-        ${user}:!:::::::
-      ''
-    )
-    (
-      writeTextDir "etc/passwd" ''
-        root:x:0:0::/root:${runtimeShell}
-        ${user}:x:${toString uid}:${toString gid}::/home/${user}:
-      ''
-    )
-    (
-      writeTextDir "etc/group" ''
-        root:x:0:
-        ${user}:x:${toString gid}:
-      ''
-    )
-    (
-      writeTextDir "etc/gshadow" ''
-        root:x::
-        ${user}:x::
-      ''
-    )
-  ];
+  nonRootShadowSetup = {
+    user,
+    uid,
+    gid ? uid,
+  }:
+    with pkgs; [
+      (
+        writeTextDir "etc/shadow" ''
+          root:!x:::::::
+          ${user}:!:::::::
+        ''
+      )
+      (
+        writeTextDir "etc/passwd" ''
+          root:x:0:0::/root:${runtimeShell}
+          ${user}:x:${toString uid}:${toString gid}::/home/${user}:
+        ''
+      )
+      (
+        writeTextDir "etc/group" ''
+          root:x:0:
+          ${user}:x:${toString gid}:
+        ''
+      )
+      (
+        writeTextDir "etc/gshadow" ''
+          root:x::
+          ${user}:x::
+        ''
+      )
+    ];
 
   dockerImageOption = with types; {
     options = {
       config = mkOption {
         type = attrs;
-        default = { };
+        default = {};
       };
       contents = mkOption {
         type = listOf package;
-        default = [ ];
+        default = [];
       };
       entryCommands = mkOption {
         type = listOf str;
-        default = [ ];
+        default = [];
       };
       command = mkOption {
         type = listOf str;
-        default = [ ];
+        default = [];
       };
       extraCommands = mkOption {
         type = listOf str;
-        default = [ ];
+        default = [];
       };
       environment = mkOption {
         type = listOf str;
@@ -84,8 +94,7 @@ let
       };
     };
   };
-in
-{
+in {
   imports = [
     # paths to other modules
   ];
@@ -94,10 +103,10 @@ in
     dockerImages = {
       baseContents = mkOption {
         type = listOf package;
-        default = [ ];
+        default = [];
       };
       images = mkOption {
-        default = { };
+        default = {};
         type = attrsOf (submodule dockerImageOption);
       };
     };
@@ -108,7 +117,8 @@ in
   };
 
   config = {
-    outputs.legacyPackages.dockerImages = mapAttrs
+    outputs.legacyPackages.dockerImages =
+      mapAttrs
       (k: image: (
         dockerTools.buildImage {
           name = k;
@@ -117,10 +127,12 @@ in
           contents = image.contents;
           # WIP for users
           # (nonRootShadowSetup { user = "sshd"; uid = 999; });
-          config = image.config // {
-            # TODO: Support Entrypoint from v.config
-            Entrypoint = [ "${preEntry image}/bin/pre-entry" ];
-          };
+          config =
+            image.config
+            // {
+              # TODO: Support Entrypoint from v.config
+              Entrypoint = ["${preEntry image}/bin/pre-entry"];
+            };
         }
       ))
       config.dockerImages.images;
