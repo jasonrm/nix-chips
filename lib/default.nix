@@ -1,4 +1,4 @@
-{ lib }:
+{ pkgs, lib }:
 let
   inherit (lib) assertMsg;
 
@@ -16,4 +16,5 @@ in
   inherit impureEnv;
   inherit requireImpureEnv;
   traefik = import ./traefik.nix { inherit lib; };
+  generators = import ./generators.nix { inherit pkgs lib; };
 }
