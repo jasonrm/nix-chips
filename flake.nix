@@ -25,7 +25,7 @@
             overlays = (args.overlay or [ ]) ++ [ nixpkgs-staging.overlay ];
             inherit nixpkgs;
             inherit system;
-            chips = import ./lib { lib = nixpkgs.lib; };
+            chips = import ./lib { pkgs = nixpkgs; lib = nixpkgs.lib; };
           };
           modules = (args.nixosModules or [ ]) ++ [{ imports = nixChipModules ++ modules; }];
         }).config.outputs));
