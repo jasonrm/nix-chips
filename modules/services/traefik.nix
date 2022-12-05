@@ -58,6 +58,16 @@
   };
 
   traefikConf = writeText "traefik.yaml" (builtins.toJSON serverConfig);
+
+  traefikExec = pkgs.writeShellScriptBin "traefik-exec" ''
+    if [[ -f "${cfg.environmentFilePath}" ]]; then
+      set -o allexport
+      source "${cfg.environmentFilePath}"
+      set +o allexport
+    fi
+    exec ${pkgs.traefik}/bin/traefik --configfile=${traefikConf}
+  '';
+
 in {
   options = with types; {
     services.traefik = {
@@ -71,6 +81,10 @@ in {
       environment = mkOption {
         type = listOf str;
         default = [];
+      };
+      environmentFilePath = mkOption {
+        type = str;
+        default = "";
       };
       domains = mkOption {
         type = listOf str;
@@ -116,7 +130,7 @@ in {
   config = mkMerge [
     (mkIf cfg.enable {
       programs.supervisord.programs.traefik = {
-        command = "${pkgs.traefik}/bin/traefik --configfile=${traefikConf}";
+        command = "${traefikExec}/bin/traefik-exec";
         environment = cfg.environment;
       };
     })
