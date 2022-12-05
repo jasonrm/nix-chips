@@ -59,6 +59,7 @@
 
   traefikConf = writeText "traefik.yaml" (builtins.toJSON serverConfig);
 
+  # TODO: Make this more generic (e.g. binWithEnv)
   traefikExec = pkgs.writeShellScriptBin "traefik-exec" ''
     if [[ -f "${cfg.environmentFile}" ]]; then
       set -o allexport
