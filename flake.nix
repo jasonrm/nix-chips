@@ -2,7 +2,7 @@
   description = "dev.mcneil.nix.nix-chips";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-22.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-22.11";
     nixpkgs-staging.url = "github:jasonrm/nixpkgs-staging";
 
     utils.url = "github:numtide/flake-utils";
@@ -25,7 +25,7 @@
             overlays = (args.overlay or [ ]) ++ [ nixpkgs-staging.overlay ];
             inherit nixpkgs;
             inherit system;
-            chips = import ./lib { pkgs = nixpkgs; lib = nixpkgs.lib; };
+            chips = import ./lib { pkgs = nixpkgs.legacyPackages.${system}; lib = nixpkgs.lib; };
           };
           modules = (args.nixosModules or [ ]) ++ [{ imports = nixChipModules ++ modules; }];
         }).config.outputs));
@@ -33,7 +33,7 @@
     (evalNixChip [ ] { }) // {
       use = modulesDir: args: evalNixChip (localModules modulesDir) args;
       useProfile = modulesDir: profile: evalNixChip (localModules modulesDir) { nixosModules = [profile]; };
-      lib = import ./lib { pkgs = nixpkgs; lib = nixpkgs.lib; };
+      # lib = import ./lib { inherit pkgs; lib = nixpkgs.lib; };
       nixosModule = { imports = nixChipModules; };
     };
 }
