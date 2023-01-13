@@ -15,7 +15,7 @@ with lib; let
 
   baseImage = dockerTools.buildImage {
     name = "baseContents";
-    contents = cfg.baseContents;
+    copyToRoot = cfg.baseContents;
   };
 
   preEntry = image: (pkgs.writeShellScriptBin "pre-entry" ''
@@ -124,7 +124,7 @@ in {
           name = k;
           fromImage = baseImage;
           extraCommands = lib.concatStringsSep "\n" image.extraCommands;
-          contents = image.contents;
+          copyToRoot = image.contents;
           # WIP for users
           # (nonRootShadowSetup { user = "sshd"; uid = 999; });
           config =
