@@ -48,7 +48,7 @@ in {
         export ${lib.concatStringsSep " " (map escapeShellArg cfg.environment)}
       ''
     ];
-    outputs.devShell = pkgs.mkShell {
+    outputs.devShells.default = pkgs.mkShell {
       buildInputs =
         cfg.contents
         ++ lib.optionals isDarwin (with pkgs.darwin.apple_sdk.frameworks; [

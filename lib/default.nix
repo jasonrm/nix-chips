@@ -16,4 +16,5 @@ in {
   inherit requireImpureEnv;
   traefik = import ./traefik.nix {inherit lib;};
   generators = import ./generators.nix {inherit pkgs lib;};
+  secrets = import ./secrets.nix {inherit pkgs lib;};
 }

@@ -68,7 +68,6 @@
     fi
     exec ${pkgs.traefik}/bin/traefik --configfile=${traefikConf}
   '';
-
 in {
   options = with types; {
     services.traefik = {

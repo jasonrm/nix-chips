@@ -16,12 +16,14 @@
   }: let
     inherit (nixpkgs.lib) evalModules hasSuffix;
     inherit (nixpkgs.lib.filesystem) listFilesRecursive;
-    inherit (utils.lib) eachSystem eachDefaultSystem;
+    inherit (utils.lib) eachDefaultSystem;
 
     onlyNix = baseName: (hasSuffix ".nix" baseName);
 
     localModules = directory: builtins.filter onlyNix (listFilesRecursive directory);
-    nixChipModules = localModules ./modules;
+    nixChipModules = localModules ./modules/chips;
+    nixosModules = localModules ./modules/nixos;
+    sharedModules = localModules ./modules/shared;
 
     evalNixChip = modules: args: (eachDefaultSystem (system:
       (evalModules {
@@ -36,16 +38,23 @@
               lib = nixpkgs.lib;
             };
           };
-        modules = (args.nixosModules or []) ++ [{imports = nixChipModules ++ modules;}];
+        modules = (args.nixosModules or []) ++ [{imports = sharedModules ++ nixChipModules ++ modules;}];
       })
       .config
       .outputs));
+
+    moduleOutputs = evalNixChip [] {};
   in
-    (evalNixChip [] {})
+    moduleOutputs
     // {
       use = modulesDir: args: evalNixChip (localModules modulesDir) args;
       useProfile = modulesDir: profile: evalNixChip (localModules modulesDir) {nixosModules = [profile];};
-      # lib = import ./lib { inherit pkgs; lib = nixpkgs.lib; };
-      nixosModule = {imports = nixChipModules;};
+      lib = import ./lib {
+        pkgs = nixpkgs;
+        lib = nixpkgs.lib;
+      };
+      nixosModules.default = {imports = nixosModules ++ sharedModules;};
+      # FIXME: This is a hack to get the secretRecipients output from the nixosModules
+      secretRecipients = moduleOutputs.secretRecipients."aarch64-darwin";
     };
 }

@@ -47,70 +47,71 @@
     ${(concatStringsSep "" programEntries)}
   '';
 
-  programOption = with lib.types; {name, ...}: let
-    programOption = cfg.programs.${name};
-  in {
-    options = {
-      autostart = mkOption {
-        type = bool;
-        default = true;
+  programOption = with lib.types;
+    {name, ...}: let
+      programOption = cfg.programs.${name};
+    in {
+      options = {
+        autostart = mkOption {
+          type = bool;
+          default = true;
+        };
+        autorestart = mkOption {
+          type = bool;
+          default = false;
+        };
+        # user = mkOption {
+        #   type = nullOr str;
+        #   default = config.default.user;
+        # };
+        # group = mkOption {
+        #   type = nullOr str;
+        #   default = config.default.group;
+        # };
+        stopsignal = mkOption {
+          type = nullOr str;
+          default = null;
+        };
+        command = mkOption {
+          type = oneOf [path str];
+        };
+        stdout_logfile = mkOption {
+          type = path;
+          default = "/dev/stdout";
+          # default = "${config.dir.log}/${name}.stdout.log";
+        };
+        stderr_logfile = mkOption {
+          type = path;
+          default = "/dev/stderr";
+          # default = "${config.dir.log}/${name}.stderr.log";
+        };
+        stopasgroup = mkOption {
+          type = bool;
+          default = true;
+        };
+        killasgroup = mkOption {
+          type = bool;
+          default = true;
+        };
+        stopwaitsecs = mkOption {
+          type = int;
+          default = 5;
+        };
+        directory = mkOption {
+          type = nullOr str;
+          default = config.dir.run;
+        };
+        environment = mkOption {
+          type = listOf str;
+          default = [];
+        };
       };
-      autorestart = mkOption {
-        type = bool;
-        default = false;
-      };
-      # user = mkOption {
-      #   type = nullOr str;
-      #   default = config.default.user;
-      # };
-      # group = mkOption {
-      #   type = nullOr str;
-      #   default = config.default.group;
-      # };
-      stopsignal = mkOption {
-        type = nullOr str;
-        default = null;
-      };
-      command = mkOption {
-        type = oneOf [path str];
-      };
-      stdout_logfile = mkOption {
-        type = path;
-        default = "/dev/stdout";
-        # default = "${config.dir.log}/${name}.stdout.log";
-      };
-      stderr_logfile = mkOption {
-        type = path;
-        default = "/dev/stderr";
-        # default = "${config.dir.log}/${name}.stderr.log";
-      };
-      stopasgroup = mkOption {
-        type = bool;
-        default = true;
-      };
-      killasgroup = mkOption {
-        type = bool;
-        default = true;
-      };
-      stopwaitsecs = mkOption {
-        type = int;
-        default = 5;
-      };
-      directory = mkOption {
-        type = nullOr str;
-        default = config.dir.run;
-      };
-      environment = mkOption {
-        type = listOf str;
-        default = [];
-      };
+      #    config = let
+      #      envVars = programOption.environment;
+      #    in {
+      #      environment = if lib.isAttrs envVars then () else envVars;
+      #    };
     };
-    #    config = let
-    #      envVars = programOption.environment;
-    #    in {
-    #      environment = if lib.isAttrs envVars then () else envVars;
-    #    };
-  };
 
   supervisord-debug = pkgs.writeShellScriptBin "supervisord-debug" ''
     cat ${configuration}
