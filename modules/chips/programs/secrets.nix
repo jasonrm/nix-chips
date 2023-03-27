@@ -70,11 +70,7 @@ with lib; let
     fi
   '';
 in {
-  options = with lib.types; {
-    programs.secrets = {
-      enable = mkEnableOption "age encrypted secret support";
-    };
-  };
+  options = with lib.types; {};
 
   config = {
     shell.contents = [
