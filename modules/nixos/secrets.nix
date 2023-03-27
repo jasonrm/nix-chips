@@ -18,7 +18,7 @@
     makeDirectory,
     ...
   }: let
-    storeSource = cfg.relativeRoot + source;
+    storeSource = "${cfg.relativeRoot}/${source}";
   in {
     description = "decrypt secret for ${name}";
     wantedBy = ["multi-user.target"];
