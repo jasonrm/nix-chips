@@ -1,5 +1,5 @@
 {lib, ...}: let
-  inherit (lib) attrValues flatten foldAttrs mapAttrs' nameValuePair unique;
+  inherit (lib) attrValues flatten foldAttrs mapAttrs' nameValuePair unique hasPrefix;
 
   recipientsFromConfigurations = nixosConfigurations: let
     adminRecipientsList = flatten (map (node: node.config.secrets.adminRecipients) (attrValues nixosConfigurations));
