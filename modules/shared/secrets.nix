@@ -68,6 +68,11 @@ in {
         description = "public keys to include as recipients for all secrets";
         default = [];
       };
+      wellKnownRecipients = mkOption {
+        type = attrsOf str;
+        description = "public keys of well known recipients";
+        default = {};
+      };
       files = mkOption {
         type = attrsOf secretFile;
         description = "secret configuration";
