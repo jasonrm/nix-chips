@@ -20,6 +20,8 @@ with lib; let
       exit 1
     fi
 
+    AGE_SECRET_KEY_FILE=''${AGE_SECRET_KEY_FILE:-$HOME/.config/age/key.text}
+
     ENCRYPTED_FILE=$2
     DECRYPTED_FILE=''${ENCRYPTED_FILE%.age}
     RECIPIENTS=$(nix eval --json '.#secretRecipients' | jq -r "if .\"$ENCRYPTED_FILE\" then .\"$ENCRYPTED_FILE\" else [] end | join(\"\n\")")
@@ -29,7 +31,7 @@ with lib; let
     fi
 
     IDENTITIES=""
-    for identity in "$HOME/.ssh/id_ed25519" "$HOME/.ssh/id_rsa"; do
+    for identity in "$HOME/.ssh/id_ed25519" "$HOME/.ssh/id_rsa" "$AGE_SECRET_KEY_FILE"; do
       if [[ -f "$identity" ]]; then
         IDENTITIES="$IDENTITIES --identity $identity"
       fi
