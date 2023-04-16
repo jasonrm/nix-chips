@@ -30,7 +30,7 @@
         specialArgs =
           (args.specialArgs or {})
           // {
-            overlays = (args.overlay or []) ++ [nixpkgs-staging.overlay];
+            overlays = (args.overlays or []) ++ [nixpkgs-staging.overlay];
             inherit nixpkgs;
             inherit system;
             chips = import ./lib {

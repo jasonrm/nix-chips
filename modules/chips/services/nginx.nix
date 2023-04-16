@@ -149,6 +149,10 @@ in {
         default = [];
         type = listOf (attrsOf anything);
       };
+      virtualHosts = mkOption {
+        default = [];
+        type = attrsOf attrs;
+      };
       # user = mkOption {
       #   type = nullOr str;
       #   default = config.default.user;

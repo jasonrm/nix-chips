@@ -6,7 +6,7 @@
 }: let
   inherit (lib) mkOption;
 
-  cfg = config.services.mysqld;
+  cfg = config.services.mysql;
 
   envHost =
     if (cfg.host == "0.0.0.0")
@@ -16,10 +16,10 @@
   command = pkgs.writeShellScriptBin "mysqld" ''
     if [ ! -d "${cfg.dataDir}/data" ]; then
       echo 'Initializing database...'
-      ${cfg.pkg}/bin/mysqld --initialize --initialize-insecure --datadir "${cfg.dataDir}/data" --default-authentication-plugin=mysql_native_password >/dev/null
+      ${cfg.package}/bin/mysqld --initialize --initialize-insecure --datadir "${cfg.dataDir}/data" --default-authentication-plugin=mysql_native_password >/dev/null
     fi
 
-    exec ${cfg.pkg}/bin/mysqld \
+    exec ${cfg.package}/bin/mysqld \
       --datadir="${cfg.dataDir}/data" \
       --general_log=ON \
       --log_output=TABLE \
@@ -44,11 +44,11 @@
   '';
 
   mysql = pkgs.writeShellScriptBin "mysql" ''
-    exec ${cfg.pkg}/bin/mysql -h${envHost} -u${cfg.mysql_user} -p${cfg.password} -P${toString cfg.port} --protocol tcp $@
+    exec ${cfg.package}/bin/mysql -h${envHost} -u${cfg.mysql_user} -p${cfg.password} -P${toString cfg.port} --protocol tcp $@
   '';
 
   mysqldump = pkgs.writeShellScriptBin "mysqldump" ''
-    exec ${cfg.pkg}/bin/mysqldump -h${envHost} -u${cfg.mysql_user} -p${cfg.password} -P${toString cfg.port} --protocol tcp $@
+    exec ${cfg.package}/bin/mysqldump -h${envHost} -u${cfg.mysql_user} -p${cfg.password} -P${toString cfg.port} --protocol tcp $@
   '';
 
   mysqlsnap = pkgs.writeShellScriptBin "mysqlsnap" ''
@@ -86,17 +86,27 @@
         counter=$((counter+1))
     done
 
-    cat "${createdb}" | ${cfg.pkg}/bin/mysql -h${envHost} -uroot --skip-password -P${toString cfg.port} --protocol tcp || true
+    cat "${createdb}" | ${cfg.package}/bin/mysql -h${envHost} -uroot --skip-password -P${toString cfg.port} --protocol tcp || true
   '';
 in {
   imports = [
   ];
 
   options = {
-    services.mysqld = with lib.types; {
-      enable = lib.mkEnableOption "enable mysqld";
+    services.mysql = with lib.types; {
+      enable = lib.mkEnableOption "enable mysql";
 
-      pkg = mkOption {
+      ensureDatabases = mkOption {
+        type = listOf str;
+        default = [];
+      };
+
+      ensureUsers = mkOption {
+        type = listOf str;
+        default = [];
+      };
+
+      package = mkOption {
         type = package;
         default = pkgs.mysql80;
       };
