@@ -10,14 +10,14 @@ with lib; let
   inherit (pkgs.stdenv) isDarwin;
   inherit (pkgs) symlinkJoin mkShell;
 
-  cfg = config.shell;
+  cfg = config.chips.devShell;
 in {
   imports = [
     # paths to other modules
   ];
 
   options = with lib.types; {
-    shell = {
+    chips.devShell = {
       enable = mkEnableOption "use shell";
 
       environment = mkOption {
@@ -42,8 +42,8 @@ in {
     };
   };
 
-  config = {
-    shell.shellHooks = [
+  config = mkIf cfg.enable {
+    chips.devShell.shellHooks = [
       ''
         export ${lib.concatStringsSep " " (map escapeShellArg cfg.environment)}
       ''

@@ -22,7 +22,7 @@ in {
   };
 
   config = {
-    shell = mkIf cfg.enable {
+    chips.devShell = mkIf cfg.enable {
       shellHooks = [
         ''echo node: ${cfg.pkg}/bin/node''
       ];

@@ -6,8 +6,6 @@
 }: let
   inherit (lib) mkOption;
 
-  cfg = config.flake;
-
   appOption = with lib.types;
     {name, ...}: let
       appOption = outputs.apps.${name};
@@ -32,9 +30,9 @@ in {
         default = {};
         type = attrsOf (submodule appOption);
       };
-      devShells.default = mkOption {
-        default = null;
-        type = nullOr package;
+      devShells = mkOption {
+        default = {};
+        type = attrsOf attrs;
       };
       packages = mkOption {
         default = {};

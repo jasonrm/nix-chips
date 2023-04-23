@@ -1,11 +1,12 @@
 {
   pkgs,
   lib,
+  modulesPath,
   ...
 }:
 with lib; {
   options = with types; {
-    systemd.services.mysql = mkOption {
+    services.dbus = mkOption {
       type = attrs;
     };
   };

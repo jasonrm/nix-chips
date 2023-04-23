@@ -184,15 +184,15 @@ in {
 
       runDir = mkOption {
         type = str;
-        default = "${config.dir.run}/tomcat";
+        default = "${config.dir.data}/tomcat/run";
       };
       logDir = mkOption {
         type = str;
-        default = "${config.dir.log}/tomcat";
+        default = "${config.dir.data}/tomcat/log";
       };
       dataDir = mkOption {
         type = str;
-        default = "${config.dir.lib}/tomcat";
+        default = "${config.dir.data}/tomcat/data";
       };
 
       logPerVirtualHost = mkOption {
@@ -279,7 +279,7 @@ in {
       cfg.logDir
       cfg.dataDir
     ];
-    shell.environment = [
+    chips.devShell.environment = [
       # "TOMCAT_HOST=${if (cfg.host == "0.0.0.0") then "127.0.0.1" else cfg.host}"
       # "TOMCAT_PORT=${toString cfg.port}"
     ];
@@ -288,7 +288,7 @@ in {
       environment =
         [
           "CATALINA_BASE=${cfg.dataDir}"
-          "CATALINA_PID=${config.dir.run}/tomcat.pid"
+          "CATALINA_PID=${config.dir.data}/run/tomcat.pid"
           "JAVA_HOME=${cfg.jdk}"
           ''JAVA_OPTS="${builtins.toString cfg.javaOpts}"''
           ''CATALINA_OPTS="${builtins.toString cfg.catalinaOpts}"''

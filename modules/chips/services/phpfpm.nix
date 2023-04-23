@@ -77,45 +77,7 @@ in {
   imports = [
   ];
 
-  options = {
-    services.phpfpm = {
-      enable = lib.mkEnableOption "enable php-fpm";
-
-      xdebug = {
-        enable = lib.mkEnableOption "enable xdebug";
-      };
-
-      settings = lib.mkOption {
-        type = with lib.types; attrsOf (oneOf [str int bool]);
-        default = {
-          daemonize = false;
-          error_log = "${cfg.logDir}/error.log";
-        };
-      };
-
-      runDir = lib.mkOption {
-        type = lib.types.str;
-        default = "${config.dir.run}/php-fpm";
-      };
-
-      logDir = lib.mkOption {
-        type = lib.types.str;
-        default = "${config.dir.log}/php-fpm";
-      };
-
-      pools = lib.mkOption {
-        default = {};
-        type = with lib.types; attrsOf (submodule poolOpts);
-      };
-
-      phpPackage = lib.mkOption {
-        type = lib.types.package;
-        default = config.programs.php.env;
-      };
-    };
-  };
-
-  config = lib.mkIf cfg.enable {
+  config = lib.mkIf false {
     dir.ensureExists =
       [
         cfg.runDir

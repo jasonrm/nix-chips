@@ -2,6 +2,7 @@
   lib,
   pkgs,
   config,
+  chips,
   ...
 }: let
   inherit (lib) mkOption assertMsg;
@@ -14,30 +15,12 @@ in {
     dir = {
       project = mkOption {
         type = str;
-        default = "/libexec/${config.project.name}";
+        default = chips.requireImpureEnv "PWD";
       };
 
-      root = mkOption {
+      data = mkOption {
         type = str;
-        default = "/usr/local";
-      };
-
-      log = mkOption {
-        type = str;
-        readOnly = true;
-        default = "${cfg.root}/var/log";
-      };
-
-      run = mkOption {
-        type = str;
-        readOnly = true;
-        default = "${cfg.root}/var/run";
-      };
-
-      lib = mkOption {
-        type = str;
-        readOnly = true;
-        default = "${cfg.root}/lib";
+        default = cfg.project + "/data";
       };
 
       ensureExists = mkOption {
@@ -49,14 +32,12 @@ in {
 
   config = {
     dir.ensureExists = [
-      cfg.root
-      cfg.log
-      cfg.run
-      cfg.lib
+      cfg.data
     ];
-    shell.shellHooks = [
+    chips.devShell.shellHooks = [
       ''
         mkdir -p ${lib.concatStringsSep " " (map lib.escapeShellArg cfg.ensureExists)}
+        echo '*' > ${cfg.data}/.gitignore
       ''
     ];
   };

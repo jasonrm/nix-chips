@@ -51,15 +51,15 @@ in {
 
       runDir = mkOption {
         type = str;
-        default = "${config.dir.run}/redis";
+        default = "${config.dir.data}/redis/run";
       };
       logDir = mkOption {
         type = str;
-        default = "${config.dir.log}/redis";
+        default = "${config.dir.data}/redis/log";
       };
       dataDir = mkOption {
         type = str;
-        default = "${config.dir.lib}/redis";
+        default = "${config.dir.data}/redis/data";
       };
 
       host = mkOption {
@@ -80,10 +80,10 @@ in {
         cfg.logDir
         cfg.dataDir
       ];
-      shell.contents = [
+      chips.devShell.contents = [
         redis-cli
       ];
-      shell.environment = [
+      chips.devShell.environment = [
         "REDIS_HOST=${
           if (cfg.host == "0.0.0.0")
           then "127.0.0.1"

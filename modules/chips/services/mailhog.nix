@@ -34,7 +34,7 @@ in {
 
   config = lib.mkMerge [
     (lib.mkIf cfg.enable {
-      shell.environment = [
+      chips.devShell.environment = [
         "MAIL_HOST=${serviceAddress}"
         "MAIL_PORT=${toString cfg.smtpPort}"
       ];

@@ -99,7 +99,7 @@
         };
         directory = mkOption {
           type = nullOr str;
-          default = config.dir.run;
+          default = config.dir.data + "/${name}/run";
         };
         environment = mkOption {
           type = listOf str;
@@ -160,7 +160,7 @@ in {
   config = lib.mkMerge [
     (lib.mkIf cfg.enable {
       programs.supervisord.out = supervisord;
-      shell = {
+      chips.devShell = {
         contents = [
           supervisord
           supervisord-debug
@@ -191,6 +191,9 @@ in {
       outputs.apps = {
         supervisord = {
           program = "${supervisord}/bin/supervisord";
+        };
+        supervisord-debug = {
+          program = "${supervisord-debug}/bin/supervisord-debug";
         };
       };
     }

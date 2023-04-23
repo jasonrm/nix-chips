@@ -22,7 +22,7 @@ in {
 
   config = lib.mkMerge [
     (lib.mkIf cfg.enable {
-      shell.environment = [
+      chips.devShell.environment = [
         "MEMCACHED_HOST=${
           if (cfg.host == "0.0.0.0")
           then "127.0.0.1"

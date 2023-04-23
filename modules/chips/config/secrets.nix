@@ -5,10 +5,10 @@
   ...
 }:
 with lib; let
-  cfg = config.secrets;
+  cfg = config.chips.secrets;
 in {
   config = {
-    secrets = {
+    chips.secrets = {
       adminRecipients = [
         "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ3k6zKT97l8vlxcmH5hekHEvnSDXpL6j8FFW/ZL3CXT jasonrm@raskin"
         "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAII5gspOWcPeO/Qol7NbmvKIN8iQtGBYqhtPWwJMLSpYo jasonrm@elon"

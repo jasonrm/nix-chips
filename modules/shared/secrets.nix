@@ -58,7 +58,7 @@ with lib; let
   };
 in {
   options = with types; {
-    secrets = {
+    chips.secrets = {
       relativeRoot = mkOption {
         type = path;
         description = "relative path to use for file sources";

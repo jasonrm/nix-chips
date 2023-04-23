@@ -75,9 +75,9 @@ in {
   options = with lib.types; {};
 
   config = {
-    shell.contents = [
-      secret
-    ];
+    #    chips.shell.contents = [
+    #      secret
+    #    ];
 
     outputs.packages.secret = secret;
 
