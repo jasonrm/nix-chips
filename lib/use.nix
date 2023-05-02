@@ -164,9 +164,7 @@ with nixpkgs.lib; let
       modules = [
         ({...}: {
           config = {
-            #            documentation.nixos.includeAllModules = true;
             documentation.nixos.extraModules = map toString modules;
-            #            documentation.nixos.extraModuleSources = [../.];
           };
         })
       ];
