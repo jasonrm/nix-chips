@@ -4,9 +4,8 @@
   pkgs,
   config,
   ...
-}: let
-  inherit (lib) mkOption escapeShellArg;
-
+}:
+with lib; let
   cfg = config.programs.supervisord;
 
   inherit (builtins) concatStringsSep;
@@ -20,7 +19,7 @@
 
   programEntry = name: attrs: ''
     [program:${name}]
-    ${lib.generators.toKeyValue {} (lib.mapAttrs prepProgramAttrs (lib.filterAttrs programAttrFilter attrs))}
+    ${generators.toKeyValue {} (mapAttrs prepProgramAttrs (filterAttrs programAttrFilter attrs))}
   '';
 
   programAttrFilter = n: v:
@@ -35,11 +34,11 @@
     else true;
 
   prepProgramAttrs = name: value:
-    if name == "environment"
+    if isList value
     then concatStringsSep "," value
     else value;
 
-  programEntries = lib.attrsets.mapAttrsToList programEntry cfg.programs;
+  programEntries = attrsets.mapAttrsToList programEntry cfg.programs;
   configuration = pkgs.writeText "supervisord.ini" ''
     [inet_http_server]
     port=127.0.0.1:${toString cfg.port}
@@ -47,7 +46,7 @@
     ${(concatStringsSep "" programEntries)}
   '';
 
-  programOption = with lib.types;
+  programOption = with types;
     {name, ...}: let
       programOption = cfg.programs.${name};
     in {
@@ -60,14 +59,14 @@
           type = bool;
           default = false;
         };
-        # user = mkOption {
-        #   type = nullOr str;
-        #   default = config.default.user;
-        # };
-        # group = mkOption {
-        #   type = nullOr str;
-        #   default = config.default.group;
-        # };
+        user = mkOption {
+          type = nullOr str;
+          default = null;
+        };
+        group = mkOption {
+          type = nullOr str;
+          default = null;
+        };
         stopsignal = mkOption {
           type = nullOr str;
           default = null;
@@ -78,24 +77,30 @@
         stdout_logfile = mkOption {
           type = path;
           default = "/dev/stdout";
-          # default = "${config.dir.log}/${name}.stdout.log";
         };
         stderr_logfile = mkOption {
           type = path;
           default = "/dev/stderr";
-          # default = "${config.dir.log}/${name}.stderr.log";
         };
         stopasgroup = mkOption {
           type = bool;
-          default = true;
+          default = false;
         };
         killasgroup = mkOption {
           type = bool;
-          default = true;
+          default = false;
+        };
+        startsecs = mkOption {
+          type = nullOr int;
+          default = null;
         };
         stopwaitsecs = mkOption {
-          type = int;
-          default = 5;
+          type = nullOr int;
+          default = null;
+        };
+        killwaitsecs = mkOption {
+          type = nullOr int;
+          default = null;
         };
         directory = mkOption {
           type = nullOr str;
@@ -105,21 +110,21 @@
           type = listOf str;
           default = [];
         };
+        depends_on = mkOption {
+          type = listOf str;
+          default = [];
+        };
       };
-      #    config = let
-      #      envVars = programOption.environment;
-      #    in {
-      #      environment = if lib.isAttrs envVars then () else envVars;
-      #    };
     };
+
+  programRunDirectories = attrsets.mapAttrsToList (name: programOption: programOption.directory) cfg.programs;
 
   supervisord-debug = pkgs.writeShellScriptBin "supervisord-debug" ''
     cat ${configuration}
   '';
 
   supervisord = pkgs.writeShellScriptBin "supervisord" ''
-    ${pkgs.coreutils}/bin/mkdir -p ${lib.concatStringsSep " " (map escapeShellArg config.dir.ensureExists)}
-    export ${lib.concatStringsSep " " (map escapeShellArg cfg.environment)}
+    ${pkgs.coreutils}/bin/mkdir -p ${concatStringsSep " " (map escapeShellArg programRunDirectories)}
     ${pkgs.supervisord-go}/bin/supervisord --configuration=${configuration} $*
   '';
 in {
@@ -127,10 +132,9 @@ in {
     # paths to other modules
   ];
 
-  options = with lib.types; {
+  options = with types; {
     programs.supervisord = {
-      enable = lib.mkEnableOption "use supervisord";
-      debug = lib.mkEnableOption "debug supervisord configuration";
+      enable = mkEnableOption "use supervisord";
       user = mkOption {
         type = nullOr str;
         default = "http";
@@ -147,55 +151,45 @@ in {
         default = {};
         type = attrsOf (submodule programOption);
       };
-      environment = mkOption {
-        type = listOf str;
-        default = [];
-      };
-      out = mkOption {
-        type = package;
-      };
     };
   };
 
-  config = lib.mkMerge [
-    (lib.mkIf cfg.enable {
-      programs.supervisord.out = supervisord;
-      chips.devShell = {
-        contents = [
-          supervisord
-          supervisord-debug
-        ];
-      };
-      dockerImages.images.supervisord = {
-        contents = [
-          supervisord
-        ];
-      };
-      services.traefik = {
-        routers = {
-          supervisord = {
-            service = "supervisord";
-            rule = "Host(`supervisord.localhost`)";
-          };
-        };
-        services = {
-          supervisord = {
-            loadBalancer.servers = [
-              {url = "http://127.0.0.1:${toString cfg.port}";}
-            ];
-          };
-        };
-      };
-    })
-    {
-      outputs.apps = {
+  config = mkIf (config.systemd.services != {} || cfg.programs != {}) {
+    programs.supervisord.programs =
+      mapAttrs (name: service: let
+        beforeServices = filter isString (mapAttrsToList (beforeName: service:
+          if (any (v: v == "${name}.service") service.before)
+          then beforeName
+          else null)
+        config.systemd.services);
+        afterServices = filter (v: hasAttrByPath [v] config.programs.supervisord.programs) (map (removeSuffix ".service") service.after);
+      in {
+        command = mkDefault "${service.serviceConfig.ExecStart}";
+        depends_on = mkDefault (beforeServices ++ afterServices);
+        environment = mapAttrsToList (name: value: "${name}=${value}") service.environment;
+      })
+      config.systemd.services;
+
+    chips.devShell = {
+      contents = [
+        supervisord
+        supervisord-debug
+      ];
+    };
+    services.traefik = {
+      routers = {
         supervisord = {
-          program = "${supervisord}/bin/supervisord";
-        };
-        supervisord-debug = {
-          program = "${supervisord-debug}/bin/supervisord-debug";
+          service = "supervisord";
+          rule = "Host(`supervisord.localhost`)";
         };
       };
-    }
-  ];
+      services = {
+        supervisord = {
+          loadBalancer.servers = [
+            {url = "http://127.0.0.1:${toString cfg.port}";}
+          ];
+        };
+      };
+    };
+  };
 }

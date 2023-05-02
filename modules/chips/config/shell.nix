@@ -6,11 +6,30 @@
   ...
 }:
 with lib; let
-  inherit (pkgs.writers) writeBashBin;
-  inherit (pkgs.stdenv) isDarwin;
-  inherit (pkgs) symlinkJoin mkShell;
-
   cfg = config.chips.devShell;
+
+  envFile = pkgs.writeText "devShell.env" (lib.concatStringsSep "\n" cfg.environment);
+
+  shellHook = pkgs.writeShellScriptBin "devShell.init.sh" ''
+    set -o errexit
+    set -o nounset
+    set -o pipefail
+
+    EXPECTED_PROJECT_DIR=$(realpath "${config.dir.project}")
+    ACTUAL_PROJECT_DIR=$(realpath "$PWD")
+    if [ "$EXPECTED_PROJECT_DIR" != "$ACTUAL_PROJECT_DIR" ]; then
+      echo "Your devShell configuration has the wrong project directory."
+      echo "Expected: $EXPECTED_PROJECT_DIR"
+      echo "Actual:   $ACTUAL_PROJECT_DIR"
+      exit 1
+    fi
+
+    set -a
+    source ${envFile}
+    set +a
+
+    ${lib.concatStringsSep "\n" cfg.shellHooks}
+  '';
 in {
   imports = [
     # paths to other modules
@@ -42,20 +61,15 @@ in {
     };
   };
 
-  config = mkIf cfg.enable {
-    chips.devShell.shellHooks = [
-      ''
-        export ${lib.concatStringsSep " " (map escapeShellArg cfg.environment)}
-      ''
-    ];
-    outputs.devShells.default = pkgs.mkShell {
+  config = {
+    outputs.devShell = pkgs.mkShell {
       buildInputs =
         cfg.contents
-        ++ lib.optionals isDarwin (with pkgs.darwin.apple_sdk.frameworks; [
+        ++ lib.optionals pkgs.stdenv.isDarwin (with pkgs.darwin.apple_sdk.frameworks; [
           CoreServices
         ]);
 
-      shellHook = lib.concatStringsSep "\n" cfg.shellHooks;
+      shellHook = "${shellHook}/bin/devShell.init.sh";
     };
   };
 }

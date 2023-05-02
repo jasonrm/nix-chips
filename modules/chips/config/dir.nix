@@ -15,7 +15,6 @@ in {
     dir = {
       project = mkOption {
         type = str;
-        default = chips.requireImpureEnv "PWD";
       };
 
       data = mkOption {

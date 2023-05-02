@@ -31,12 +31,12 @@ in {
       ];
     };
 
-    outputs.apps.node = {
-      program = "${cfg.pkg}/bin/node";
-    };
-
-    outputs.apps.npm = {
-      program = "${cfg.pkg}/bin/npm";
-    };
+    #    outputs.apps.node = {
+    #      program = "${cfg.pkg}/bin/node";
+    #    };
+    #
+    #    outputs.apps.npm = {
+    #      program = "${cfg.pkg}/bin/npm";
+    #    };
   };
 }

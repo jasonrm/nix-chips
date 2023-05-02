@@ -26,17 +26,8 @@ in {
 
   options = with lib.types; {
     outputs = {
-      apps = mkOption {
-        default = {};
-        type = attrsOf (submodule appOption);
-      };
-      devShells = mkOption {
-        default = {};
-        type = attrsOf attrs;
-      };
-      packages = mkOption {
-        default = {};
-        type = attrsOf package;
+      devShell = mkOption {
+        type = nullOr package;
       };
       secretRecipients = mkOption {
         default = {};

@@ -17,11 +17,13 @@ with lib; let
   configFile = format.generate "my.cnf" cfg.settings;
 
   mysqld = pkgs.writeShellScriptBin "mysqld" ''
+    echo "Initializing MySQL..."
     if [ ! -d "${dataDir}" ]; then
       mkdir -p "${runDir}" "${logDir}" "${dataDir}"
       echo 'Initializing database...'
       ${cfg.package}/bin/mysqld \
         --initialize \
+        --initialize-insecure \
         --authentication-policy="mysql_native_password" \
         ${
       if cfg.initialScript != null
@@ -46,7 +48,7 @@ with lib; let
 
     ${concatMapStrings (user: (
         concatStringsSep "\n" ([
-            "CREATE USER IF NOT EXISTS '${user.name}'@'localhost' IDENTIFIED BY '${user.name}';"
+            "CREATE USER IF NOT EXISTS '${user.name}'@'localhost';"
           ]
           ++ (mapAttrsToList (
               database: permission: "GRANT ${permission} ON ${database} TO '${user.name}'@'localhost';"
@@ -71,45 +73,32 @@ in {
   imports = [
   ];
 
-  config = lib.mkMerge [
-    (lib.mkIf cfg.enable {
-      services.mysql = {
-        settings = {
-          mysql = {
-            socket = runDir + "/mysqld.sock";
-          };
-          mysqldump = {
-            socket = runDir + "/mysqld.sock";
-          };
-          mysqld = {
-            tls_version = "";
-            mysqlx = 0;
-            socket = runDir + "/mysqld.sock";
-            authentication-policy = "mysql_native_password";
-          };
+  config = lib.mkIf cfg.enable {
+    services.mysql = {
+      settings = {
+        mysql = {
+          socket = runDir + "/mysqld.sock";
+        };
+        mysqldump = {
+          socket = runDir + "/mysqld.sock";
+        };
+        mysqld = {
+          tls_version = "";
+          mysqlx = 0;
+          socket = runDir + "/mysqld.sock";
+          authentication-policy = "mysql_native_password";
         };
       };
-      programs.supervisord.programs.mysqld = {
-        # user = cfg.user;
-        # group = cfg.group;
-        command = "${mysqld}/bin/mysqld";
-      };
-      chips.devShell.contents = [
-        mysql
-        mysqld
-        mysqldump
-      ];
-    })
-    {
-      outputs.apps.mysql = {
-        program = "${mysql}/bin/mysql";
-      };
-      outputs.apps.mysqld = {
-        program = "${mysqld}/bin/mysqld";
-      };
-      outputs.apps.mysqldump = {
-        program = "${mysqldump}/bin/mysqldump";
-      };
-    }
-  ];
+    };
+    programs.supervisord.programs.mysql = {
+      stopwaitsecs = 60;
+      startsecs = 5;
+      command = "${mysqld}/bin/mysqld";
+    };
+    chips.devShell.contents = [
+      mysql
+      mysqld
+      mysqldump
+    ];
+  };
 }

@@ -11,7 +11,7 @@ with lib; {
   ];
   config = {
     services.mysql = {
-      package = mkForce pkgs.mysql80;
+      package = mkDefault pkgs.mysql80;
       dataDir = mkForce (config.dir.data + "/mysql");
     };
   };

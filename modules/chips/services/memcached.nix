@@ -37,11 +37,11 @@ in {
       };
     })
     {
-      outputs.apps.memcached = {
-        # user = cfg.user;
-        # group = cfg.group;
-        program = "${pkgs.memcached}/bin/memcached";
-      };
+      #      outputs.apps.memcached = {
+      #        # user = cfg.user;
+      #        # group = cfg.group;
+      #        program = "${pkgs.memcached}/bin/memcached";
+      #      };
     }
   ];
 }

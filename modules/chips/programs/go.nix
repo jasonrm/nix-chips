@@ -26,8 +26,8 @@ in {
       ];
     };
 
-    outputs.apps.go = {
-      program = "${cfg.pkg}/bin/go";
-    };
+    #    outputs.apps.go = {
+    #      program = "${cfg.pkg}/bin/go";
+    #    };
   };
 }

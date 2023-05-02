@@ -5,7 +5,7 @@
   ...
 }:
 with lib; let
-  cfg = config.secrets;
+  cfg = config.arcanum;
 
   secretFile = types.submodule {
     options = {
@@ -58,7 +58,7 @@ with lib; let
   };
 in {
   options = with types; {
-    chips.secrets = {
+    arcanum = {
       relativeRoot = mkOption {
         type = path;
         description = "relative path to use for file sources";

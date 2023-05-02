@@ -79,17 +79,17 @@ in {
       ];
     };
 
-    outputs.apps.php = {
-      program = "${php}/bin/php";
-    };
-    outputs.apps.flamegraph-php = {
-      program = "${flamegraph}/bin/flamegraph-php";
-    };
-    outputs.apps.php-xdebug = {
-      program = "${php-xdebug}/bin/php-xdebug";
-    };
-    outputs.apps.php-spx = {
-      program = "${php-spx}/bin/php-spx";
-    };
+    #    outputs.apps.php = {
+    #      program = "${php}/bin/php";
+    #    };
+    #    outputs.apps.flamegraph-php = {
+    #      program = "${flamegraph}/bin/flamegraph-php";
+    #    };
+    #    outputs.apps.php-xdebug = {
+    #      program = "${php-xdebug}/bin/php-xdebug";
+    #    };
+    #    outputs.apps.php-spx = {
+    #      program = "${php-spx}/bin/php-spx";
+    #    };
   };
 }

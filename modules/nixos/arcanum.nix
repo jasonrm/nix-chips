@@ -6,7 +6,7 @@
 }: let
   inherit (lib) mkOption escapeShellArg optionalString mapAttrs';
 
-  cfg = config.secrets;
+  cfg = config.arcanum;
 
   mkService = name: {
     source,
