@@ -57,7 +57,7 @@ with lib; let
         };
         autorestart = mkOption {
           type = bool;
-          default = false;
+          default = true;
         };
         user = mkOption {
           type = nullOr str;
@@ -156,18 +156,31 @@ in {
 
   config = mkIf (config.systemd.services != {} || cfg.programs != {}) {
     programs.supervisord.programs =
-      mapAttrs (name: service: let
-        beforeServices = filter isString (mapAttrsToList (beforeName: service:
-          if (any (v: v == "${name}.service") service.before)
-          then beforeName
-          else null)
-        config.systemd.services);
-        afterServices = filter (v: hasAttrByPath [v] config.programs.supervisord.programs) (map (removeSuffix ".service") service.after);
-      in {
-        command = mkDefault "${service.serviceConfig.ExecStart}";
-        depends_on = mkDefault (beforeServices ++ afterServices);
-        environment = mapAttrsToList (name: value: "${name}=${value}") service.environment;
-      })
+      mapAttrs (
+        name: service: let
+          beforeServices = filter isString (mapAttrsToList (beforeName: service:
+            if (any (v: v == "${name}.service") service.before)
+            then beforeName
+            else null)
+          config.systemd.services);
+          afterServices = filter (v: hasAttrByPath [v] config.programs.supervisord.programs) (map (removeSuffix ".service") service.after);
+        in
+          filterAttrs (n: v: v != {}) {
+            autostart = mkDefault (service.wantedBy != []);
+            command = mkDefault "${service.serviceConfig.ExecStart}";
+            depends_on = mkDefault (beforeServices ++ afterServices);
+            environment = mapAttrsToList (name: value: "${name}=${value}") service.environment;
+          }
+          // (optionalAttrs (hasAttrByPath ["serviceConfig" "WorkingDirectory"] service) {
+            directory = "${service.serviceConfig.WorkingDirectory}";
+          })
+          // (optionalAttrs (hasAttrByPath ["serviceConfig" "Type"] service) {
+            autorestart =
+              if service.serviceConfig.Type == "oneshot"
+              then false
+              else true;
+          })
+      )
       config.systemd.services;
 
     chips.devShell = {
