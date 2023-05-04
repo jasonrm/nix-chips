@@ -9,6 +9,8 @@ with nixpkgs.lib; let
   inherit (filesystem) listFilesRecursive;
   inherit (utils.lib) eachSystem eachDefaultSystem;
 
+  chipsLib = import ./arcanum.nix {lib = nixpkgs.lib;};
+
   onlyNix = baseName: (hasSuffix ".nix" baseName);
   nixFilesIn = directory: builtins.filter onlyNix (listFilesRecursive directory);
 
@@ -269,6 +271,6 @@ in
     overlays.default = overlay;
     lib = {
       manual = mkManual {modules = mergedNixosModules;};
-      arcanum = mapAttrs' (name: file: nameValuePair file.source ((file.recipients or []) ++ arcanum.adminRecipients)) arcanum.files;
+      arcanum = (chipsLib.recipientsFromConfigurations nixosConfigurations) // (mapAttrs' (name: file: nameValuePair file.source ((file.recipients or []) ++ arcanum.adminRecipients)) (arcanum.files or {}));
     };
   }

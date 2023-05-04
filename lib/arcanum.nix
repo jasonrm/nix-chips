@@ -1,10 +1,5 @@
-{
-  lib,
-  pkgs,
-  ...
-}: let
-  inherit (lib) attrValues flatten foldAttrs mapAttrs' nameValuePair unique hasPrefix;
-
+{lib, ...}:
+with lib; let
   recipientsFromConfigurations = nixosConfigurations: let
     adminRecipientsList = flatten (map (node: node.config.arcanum.adminRecipients) (attrValues nixosConfigurations));
     prefixRecipient = node: recipient:
