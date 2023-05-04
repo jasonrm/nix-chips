@@ -154,7 +154,14 @@ in {
     };
   };
 
-  config = mkIf (config.systemd.services != {} || cfg.programs != {}) {
+  config = mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = cfg.enable -> config.dir.project == "/dev/null";
+        message = "cfg.enable cannot be set without also setting config.dir.project ";
+      }
+    ];
+
     programs.supervisord.programs =
       mapAttrs (
         name: service: let
