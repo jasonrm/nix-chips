@@ -15,13 +15,15 @@ with lib; let
     set -o nounset
     set -o pipefail
 
-    EXPECTED_PROJECT_DIR=$(realpath "${config.dir.project}")
-    ACTUAL_PROJECT_DIR=$(realpath "$PWD")
-    if [ "$EXPECTED_PROJECT_DIR" != "$ACTUAL_PROJECT_DIR" ]; then
-      echo "Your devShell configuration has the wrong project directory."
-      echo "Expected: $EXPECTED_PROJECT_DIR"
-      echo "Actual:   $ACTUAL_PROJECT_DIR"
-      exit 1
+    if [ "${toString cfg.requireProjectDirectory}" == "true" ]; then
+      EXPECTED_PROJECT_DIR=$(realpath "${config.dir.project}")
+      ACTUAL_PROJECT_DIR=$(realpath "$PWD")
+      if [ "$EXPECTED_PROJECT_DIR" != "$ACTUAL_PROJECT_DIR" ]; then
+        echo "Your devShell configuration has the wrong project directory."
+        echo "Expected: $EXPECTED_PROJECT_DIR"
+        echo "Actual:   $ACTUAL_PROJECT_DIR"
+        exit 1
+      fi
     fi
 
     set -a
@@ -37,7 +39,9 @@ in {
 
   options = with lib.types; {
     chips.devShell = {
-      enable = mkEnableOption "use shell";
+      enable = mkEnableOption "Enable devShell";
+
+      requireProjectDirectory = mkEnableOption "Require the project directory to be set";
 
       environment = mkOption {
         type = listOf str;
