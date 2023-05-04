@@ -246,7 +246,10 @@ in
 
     devShells = optionalAttrs (devShellsDir != null) (useDevShells {
       inherit devShellsDir overlay;
-      modules = mergedNixChipModules;
+      modules =
+        nixChipModules
+        ++ nixosShimModules
+        ++ sharedChipModules;
     });
 
     checks = optionalAttrs (checksDir != null) (useChecks {
