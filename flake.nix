@@ -3,7 +3,7 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-22.11";
-    nixpkgs-staging.url = "github:jasonrm/nixpkgs-staging/flakes";
+    nixpkgs-staging.url = "github:jasonrm/nixpkgs-staging";
 
     utils.url = "github:numtide/flake-utils";
   };

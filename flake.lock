@@ -48,7 +48,6 @@
       },
       "original": {
         "owner": "jasonrm",
-        "ref": "flakes",
         "repo": "nixpkgs-staging",
         "type": "github"
       }
