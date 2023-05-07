@@ -4,55 +4,61 @@
   lib,
   ...
 }:
-with lib; let
+with lib; with types; let
   cfg = config.arcanum;
 
-  secretFile = types.submodule {
+  secretFile = submodule {
     options = {
       source = mkOption {
-        type = types.str;
+        type = str;
         description = "path to encrypted secret relative to relativeRoot";
       };
 
       recipients = mkOption {
-        type = types.listOf types.str;
+        type = listOf str;
         default = [];
         description = "public keys to encrypt the secret for";
       };
 
       dest = mkOption {
-        type = types.str;
+        type = str;
         description = "where to write the decrypted secret to";
       };
 
       owner = mkOption {
         default = "root";
-        type = types.str;
+        type = str;
         description = "who should own the secret";
       };
 
       group = mkOption {
         default = "root";
-        type = types.str;
+        type = str;
         description = "what group should own the secret";
       };
 
       permissions = mkOption {
         default = "0400";
-        type = types.str;
+        type = str;
         description = "Permissions expressed as octal.";
       };
 
       makeDirectory = mkOption {
         default = false;
-        type = types.bool;
+        type = bool;
         description = "Whether to create the directory if it doesn't exist.";
       };
 
       directoryPermissions = mkOption {
         default = "0555";
-        type = types.nullOr types.str;
+        type = nullOr str;
         description = "Permissions expressed as octal.";
+      };
+
+      before = mkOption {
+        type = listOf str;
+        default = [];
+        description = "Ensure this secret is decrypted before these services are started.";
       };
     };
   };

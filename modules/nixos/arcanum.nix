@@ -16,10 +16,12 @@
     permissions,
     directoryPermissions,
     makeDirectory,
+    before,
     ...
   }: let
     storeSource = "${cfg.relativeRoot}/${source}";
   in {
+    inherit before;
     description = "decrypt secret for ${name}";
     wantedBy = ["multi-user.target"];
 
