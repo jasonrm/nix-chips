@@ -30,7 +30,7 @@ with lib; let
     source ${envFile}
     set +a
 
-    ${lib.concatStringsSep "\n" cfg.shellHooks}
+    ${cfg.shellHooks}
   '';
 in {
   imports = [
@@ -49,7 +49,7 @@ in {
       };
 
       shellHooks = mkOption {
-        type = listOf lines;
+        type = lines;
         default = [];
       };
 

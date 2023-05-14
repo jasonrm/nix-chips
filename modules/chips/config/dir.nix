@@ -34,11 +34,9 @@ in
       dir.ensureExists = [
         cfg.data
       ];
-      chips.devShell.shellHooks = [
-        ''
-          mkdir -p ${lib.concatStringsSep " " (map lib.escapeShellArg cfg.ensureExists)}
-          echo '*' > ${cfg.data}/.gitignore
-        ''
-      ];
+      chips.devShell.shellHooks = ''
+        mkdir -p ${lib.concatStringsSep " " (map lib.escapeShellArg cfg.ensureExists)}
+        echo '*' > ${cfg.data}/.gitignore
+      '';
     };
   }
