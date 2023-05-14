@@ -4,7 +4,8 @@
   lib,
   ...
 }:
-with lib; with types; let
+with lib;
+with types; let
   cfg = config.arcanum;
 
   secretFile = submodule {
