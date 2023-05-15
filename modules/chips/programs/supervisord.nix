@@ -84,11 +84,11 @@ with lib; let
         };
         stopasgroup = mkOption {
           type = bool;
-          default = false;
+          default = true;
         };
         killasgroup = mkOption {
           type = bool;
-          default = false;
+          default = true;
         };
         startsecs = mkOption {
           type = nullOr int;
