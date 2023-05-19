@@ -129,14 +129,14 @@ in {
           copyToRoot = image.contents;
           # WIP
           #  ++ (nonRootShadowSetup { user = "http"; uid = 999; })
-          config = mkMerge [
-            image.config
+          config = foldl recursiveUpdate {} [
             {
               Entrypoint = mkDefault ["${preEntry image}/bin/pre-entry"];
               Env = [
                 "IS_DOCKER=1"
               ];
             }
+            image.config
           ];
         }
       ))
