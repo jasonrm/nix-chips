@@ -97,7 +97,6 @@ in {
 
       secretRecipients = mkOption {
         type = nullOr attrs;
-        readOnly = true;
         default = {};
       };
     };

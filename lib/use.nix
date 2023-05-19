@@ -96,20 +96,17 @@ with nixpkgs.lib; let
             overlays = [overlay];
           };
         in {
-          devShells = listToAttrs (map (name: {
+          results = listToAttrs (map (name: {
               name = removeSuffix ".nix" (baseNameOf name);
-              value =
-                (evalChipsModules {
-                  inherit pkgs system;
-                  modules = modules ++ [name];
-                })
-                .devShell
-                .output;
+              value = evalChipsModules {
+                inherit pkgs system;
+                modules = modules ++ [name];
+              };
             })
             nixFiles);
         }
       ))
-      .devShells;
+      .results;
 
   useDockerImages = {
     dockerImagesDir,
@@ -307,23 +304,17 @@ in
         ++ sharedChipModules;
     });
 
-    devShellsSecrets = listToAttrs (map (name: {
-      name = removeSuffix ".nix" (baseNameOf name);
-      value =
-        (evalChipsModules {
-          pkgs = nixpkgs.legacyPackages;
-          system = pkgs.stdenv.system;
-          modules = modules ++ [name];
-        })
-        .arcanum
-        .secretRecipients;
-    }) (nixFilesIn devShellsDir));
+    collectFromOutput = attrPath: output: let
+      fromPath = getAttrFromPath attrPath;
+    in
+      mapAttrs (n: v: mapAttrs (n: cfg: fromPath cfg) v) output;
 
-    devShellsSecretsFlat = flatten (mapAttrsToList (n: v: (mapAttrsToList (n: v: v.secretRecipients)) v) devShellsSecrets);
+    devShellSecretsPerSystem = collectFromOutput ["arcanum" "secretRecipients"] devShells;
+    devShellsSecretsFlat = flatten (mapAttrsToList (system: devShell: (mapAttrsToList (devShellName: secrets: secrets) devShell)) devShellSecretsPerSystem);
     mergedDevShellSecrets = foldAttrs (recipients: carry: unique (carry ++ recipients)) (arcanum.adminRecipients or []) devShellsSecretsFlat;
   in {
     inherit packages checks apps nixosConfigurations;
-    devShells = devShells;
+    devShells = collectFromOutput ["devShell" "output"] devShells;
     nixosModules.default = nixosModules ++ projectNixosModules;
     overlays.default = overlay;
     legacyPackages = dockerImages;
