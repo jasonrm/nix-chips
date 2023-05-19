@@ -129,15 +129,15 @@ in {
           copyToRoot = image.contents;
           # WIP
           #  ++ (nonRootShadowSetup { user = "http"; uid = 999; })
-          config =
+          config = mkMerge [
             image.config
-            // {
-              # TODO: Support Entrypoint from v.config
-              Entrypoint = ["${preEntry image}/bin/pre-entry"];
+            {
+              Entrypoint = mkDefault ["${preEntry image}/bin/pre-entry"];
               Env = [
                 "IS_DOCKER=1"
               ];
-            };
+            }
+          ];
         }
       ))
       config.dockerImages.images;
