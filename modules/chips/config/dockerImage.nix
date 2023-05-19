@@ -122,11 +122,11 @@ in {
     dockerImages.output =
       mapAttrs
       (k: image: (
-        dockerTools.buildImage {
+        dockerTools.buildLayeredImage {
           name = k;
           fromImage = baseImage;
           extraCommands = lib.concatStringsSep "\n" image.extraCommands;
-          copyToRoot = image.contents;
+          contents = image.contents;
           # WIP for users
           # (nonRootShadowSetup { user = "sshd"; uid = 999; });
           config =
