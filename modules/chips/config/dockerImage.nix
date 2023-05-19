@@ -38,24 +38,28 @@ with lib; let
       (
         writeTextDir "etc/shadow" ''
           root:!x:::::::
+          nobody:!:1::::::
           ${user}:!:::::::
         ''
       )
       (
         writeTextDir "etc/passwd" ''
           root:x:0:0::/root:${runtimeShell}
+          nobody:x:65534:65534:Unprivileged account (don't use!):/var/empty:/run/current-system/sw/bin/nologin
           ${user}:x:${toString uid}:${toString gid}::/home/${user}:
         ''
       )
       (
         writeTextDir "etc/group" ''
           root:x:0:
+          nogroup:x:65534:
           ${user}:x:${toString gid}:
         ''
       )
       (
         writeTextDir "etc/gshadow" ''
           root:x::
+          nobody:!:1::::::
           ${user}:x::
         ''
       )
