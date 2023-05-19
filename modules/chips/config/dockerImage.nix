@@ -129,15 +129,16 @@ in {
           copyToRoot = image.contents;
           # WIP
           #  ++ (nonRootShadowSetup { user = "http"; uid = 999; })
-          config = foldl recursiveUpdate {} [
-            {
-              Entrypoint = mkDefault ["${preEntry image}/bin/pre-entry"];
-              Env = [
-                "IS_DOCKER=1"
-              ];
-            }
+          config =
             image.config
-          ];
+            // {
+              Entrypoint = ["${preEntry image}/bin/pre-entry"];
+              Env =
+                (image.config.Env or [])
+                ++ [
+                  "IS_DOCKER=1"
+                ];
+            };
         }
       ))
       config.dockerImages.images;
