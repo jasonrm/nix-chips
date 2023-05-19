@@ -279,7 +279,7 @@ in {
       cfg.logDir
       cfg.dataDir
     ];
-    chips.devShell.environment = [
+    devShell.environment = [
       # "TOMCAT_HOST=${if (cfg.host == "0.0.0.0") then "127.0.0.1" else cfg.host}"
       # "TOMCAT_PORT=${toString cfg.port}"
     ];

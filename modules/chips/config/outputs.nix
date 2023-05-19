@@ -21,20 +21,4 @@
       };
     };
 in {
-  imports = [
-  ];
-
-  options = with lib.types; {
-    outputs = {
-      devShell = mkOption {
-        type = nullOr package;
-      };
-      secretRecipients = mkOption {
-        default = {};
-        type = nullOr attrs;
-      };
-    };
-  };
-
-  config = {};
 }

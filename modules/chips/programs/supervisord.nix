@@ -151,6 +151,11 @@ in {
         default = {};
         type = attrsOf (submodule programOption);
       };
+
+      output = mkOption {
+        type = package;
+        readOnly = true;
+      };
     };
   };
 
@@ -190,12 +195,15 @@ in {
       )
       config.systemd.services;
 
-    chips.devShell = {
+    devShell = {
       contents = [
         supervisord
         supervisord-debug
       ];
     };
+
+    programs.supervisord.output = supervisord;
+
     services.traefik = {
       routers = {
         supervisord = {

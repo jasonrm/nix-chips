@@ -135,7 +135,7 @@ in {
       };
     })
     (mkIf cfg.debug {
-      chips.devShell.shellHooks = [
+      devShell.shellHooks = [
         ''echo traefik config: ${traefikConf}''
         ''echo traefik static config: ${staticConfDir}/static.yaml''
       ];

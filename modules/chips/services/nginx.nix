@@ -42,7 +42,7 @@ in {
     programs.supervisord.programs.nginx = {
       command = "${execCommand}/bin/nginx";
     };
-    chips.devShell = {
+    devShell = {
       contents = [
         nginx-debug
       ];

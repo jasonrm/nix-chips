@@ -80,10 +80,10 @@ in {
         cfg.logDir
         cfg.dataDir
       ];
-      chips.devShell.contents = [
+      devShell.contents = [
         redis-cli
       ];
-      chips.devShell.environment = [
+      devShell.environment = [
         "REDIS_HOST=${
           if (cfg.host == "0.0.0.0")
           then "127.0.0.1"

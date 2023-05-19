@@ -66,7 +66,7 @@ in {
   };
 
   config = {
-    chips.devShell = mkIf cfg.enable {
+    devShell = mkIf cfg.enable {
       shellHooks = [
         ''echo php: ${php}/bin/php''
       ];

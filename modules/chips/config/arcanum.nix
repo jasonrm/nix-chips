@@ -16,15 +16,14 @@ in {
       files = {
         testing = {
           source = "secrets/testing.age";
+          dest = "/dev/null";
         };
       };
     };
-    chips.devShell.contents = [
+    devShell.contents = [
       pkgs.arcanum
     ];
 
-    outputs = {
-      secretRecipients = mapAttrs' (name: secret: nameValuePair secret.source (secret.recipients ++ cfg.adminRecipients)) cfg.files;
-    };
+    arcanum.secretRecipients = mapAttrs' (name: secret: nameValuePair secret.source (secret.recipients ++ cfg.adminRecipients)) cfg.files;
   };
 }

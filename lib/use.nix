@@ -79,14 +79,15 @@ with nixpkgs.lib; let
         modulesPath = pkgs.path + "/nixos/modules";
       };
     })
-    .config
-    .outputs;
+    .config;
 
   useDevShells = {
     devShellsDir,
     modules,
     overlay,
-  }:
+  }: let
+    nixFiles = nixFilesIn devShellsDir;
+  in
     with utils.lib;
       (eachDefaultSystem (
         system: let
@@ -94,15 +95,50 @@ with nixpkgs.lib; let
             inherit system;
             overlays = [overlay];
           };
-        in listToAttrs (map (name: {
-            name = removeSuffix ".nix" (baseNameOf name);
-            value =
-              (evalChipsModules {
-                inherit pkgs system;
-                modules = modules ++ [name];
-              });
-          }) (nixFilesIn devShellsDir))
-      ));
+        in {
+          devShells = listToAttrs (map (name: {
+              name = removeSuffix ".nix" (baseNameOf name);
+              value =
+                (evalChipsModules {
+                  inherit pkgs system;
+                  modules = modules ++ [name];
+                })
+                .devShell
+                .output;
+            })
+            nixFiles);
+        }
+      ))
+      .devShells;
+
+  useDockerImages = {
+    dockerImagesDir,
+    modules,
+    overlay,
+  }: let
+    nixFiles = nixFilesIn dockerImagesDir;
+  in
+    with utils.lib;
+      (eachDefaultSystem (
+        system: let
+          pkgs = import nixpkgs {
+            inherit system;
+            overlays = [overlay];
+          };
+        in {
+          legacyPackages = foldl recursiveUpdate {} (map (nixFile: {
+              dockerImages =
+                (evalChipsModules {
+                  inherit pkgs system;
+                  modules = modules ++ [nixFile];
+                })
+                .dockerImages
+                .output;
+            })
+            nixFiles);
+        }
+      ))
+      .legacyPackages;
 
   usePackages = {
     packagesDir,
@@ -215,6 +251,7 @@ in
     devShellsDir ? null,
     packagesDir ? null,
     nixosModulesDir ? null,
+    dockerImagesDir ? null,
     nixosConfigurationsDir ? null,
     nixosModules ? [],
     overlays ? [],
@@ -242,8 +279,8 @@ in
 
     packages = optionalAttrs (packagesDir != null) (usePackages {inherit overlay packagesDir;});
 
-    devShells = optionalAttrs (devShellsDir != null) (useDevShells {
-      inherit devShellsDir overlay;
+    dockerImages = optionalAttrs (dockerImagesDir != null) (useDockerImages {
+      inherit dockerImagesDir overlay;
       modules =
         nixChipModules
         ++ nixosShimModules
@@ -262,13 +299,24 @@ in
       modules = mergedNixosModules;
     });
 
+    devShells = optionalAttrs (devShellsDir != null) (useDevShells {
+      inherit devShellsDir overlay;
+      modules =
+        nixChipModules
+        ++ nixosShimModules
+        ++ sharedChipModules;
+    });
+
     devShellsSecrets = listToAttrs (map (name: {
       name = removeSuffix ".nix" (baseNameOf name);
-      value = (evalChipsModules {
-        pkgs = nixpkgs.legacyPackages;
-        system = pkgs.stdenv.system;
-        modules = modules ++ [name];
-      }).secretRecipients;
+      value =
+        (evalChipsModules {
+          pkgs = nixpkgs.legacyPackages;
+          system = pkgs.stdenv.system;
+          modules = modules ++ [name];
+        })
+        .arcanum
+        .secretRecipients;
     }) (nixFilesIn devShellsDir));
 
     devShellsSecretsFlat = flatten (mapAttrsToList (n: v: (mapAttrsToList (n: v: v.secretRecipients)) v) devShells);
@@ -278,6 +326,7 @@ in
     devShells = devShells;
     nixosModules.default = nixosModules ++ projectNixosModules;
     overlays.default = overlay;
+    legacyPackages = dockerImages;
     lib = {
       devShellsSecrets = mergedDevShellSecrets;
       manual = mkManual {modules = mergedNixosModules;};

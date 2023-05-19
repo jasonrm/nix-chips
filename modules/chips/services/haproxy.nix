@@ -26,7 +26,7 @@ in {
     programs.supervisord.programs.haproxy = {
       command = "${pkgs.haproxy}/sbin/haproxy -W -f ${haproxyCfg}";
     };
-    chips.devShell = {
+    devShell = {
       contents = [
         haproxy-debug
       ];

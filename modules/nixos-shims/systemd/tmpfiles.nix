@@ -14,7 +14,7 @@ with lib; let
 in {
   options = systemdTmpfiles.options;
   config = {
-    chips.devShell.shellHooks = ''
+    devShell.shellHooks = ''
       while IFS= read -r line; do
           case "$line" in
               d*|D*)

@@ -95,7 +95,7 @@ in {
       startsecs = 5;
       command = "${mysqld}/bin/mysqld";
     };
-    chips.devShell.contents = [
+    devShell.contents = [
       mysql
       mysqld
       mysqldump

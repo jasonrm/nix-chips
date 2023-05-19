@@ -6,7 +6,7 @@
   ...
 }:
 with lib; let
-  cfg = config.chips.devShell;
+  cfg = config.devShell;
 
   envFile = pkgs.writeText "devShell.env" (lib.concatStringsSep "\n" cfg.environment);
 
@@ -38,7 +38,7 @@ in {
   ];
 
   options = with lib.types; {
-    chips.devShell = {
+    devShell = {
       enable = mkEnableOption "Enable devShell";
 
       requireProjectDirectory = mkEnableOption "Require the project directory to be set";
@@ -62,11 +62,16 @@ in {
         type = listOf package;
         default = [];
       };
+
+      output = mkOption {
+        readOnly = true;
+        type = package;
+      };
     };
   };
 
   config = {
-    outputs.devShell = pkgs.mkShell {
+    devShell.output = pkgs.mkShell {
       buildInputs =
         cfg.contents
         ++ lib.optionals pkgs.stdenv.isDarwin (with pkgs.darwin.apple_sdk.frameworks; [

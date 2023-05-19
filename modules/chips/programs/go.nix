@@ -20,7 +20,7 @@ in {
   };
 
   config = {
-    chips.devShell = mkIf cfg.enable {
+    devShell = mkIf cfg.enable {
       contents = [
         cfg.pkg
       ];

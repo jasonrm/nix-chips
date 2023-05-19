@@ -94,6 +94,12 @@ in {
         type = types.path;
         description = "Identity file to use for decryption.";
       };
+
+      secretRecipients = mkOption {
+        type = nullOr attrs;
+        readOnly = true;
+        default = {};
+      };
     };
   };
 }

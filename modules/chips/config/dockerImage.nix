@@ -109,15 +109,16 @@ in {
         default = {};
         type = attrsOf (submodule dockerImageOption);
       };
-    };
 
-    outputs.legacyPackages.dockerImages = mkOption {
-      type = attrsOf package;
+      output = mkOption {
+        type = attrsOf package;
+        readOnly = true;
+      };
     };
   };
 
   config = {
-    outputs.legacyPackages.dockerImages =
+    dockerImages.output =
       mapAttrs
       (k: image: (
         dockerTools.buildImage {
