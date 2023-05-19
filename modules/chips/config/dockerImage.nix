@@ -19,9 +19,6 @@ with lib; let
   };
 
   preEntry = image: (pkgs.writeShellScriptBin "pre-entry" ''
-    echo preEntry: ensureExists
-    ${pkgs.coreutils}/bin/mkdir -p ${lib.concatStringsSep " " (map escapeShellArg config.dir.ensureExists)}
-
     echo preEntry: entryCommands
     ${lib.concatStringsSep "\n" image.entryCommands}
 
