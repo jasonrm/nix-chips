@@ -134,6 +134,9 @@ in {
             // {
               # TODO: Support Entrypoint from v.config
               Entrypoint = ["${preEntry image}/bin/pre-entry"];
+              Env = [
+                "IS_DOCKER=1"
+              ];
             };
         }
       ))
