@@ -94,19 +94,15 @@ with nixpkgs.lib; let
             inherit system;
             overlays = [overlay];
           };
-        in {
-          devShells = listToAttrs (map (name: {
+        in listToAttrs (map (name: {
             name = removeSuffix ".nix" (baseNameOf name);
             value =
               (evalChipsModules {
                 inherit pkgs system;
                 modules = modules ++ [name];
-              })
-              .devShell;
-          }) (nixFilesIn devShellsDir));
-        }
-      ))
-      .devShells;
+              });
+          }) (nixFilesIn devShellsDir))
+      ));
 
   usePackages = {
     packagesDir,
@@ -265,12 +261,29 @@ in
       inherit nixosConfigurationsDir overlay;
       modules = mergedNixosModules;
     });
+
+    devShellsSecrets = listToAttrs (map (name: {
+      name = removeSuffix ".nix" (baseNameOf name);
+      value = (evalChipsModules {
+        pkgs = nixpkgs.legacyPackages;
+        system = pkgs.stdenv.system;
+        modules = modules ++ [name];
+      }).secretRecipients;
+    }) (nixFilesIn devShellsDir));
+
+    devShellsSecretsFlat = flatten (mapAttrsToList (n: v: (mapAttrsToList (n: v: v.secretRecipients)) v) devShells);
+    mergedDevShellSecrets = foldAttrs (recipients: carry: unique (carry ++ recipients)) (arcanum.adminRecipients or []) devShellsSecretsFlat;
   in {
-    inherit devShells packages checks apps nixosConfigurations;
+    inherit packages checks apps nixosConfigurations;
+    devShells = devShells;
     nixosModules.default = nixosModules ++ projectNixosModules;
     overlays.default = overlay;
     lib = {
+      devShellsSecrets = mergedDevShellSecrets;
       manual = mkManual {modules = mergedNixosModules;};
-      arcanum = (chipsLib.recipientsFromConfigurations nixosConfigurations) // (mapAttrs' (name: file: nameValuePair file.source ((file.recipients or []) ++ arcanum.adminRecipients)) (arcanum.files or {}));
+      arcanum =
+        (chipsLib.recipientsFromConfigurations nixosConfigurations)
+        // mergedDevShellSecrets
+        // (mapAttrs' (name: file: nameValuePair file.source ((file.recipients or []) ++ arcanum.adminRecipients)) (arcanum.files or {}));
     };
   }
