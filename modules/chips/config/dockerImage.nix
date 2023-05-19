@@ -127,8 +127,8 @@ in {
           fromImage = baseImage;
           extraCommands = lib.concatStringsSep "\n" image.extraCommands;
           copyToRoot = image.contents;
-          # WIP for users
-          # (nonRootShadowSetup { user = "sshd"; uid = 999; });
+          # WIP
+          #  ++ (nonRootShadowSetup { user = "http"; uid = 999; })
           config =
             image.config
             // {

@@ -319,7 +319,7 @@ in
         .secretRecipients;
     }) (nixFilesIn devShellsDir));
 
-    devShellsSecretsFlat = flatten (mapAttrsToList (n: v: (mapAttrsToList (n: v: v.secretRecipients)) v) devShells);
+    devShellsSecretsFlat = flatten (mapAttrsToList (n: v: (mapAttrsToList (n: v: v.secretRecipients)) v) devShellsSecrets);
     mergedDevShellSecrets = foldAttrs (recipients: carry: unique (carry ++ recipients)) (arcanum.adminRecipients or []) devShellsSecretsFlat;
   in {
     inherit packages checks apps nixosConfigurations;
