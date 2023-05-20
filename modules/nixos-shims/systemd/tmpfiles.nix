@@ -15,6 +15,7 @@ in {
   options = systemdTmpfiles.options;
   config = {
     devShell.shellHooks = ''
+      IS_DOCKER=''${IS_DOCKER:-0}
       while IFS= read -r line; do
           case "$line" in
               d*|D*)
