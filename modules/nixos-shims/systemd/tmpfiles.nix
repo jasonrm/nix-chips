@@ -25,7 +25,7 @@ in {
                   dir_group=$(echo $line | cut -d' ' -f5)
                   if [[ "$dir_path" == "${config.dir.data}"*  ]]; then
                       mkdir -p "$dir_path"
-                      if [ ! -z $IS_DOCKER ]; then
+                      if [ $IS_DOCKER -eq 1 ]; then
                           chmod "$dir_mode" "$dir_path"
                           chown "$dir_user:$dir_group" "$dir_path"
                       fi
