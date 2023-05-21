@@ -26,7 +26,7 @@ with lib; let
       fi
     fi
 
-    ln -s ${envFile} .env
+    ln -sf ${envFile} devShell.env
 
     ${cfg.shellHooks}
   '';
