@@ -26,9 +26,9 @@ with lib; let
       fi
     fi
 
-    set -a
-    source ${envFile}
-    set +a
+    set -o allexport
+    . ${envFile}
+    set +o allexport
 
     ${cfg.shellHooks}
   '';
