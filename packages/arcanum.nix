@@ -13,7 +13,7 @@ pkgs.writeShellScriptBin "arcanum" ''
 
   ENCRYPTED_FILE=$2
   DECRYPTED_FILE=''${ENCRYPTED_FILE%.age}
-  RECIPIENTS=$(${pkgs.nix}/bin/nix eval --json '.#lib.arcanum' | ${pkgs.jq}/bin/jq -r "if .\"$ENCRYPTED_FILE\" then .\"$ENCRYPTED_FILE\" else [] end | join(\"\n\")")
+  RECIPIENTS=$(${pkgs.nix}/bin/nix --extra-experimental-features nix-command eval --json '.#lib.arcanum' | ${pkgs.jq}/bin/jq -r "if .\"$ENCRYPTED_FILE\" then .\"$ENCRYPTED_FILE\" else [] end | join(\"\n\")")
   if [[ -z "$RECIPIENTS" ]]; then
     echo "No recipients found for $ENCRYPTED_FILE"
     exit 1
