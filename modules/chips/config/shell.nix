@@ -8,7 +8,7 @@
 with lib; let
   cfg = config.devShell;
 
-  envFile = pkgs.writeText "devShell.env" (lib.concatStringsSep "\n" cfg.environment);
+  envFile = pkgs.writeText "devShell.env" (concatStringsSep "\n" cfg.environment);
 
   shellHook = pkgs.writeShellScriptBin "devShell.init.sh" ''
     set -o errexit
@@ -26,9 +26,7 @@ with lib; let
       fi
     fi
 
-    set -o allexport
-    . ${envFile}
-    set +o allexport
+    ln -s ${envFile} .env
 
     ${cfg.shellHooks}
   '';
