@@ -28,17 +28,22 @@ in {
   ];
 
   config = lib.mkIf cfg.enable {
-    services.nginx.appendHttpConfig = ''
-      access_log  ${config.dir.data}/nginx/access.log;
-      error_log  ${config.dir.data}/nginx/error.log;
+    services.nginx = {
+      recommendedTlsSettings = true;
+      recommendedOptimisation = true;
+      recommendedGzipSettings = true;
+      appendHttpConfig = ''
+        access_log  ${config.dir.data}/nginx/access.log;
+        error_log  ${config.dir.data}/nginx/error.log;
 
-      # Override all the temp directories to make nginx happy
-      client_body_temp_path ${config.dir.data}/nginx/client_body_temp;
-      proxy_temp_path ${config.dir.data}/nginx/proxy_temp;
-      fastcgi_temp_path ${config.dir.data}/nginx/fastcgi_temp;
-      uwsgi_temp_path ${config.dir.data}/nginx/uwsgi_temp;
-      scgi_temp_path ${config.dir.data}/nginx/scgi_temp;
-    '';
+        # Override all the temp directories to make nginx happy
+        client_body_temp_path ${config.dir.data}/nginx/client_body_temp;
+        proxy_temp_path ${config.dir.data}/nginx/proxy_temp;
+        fastcgi_temp_path ${config.dir.data}/nginx/fastcgi_temp;
+        uwsgi_temp_path ${config.dir.data}/nginx/uwsgi_temp;
+        scgi_temp_path ${config.dir.data}/nginx/scgi_temp;
+      '';
+    };
     programs.supervisord.programs.nginx = {
       command = "${execCommand}/bin/nginx";
     };
