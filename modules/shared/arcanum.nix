@@ -10,6 +10,8 @@ with types; let
 
   secretFile = submodule {
     options = {
+      # TODO: remember why this can't be a path or in-store path?
+      # It might be that the arcanum edit/encrypy/decrypt commands need it relative like this?
       source = mkOption {
         type = str;
         description = "path to encrypted secret relative to relativeRoot";
@@ -91,7 +93,7 @@ in {
       };
       identity = mkOption {
         default = "/etc/ssh/ssh_host_ed25519_key";
-        type = types.path;
+        type = oneOf [str path];
         description = "Identity file to use for decryption.";
       };
 

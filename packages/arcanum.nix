@@ -59,4 +59,7 @@ pkgs.writeShellScriptBin "arcanum" ''
       ${pkgs.rage}/bin/rage --encrypt --armor "''${ENCRYPT[@]}" -o "$ENCRYPTED_FILE" "$DECRYPTED_FILE"
       echo "Rekeyed $ENCRYPTED_FILE"
   fi
+  if [ -f "$DECRYPTED_FILE" ]; then
+    rm "$DECRYPTED_FILE"
+  fi
 ''
