@@ -26,7 +26,7 @@ with lib; let
     mkdir -p /tmp/ && chmod 1777 /tmp/
 
     echo preEntry: done
-    exec $*
+    exec ${pkgs.dumb-init}/bin/dumb-init $*
   '');
 
   nonRootShadowSetup = {
