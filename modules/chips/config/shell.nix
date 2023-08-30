@@ -26,7 +26,7 @@ with lib; let
       fi
     fi
 
-    # ln -sf ${envFile} devShell.env
+    echo "${concatStringsSep "\n" cfg.environment}" > .env.devshell
 
     ${cfg.shellHooks}
   '';
