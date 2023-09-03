@@ -110,6 +110,10 @@ with lib; let
           type = listOf str;
           default = [];
         };
+        envFiles = mkOption {
+          type = listOf str;
+          default = [];
+        };
         depends_on = mkOption {
           type = listOf str;
           default = [];
@@ -185,6 +189,9 @@ in {
           }
           // (optionalAttrs (hasAttrByPath ["serviceConfig" "WorkingDirectory"] service) {
             directory = "${service.serviceConfig.WorkingDirectory}";
+          })
+          // (optionalAttrs (hasAttrByPath ["serviceConfig" "EnvironmentFile"] service) {
+            envFiles = service.serviceConfig.EnvironmentFile;
           })
           // (optionalAttrs (hasAttrByPath ["serviceConfig" "Type"] service) {
             autorestart =
