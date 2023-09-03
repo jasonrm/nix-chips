@@ -5,10 +5,25 @@
   ...
 }: let
   inherit (lib) mkOption types concatStrings optional concatMapStringsSep replaceStrings escapeShellArg;
+  inherit (builtins) concatStringsSep;
+
   cfg = config.services.tomcat;
   tomcat = cfg.package;
 
   tomcatExec = pkgs.writeShellScriptBin "tomcat-exec" ''
+    export JAVA_OPTS="${concatStringsSep " " cfg.javaOpts}"
+    export CATALINA_OPTS="${concatStringsSep " " cfg.catalinaOpts}"
+
+    ${concatStringsSep "\n" (map (file: ''
+        if [[ -f "${file}" ]]; then
+          echo "Importing vars from ${file}"
+          set -o allexport
+          source "${file}"
+          set +o allexport
+        fi
+      '')
+      cfg.extraEnvironmentFiles)}
+
     mkdir -p \
       ${cfg.dataDir}/{conf,virtualhosts,logs,temp,lib,shared/lib,webapps,work}
 
@@ -229,6 +244,12 @@ in {
         description = "Environment Variables to pass to the tomcat service";
       };
 
+      extraEnvironmentFiles = mkOption {
+        type = types.listOf types.str;
+        default = [];
+        description = "Files with environment variables to source before starting the tomcat service";
+      };
+
       webapps = mkOption {
         type = types.listOf types.path;
         default = [tomcat.webapps];
@@ -290,8 +311,6 @@ in {
           "CATALINA_BASE=${cfg.dataDir}"
           "CATALINA_PID=${config.dir.data}/run/tomcat.pid"
           "JAVA_HOME=${cfg.jdk}"
-          ''JAVA_OPTS="${builtins.toString cfg.javaOpts}"''
-          ''CATALINA_OPTS="${builtins.toString cfg.catalinaOpts}"''
         ]
         ++ cfg.extraEnvironment;
     };
