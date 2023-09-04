@@ -24,6 +24,7 @@ with lib; let
       ${cfg.package}/bin/mysqld \
         --initialize \
         --initialize-insecure \
+        --authentication-policy="mysql_native_password" \
         ${
       if cfg.initialScript != null
       then "--init-file=${cfg.initialScript}"
@@ -85,6 +86,7 @@ in {
           tls_version = "";
           mysqlx = 0;
           socket = runDir + "/mysqld.sock";
+          authentication-policy = "mysql_native_password";
         };
       };
     };
