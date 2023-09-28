@@ -28,8 +28,10 @@ in {
   options = {};
 
   config = {
-    devShell = {
-      shellHooks = concatStringsSep "\n" (mapAttrsToList (name: secret: "${decryptSecret} ${secret.source} ${secret.dest}") cfg.files);
+    devShell = let
+      filesWithDest = filterAttrs (n: secret: secret.dest != null) cfg.files;
+    in {
+      shellHooks = concatStringsSep "\n" (mapAttrsToList (name: secret: "${decryptSecret} ${secret.source} ${secret.dest}") filesWithDest);
     };
   };
 }

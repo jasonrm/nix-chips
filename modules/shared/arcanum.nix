@@ -24,8 +24,9 @@ with types; let
       };
 
       dest = mkOption {
-        type = str;
-        description = "where to write the decrypted secret to";
+        type = nullOr str;
+        default = null;
+        description = "where to write the decrypted secret to..";
       };
 
       owner = mkOption {
