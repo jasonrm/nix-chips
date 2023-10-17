@@ -224,6 +224,8 @@ with nixpkgs.lib; let
             nixpkgs.lib.nixosSystem {
               system = "x86_64-linux";
               specialArgs = specialArgs // {
+                # expose `name` as an input to NixOS configurations
+                name = configuration.name;
                 nodes = nixosConfigurations;
               };
               modules =
