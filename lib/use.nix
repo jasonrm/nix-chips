@@ -209,6 +209,7 @@ with nixpkgs.lib; let
     nixosConfigurationsDir,
     modules,
     overlay,
+    specialArgs,
   }: let
     onlyDefaultNix = baseName: (hasSuffix "default.nix" baseName);
 
@@ -222,7 +223,7 @@ with nixpkgs.lib; let
           nameValuePair configuration.name (
             nixpkgs.lib.nixosSystem {
               system = "x86_64-linux";
-              specialArgs = {
+              specialArgs = specialArgs // {
                 nodes = nixosConfigurations;
               };
               modules =
@@ -250,6 +251,7 @@ in
     nixosModulesDir ? null,
     dockerImagesDir ? null,
     nixosConfigurationsDir ? null,
+    nixosSpecialArgs ? {},
     nixosModules ? [],
     overlays ? [],
     arcanum ? {},
@@ -294,6 +296,7 @@ in
     nixosConfigurations = optionalAttrs (nixosConfigurationsDir != null) (useNixosConfigurations {
       inherit nixosConfigurationsDir overlay;
       modules = mergedNixosModules;
+      specialArgs = nixosSpecialArgs;
     });
 
     devShells = optionalAttrs (devShellsDir != null) (useDevShells {
