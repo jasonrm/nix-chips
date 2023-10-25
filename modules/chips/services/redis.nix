@@ -85,7 +85,7 @@ in {
       ];
       devShell.environment = [
         "REDIS_HOST=${
-          if (cfg.host == "0.0.0.0")
+          if (cfg.host == "* -::*")
           then "127.0.0.1"
           else cfg.host
         }"
