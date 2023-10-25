@@ -64,7 +64,7 @@ in {
 
       host = mkOption {
         type = str;
-        default = "0.0.0.0";
+        default = "* -::*"; # all available interfaces, IPv4 and IPv6
       };
       port = mkOption {
         type = int;
