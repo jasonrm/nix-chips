@@ -111,7 +111,7 @@ with lib; let
           default = [];
         };
         envFiles = mkOption {
-          type = listOf (oneOf [path str]);
+          type = nullOr (listOf (oneOf [path str]));
           default = [];
         };
         depends_on = mkOption {
@@ -191,7 +191,13 @@ in {
             directory = "${service.serviceConfig.WorkingDirectory}";
           })
           // (optionalAttrs (hasAttrByPath ["serviceConfig" "EnvironmentFile"] service) {
-            envFiles = map toString service.serviceConfig.EnvironmentFile;
+            envFiles = map toString (
+              if service.serviceConfig.EnvironmentFile == null
+              then []
+              else if isList service.serviceConfig.EnvironmentFile
+              then service.serviceConfig.EnvironmentFile
+              else [service.serviceConfig.EnvironmentFile]
+            );
           })
           // (optionalAttrs (hasAttrByPath ["serviceConfig" "Type"] service) {
             autorestart =
