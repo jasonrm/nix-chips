@@ -15,26 +15,7 @@ in {
   options = systemdTmpfiles.options;
   config = {
     devShell.shellHooks = ''
-      IS_DOCKER=''${IS_DOCKER:-0}
-      while IFS= read -r line; do
-          case "$line" in
-              d*|D*)
-                  dir_path=$(echo $line | cut -d' ' -f2)
-                  dir_mode=$(echo $line | cut -d' ' -f3)
-                  dir_user=$(echo $line | cut -d' ' -f4)
-                  dir_group=$(echo $line | cut -d' ' -f5)
-                  if [[ "$dir_path" == "${config.dir.data}"*  ]]; then
-                      mkdir -p "$dir_path"
-                      if [ $IS_DOCKER -eq 1 ]; then
-                          chmod "$dir_mode" "$dir_path"
-                          chown "$dir_user:$dir_group" "$dir_path"
-                      fi
-                  else
-                      "Not creating '$dir_path' as it is outside of the data directory."
-                  fi
-                  ;;
-          esac
-      done < "${tmpFilesRules}"
+      ${pkgs.systemd-tmpfiles}/bin/systemd-tmpfiles --prefix "${config.dir.data}" "${tmpFilesRules}"
     '';
   };
 }
