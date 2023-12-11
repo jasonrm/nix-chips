@@ -20,7 +20,7 @@ in
 
         data = mkOption {
           type = str;
-          default = cfg.project + "/data";
+          default = cfg.project + "/.chips";
         };
 
         ensureExists = mkOption {
