@@ -69,6 +69,7 @@ in {
     devShell = mkIf cfg.enable {
       shellHooks = [
         ''echo php: ${php}/bin/php''
+        ''export $PATH:$(pwd)/vendor/bin''
       ];
       contents = [
         flamegraph
