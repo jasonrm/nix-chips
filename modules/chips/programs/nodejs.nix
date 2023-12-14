@@ -23,10 +23,10 @@ in {
 
   config = {
     devShell = mkIf cfg.enable {
-      shellHooks = [
-        ''echo node: ${cfg.pkg}/bin/node''
-        ''export $PATH:$(pwd)/node_modules/.bin/''
-      ];
+      shellHooks = ''
+        echo node: ${cfg.pkg}/bin/node
+        [[ ":$PATH:" != *":/node_modules/.bin:"* ]] && export PATH="$PATH:$(pwd)/node_modules/.bin"
+      '';
       contents = with cfg.nodePackages; [
         nodejs
         pnpm
