@@ -14,9 +14,9 @@ in {
     programs.nodejs = {
       enable = mkEnableOption "nodejs support";
 
-      pkg = mkOption {
+      nodePackages = mkOption {
         type = package;
-        default = pkgs.nodejs;
+        default = pkgs.nodePackages;
       };
     };
   };
@@ -25,9 +25,11 @@ in {
     devShell = mkIf cfg.enable {
       shellHooks = [
         ''echo node: ${cfg.pkg}/bin/node''
+        ''export $PATH:$(pwd)/node_modules/.bin/''
       ];
-      contents = [
-        cfg.pkg
+      contents = with cfg.nodePackages; [
+        nodejs
+        pnpm
       ];
     };
 
