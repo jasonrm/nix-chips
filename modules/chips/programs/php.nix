@@ -69,8 +69,10 @@ in {
     devShell = mkIf cfg.enable {
       shellHooks = ''
         echo php: ${php}/bin/php
-        [[ ":$PATH:" != *":/vendor/bin:"* ]] && export PATH="$PATH:$(pwd)/vendor/bin"
       '';
+      environment = [
+        "PATH=$PATH:${config.dir.project}/vendor/bin"
+      ];
       contents = [
         flamegraph
         # php-spx
