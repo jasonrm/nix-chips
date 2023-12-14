@@ -14,7 +14,14 @@
     nixpkgs-staging,
     utils,
     ...
-  } @ inputs: {
-    lib = import ./lib inputs;
-  };
+  } @ inputs:
+    {
+      lib = import ./lib inputs;
+    }
+    // {
+      templates.default = {
+        path = ./templates/default;
+        description = "nix flake new -t github:jasonrm/nix-chips .";
+      };
+    };
 }

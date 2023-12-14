@@ -19,7 +19,7 @@ with types; let
 
       recipients = mkOption {
         type = listOf str;
-        default = [];
+        default = cfg.defaultRecipients;
         description = "public keys to encrypt the secret for";
       };
 
@@ -76,6 +76,11 @@ in {
       adminRecipients = mkOption {
         type = listOf str;
         description = "public keys to include as recipients for all secrets";
+        default = [];
+      };
+      defaultRecipients = mkOption {
+        type = listOf str;
+        description = "default recipients for a secret";
         default = [];
       };
       wellKnownRecipients = mkOption {

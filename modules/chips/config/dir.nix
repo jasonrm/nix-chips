@@ -36,7 +36,7 @@ in
       ];
       devShell.shellHooks = ''
         mkdir -p ${lib.concatStringsSep " " (map lib.escapeShellArg cfg.ensureExists)}
-        echo '*' > ${cfg.data}/.gitignore
+        echo '*' > ${map lib.escapeShellArg cfg.data}/.gitignore
       '';
     };
   }

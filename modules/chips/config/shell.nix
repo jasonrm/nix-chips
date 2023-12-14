@@ -8,7 +8,7 @@
 with lib; let
   cfg = config.devShell;
 
-  envFile = pkgs.writeText "devShell.env" (concatStringsSep "\n" cfg.environment);
+  envFile = pkgs.writeText "chips.shell.env" (concatStringsSep "\n" cfg.environment);
 
   shellHook = pkgs.writeShellScriptBin "devShell.init.sh" ''
     set -o errexit
@@ -25,8 +25,6 @@ with lib; let
         exit 1
       fi
     fi
-
-    echo "${concatStringsSep "\n" cfg.environment}" > .env.devshell
 
     ${cfg.shellHooks}
   '';
@@ -76,7 +74,10 @@ in {
           CoreServices
         ]);
 
-      shellHook = "${shellHook}/bin/devShell.init.sh";
+      shellHook = ''
+        EXPORT CHIPS_ENV_FILE=${envFile}
+        ${shellHook}/bin/devShell.init.sh
+      '';
     };
   };
 }
