@@ -1,4 +1,4 @@
-{...}: {
+{ config, ...}: {
   config = {
     arcanum.files.project-env = {
       source = "secrets/project.env.age";

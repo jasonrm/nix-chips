@@ -1,13 +1,15 @@
 ## Templated Setup
 
 ```
+git init
+
 nix flake new -t github:jasonrm/nix-chips .
 
 cat ./nix/devShells/user-hostname.nix \
     | python3 -c 'import os,sys;[sys.stdout.write(os.path.expandvars(l)) for l in sys.stdin]' \
     > ./nix/devShells/$(whoami)-$(hostname -s).nix
 
-git add ./nix/devShells/$(whoami)-$(hostname -s).nix
+git add .
 
 direnv allow
 ```
