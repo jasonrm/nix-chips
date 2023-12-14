@@ -46,7 +46,7 @@ in {
 
       shellHooks = mkOption {
         type = lines;
-        default = [];
+        default = "";
       };
 
       directories = mkOption {
@@ -75,7 +75,7 @@ in {
         ]);
 
       shellHook = ''
-        EXPORT CHIPS_ENV_FILE=${envFile}
+        export CHIPS_ENV_FILE=${envFile}
         ${shellHook}/bin/devShell.init.sh
       '';
     };

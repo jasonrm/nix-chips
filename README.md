@@ -11,6 +11,7 @@ cat ./nix/devShells/user-hostname.nix \
 
 git add .
 
+nix-direnv-reload
 direnv allow
 ```
 
