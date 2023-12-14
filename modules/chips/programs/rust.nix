@@ -19,7 +19,6 @@ in {
       contents = [
         pkgs.cargo
         pkgs.cargo-sort
-        pkgs.fuzz
         pkgs.rustfmt
       ];
     };
