@@ -67,10 +67,10 @@ in {
 
   config = {
     devShell = mkIf cfg.enable {
-      shellHooks = [
-        ''echo php: ${php}/bin/php''
-        ''export $PATH:$(pwd)/vendor/bin''
-      ];
+      shellHooks = ''
+        echo php: ${php}/bin/php
+        [[ ":$PATH:" != *":/vendor/bin:"* ]] && export PATH="$PATH:$(pwd)/vendor/bin"
+      '';
       contents = [
         flamegraph
         # php-spx
