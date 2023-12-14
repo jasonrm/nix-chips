@@ -25,8 +25,10 @@ in {
     devShell = mkIf cfg.enable {
       shellHooks = ''
         echo node: ${cfg.pkg}/bin/node
-        [[ ":$PATH:" != *":/node_modules/.bin:"* ]] && export PATH="$PATH:$(pwd)/node_modules/.bin"
       '';
+      environment = [
+        "PATH=$PATH:${config.dir.project}/node_modules/.bin"
+      ];
       contents = with cfg.nodePackages; [
         nodejs
         pnpm
