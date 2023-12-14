@@ -54,6 +54,11 @@ in {
         default = [];
       };
 
+      nativeBuildInputs = mkOption {
+        type = listOf package;
+        default = [];
+      };
+
       contents = mkOption {
         type = listOf package;
         default = [];
@@ -68,6 +73,7 @@ in {
 
   config = {
     devShell.output = pkgs.mkShell {
+      nativeBuildInputs = cfg.nativeBuildInputs;
       buildInputs =
         cfg.contents
         ++ lib.optionals pkgs.stdenv.isDarwin (with pkgs.darwin.apple_sdk.frameworks; [
