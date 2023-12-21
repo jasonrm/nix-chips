@@ -85,7 +85,7 @@ in {
         mysqld = {
           tls_version = "";
           mysqlx = 0;
-          socket = runDir + "/mysqld.sock";
+          socket = "${runDir}/mysqld.sock";
           authentication-policy = "mysql_native_password";
         };
       };
@@ -95,10 +95,16 @@ in {
       startsecs = 5;
       command = "${mysqld}/bin/mysqld";
     };
-    devShell.contents = [
-      mysql
-      mysqld
-      mysqldump
-    ];
+    devShell = {
+      environment = [
+        "MYSQL_HOST=localhost"
+        "MYSQL_UNIX_PORT=${runDir}/mysqld.sock"
+      ];
+      contents = [
+        mysql
+        mysqld
+        mysqldump
+      ];
+    };
   };
 }

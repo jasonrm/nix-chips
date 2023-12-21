@@ -8,6 +8,9 @@
 with lib; let
   cfg = config.devShell;
 
+  # Note: If this dies with an error like `error: cannot coerce a list to a string`
+  # then you probably have an environemnt variable that isn't able to resolve due to a loop.
+  # For example, MYSQL_UNIX_PORT wasn't able to be set to `${config.services.mysql.settings.mysqld.socket}`
   envFile = pkgs.writeText "chips.shell.env" (concatStringsSep "\n" cfg.environment);
 
   shellHook = pkgs.writeShellScriptBin "devShell.init.sh" ''
