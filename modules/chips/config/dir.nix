@@ -34,7 +34,7 @@ in
       dir.ensureExists = [
         cfg.data
       ];
-      devShell.shellHooks = ''
+      devShell.shellHooks = mkBefore ''
         mkdir -p ${lib.concatStringsSep " " (map lib.escapeShellArg cfg.ensureExists)}
         echo '*' > ${lib.escapeShellArg "${cfg.data}/.gitignore"}
       '';
