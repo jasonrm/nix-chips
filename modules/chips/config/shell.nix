@@ -13,7 +13,7 @@ with lib; let
   # For example, MYSQL_UNIX_PORT wasn't able to be set to `${config.services.mysql.settings.mysqld.socket}`
   envFile = pkgs.writeText "chips.shell.env" (concatStringsSep "\n" cfg.environment);
 
-  shellHook = pkgs.writeShellScriptBin "devShell.init.sh" ''
+  shellHook = pkgs.writeShellScriptBin "dev-shell.init.sh" ''
     set -o errexit
     set -o nounset
     set -o pipefail
@@ -38,7 +38,7 @@ in {
 
   options = with lib.types; {
     devShell = {
-      enable = mkEnableOption "Enable devShell";
+      enable = mkEnableOption "Enable Developer Shell";
 
       requireProjectDirectory = mkEnableOption "Require the project directory to be set";
 
@@ -84,8 +84,10 @@ in {
         ]);
 
       shellHook = ''
-        export CHIPS_ENV_FILE=${envFile}
-        ${shellHook}/bin/devShell.init.sh
+        set -o allexport
+        source ${envFile}
+        set +o allexport
+        ${shellHook}/bin/dev-shell.init.sh
       '';
     };
   };
