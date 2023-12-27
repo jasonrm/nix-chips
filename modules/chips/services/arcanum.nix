@@ -11,7 +11,7 @@ with lib; let
     set -o errexit -o nounset -o pipefail
     if [ ! -f "$1" ]; then
       echo "Encrypted Secret Not Found: $1" >&2
-      exit 1
+      exit 0
     fi
 
     DECRYPTED_DIR=$(dirname "$2")
@@ -31,7 +31,7 @@ in {
     devShell = let
       filesWithDest = filterAttrs (n: secret: secret.dest != null) cfg.files;
     in {
-      shellHooks = concatStringsSep "\n" (mapAttrsToList (name: secret: "${decryptSecret} ${secret.source} ${secret.dest}") filesWithDest);
+      shellHooks = mkOrder 750 (concatStringsSep "\n" (mapAttrsToList (name: secret: "${decryptSecret} ${secret.source} ${secret.dest}") filesWithDest));
     };
   };
 }
