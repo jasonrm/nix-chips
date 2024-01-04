@@ -6,12 +6,16 @@
     nixpkgs-staging.url = "github:jasonrm/nixpkgs-staging";
 
     utils.url = "github:numtide/flake-utils";
+
+    home-manager.url = "github:nix-community/home-manager";
+    home-manager.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs = {
     self,
     nixpkgs,
     nixpkgs-staging,
+    home-manager,
     utils,
     ...
   } @ inputs:

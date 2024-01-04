@@ -2,6 +2,7 @@
   self,
   nixpkgs,
   nixpkgs-staging,
+  home-manager,
   utils,
   ...
 }:
@@ -83,6 +84,7 @@ with nixpkgs.lib; let
 
   useDevShells = {
     devShellsDir,
+    nixpkgsConfig,
     modules,
     overlay,
   }: let
@@ -93,6 +95,7 @@ with nixpkgs.lib; let
         system: let
           pkgs = import nixpkgs {
             inherit system;
+            config = nixpkgsConfig;
             overlays = [overlay];
           };
         in {
@@ -207,6 +210,7 @@ with nixpkgs.lib; let
 
   useHomeConfigurations = {
     homeConfigurationsDir,
+    nixpkgsConfig,
     modules,
     overlay,
   }: let
@@ -222,21 +226,25 @@ with nixpkgs.lib; let
         system: let
           pkgs = import nixpkgs {
             inherit system;
-            config.allowUnfree = true;
+            config = nixpkgsConfig;
             overlays = [overlay];
           };
         in {
           results = {
-            homeConfigurations = listToAttrs (map ( configuration:
+            homeConfigurations = listToAttrs (map (configuration:
               nameValuePair configuration.name (
-                evalChipsModules {
-                  inherit pkgs system;
-                  modules = modules ++ [configuration.path];
+                home-manager.lib.homeManagerConfiguration {
+                  inherit pkgs;
+                  modules = [
+                    configuration.path
+                  ];
                 }
-              )) configurations);
-            };
-          }
-      )).results;
+              ))
+            configurations);
+          };
+        }
+      ))
+      .results;
 
   useNixosConfigurations = {
     nixosConfigurationsDir,
@@ -294,6 +302,7 @@ in
     homeConfigurationModules ? [],
     overlays ? [],
     arcanum ? {},
+    nixpkgsConfig ? {},
     ...
   }: let
     projectNixosModules =
@@ -339,14 +348,12 @@ in
     });
 
     homeConfigurations = optionalAttrs (homeConfigurationsDir != null) (useHomeConfigurations {
-      inherit homeConfigurationsDir overlay;
-      modules =
-        homeConfigurationModules
-        ++ nixosShimModules;
+      inherit homeConfigurationsDir nixpkgsConfig overlay;
+      modules = homeConfigurationModules;
     });
 
     devShells = optionalAttrs (devShellsDir != null) (useDevShells {
-      inherit devShellsDir overlay;
+      inherit devShellsDir nixpkgsConfig overlay;
       modules =
         nixChipModules
         ++ nixosShimModules
@@ -361,16 +368,14 @@ in
     devShellSecretsPerSystem = collectFromOutput ["arcanum" "secretRecipients"] devShells;
     devShellsSecretsFlat = flatten (mapAttrsToList (system: devShell: (mapAttrsToList (devShellName: secrets: secrets) devShell)) devShellSecretsPerSystem);
     mergedDevShellSecrets = foldAttrs (recipients: carry: unique (carry ++ recipients)) (arcanum.adminRecipients or []) devShellsSecretsFlat;
+
+    mergeListOfSystemAttrs = input: builtins.foldl' (acc: curr: acc // curr) {} input;
   in {
     inherit checks apps packages nixosConfigurations;
-    # packages = packages // {
-    #   inherit homeConfigurations;
-    # };
-    # legacyPackages = homeConfigurations;
+    legacyPackages = traceVal (mergeListOfSystemAttrs [homeConfigurations dockerImages]);
     devShells = collectFromOutput ["devShell" "output"] devShells;
     nixosModules.default = nixosModules ++ projectNixosModules;
     overlays.default = overlay;
-    legacyPackages = dockerImages;
     lib = {
       devShellsSecrets = mergedDevShellSecrets;
       manual = mkManual {modules = mergedNixosModules;};
