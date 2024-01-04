@@ -372,7 +372,7 @@ in
     mergeListOfSystemAttrs = input: builtins.foldl' (acc: curr: acc // curr) {} input;
   in {
     inherit checks apps packages nixosConfigurations;
-    legacyPackages = traceVal (mergeListOfSystemAttrs [homeConfigurations dockerImages]);
+    legacyPackages = mergeListOfSystemAttrs [homeConfigurations dockerImages];
     devShells = collectFromOutput ["devShell" "output"] devShells;
     nixosModules.default = nixosModules ++ projectNixosModules;
     overlays.default = overlay;
