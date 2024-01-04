@@ -205,6 +205,39 @@ with nixpkgs.lib; let
     .build
     .manual;
 
+  useHomeConfigurations = {
+    homeConfigurationsDir,
+    modules,
+    overlay,
+  }: let
+    onlyHomeNix = baseName: (hasSuffix "home.nix" baseName);
+
+    configurations = map (n: {
+      name = builtins.baseNameOf (builtins.dirOf n);
+      path = n;
+    }) (builtins.filter onlyHomeNix (nixFilesIn homeConfigurationsDir));
+  in
+    with utils.lib;
+      (eachDefaultSystem (
+        system: let
+          pkgs = import nixpkgs {
+            inherit system;
+            config.allowUnfree = true;
+            overlays = [overlay];
+          };
+        in {
+          results = {
+            homeConfigurations = listToAttrs (map ( configuration:
+              nameValuePair configuration.name (
+                evalChipsModules {
+                  inherit pkgs system;
+                  modules = modules ++ [configuration.path];
+                }
+              )) configurations);
+            };
+          }
+      )).results;
+
   useNixosConfigurations = {
     nixosConfigurationsDir,
     modules,
@@ -255,8 +288,10 @@ in
     nixosModulesDir ? null,
     dockerImagesDir ? null,
     nixosConfigurationsDir ? null,
+    homeConfigurationsDir ? null,
     nixosSpecialArgs ? {},
     nixosModules ? [],
+    homeConfigurationModules ? [],
     overlays ? [],
     arcanum ? {},
     ...
@@ -303,6 +338,13 @@ in
       specialArgs = nixosSpecialArgs;
     });
 
+    homeConfigurations = optionalAttrs (homeConfigurationsDir != null) (useHomeConfigurations {
+      inherit homeConfigurationsDir overlay;
+      modules =
+        homeConfigurationModules
+        ++ nixosShimModules;
+    });
+
     devShells = optionalAttrs (devShellsDir != null) (useDevShells {
       inherit devShellsDir overlay;
       modules =
@@ -320,7 +362,11 @@ in
     devShellsSecretsFlat = flatten (mapAttrsToList (system: devShell: (mapAttrsToList (devShellName: secrets: secrets) devShell)) devShellSecretsPerSystem);
     mergedDevShellSecrets = foldAttrs (recipients: carry: unique (carry ++ recipients)) (arcanum.adminRecipients or []) devShellsSecretsFlat;
   in {
-    inherit packages checks apps nixosConfigurations;
+    inherit checks apps packages nixosConfigurations;
+    # packages = packages // {
+    #   inherit homeConfigurations;
+    # };
+    # legacyPackages = homeConfigurations;
     devShells = collectFromOutput ["devShell" "output"] devShells;
     nixosModules.default = nixosModules ++ projectNixosModules;
     overlays.default = overlay;

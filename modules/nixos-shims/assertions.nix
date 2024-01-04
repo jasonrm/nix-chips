@@ -6,7 +6,7 @@
 with lib; {
   options = with types; {
     assertions = mkOption {
-      type = str;
+      type = oneOf [str attrs (listOf attrs)];
     };
   };
 }
