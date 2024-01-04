@@ -14,6 +14,18 @@ with lib; {
         type = listOf str;
         default = [];
       };
+      kernelModules = mkOption {
+        type = listOf str;
+        default = [];
+      };
+      kernelPackages = mkOption {
+        type = attrs;
+        default = {
+          kernel = {
+            version = "1";
+          };
+        };
+      };
     };
   };
 }
