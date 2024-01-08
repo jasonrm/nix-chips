@@ -20,16 +20,11 @@ with nixpkgs.lib; let
   nixosShimModules = nixFilesIn ../modules/nixos-shims;
   sharedChipModules = nixFilesIn ../modules/shared;
 
-  chipPackages = nixFilesIn ../packages;
-  chipApps = nixFilesIn ../apps;
-
   useApps = {
     appsDir,
     overlay,
   }: let
-    allApps =
-      chipApps
-      ++ (
+    allApps = (
         if appsDir != null
         then nixFilesIn appsDir
         else []
@@ -58,8 +53,7 @@ with nixpkgs.lib; let
         if packagesDir != null
         then nixFilesIn packagesDir
         else []
-      )
-      ++ chipPackages;
+      );
   in
     listToAttrs (map (name: {
         name = removeSuffix ".nix" (baseNameOf name);
@@ -144,7 +138,7 @@ with nixpkgs.lib; let
     packagesDir,
     overlay,
   }: let
-    allPackages = (nixFilesIn packagesDir) ++ chipPackages;
+    allPackages = nixFilesIn packagesDir;
   in
     with utils.lib;
       (eachDefaultSystem (
