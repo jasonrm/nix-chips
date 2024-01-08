@@ -102,11 +102,6 @@ in {
         type = oneOf [str path];
         description = "Identity file to use for decryption.";
       };
-
-      secretRecipients = mkOption {
-        type = nullOr attrs;
-        default = {};
-      };
     };
   };
 }

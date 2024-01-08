@@ -235,7 +235,7 @@ with nixpkgs.lib; let
               nameValuePair configuration.name (
                 home-manager.lib.homeManagerConfiguration {
                   inherit pkgs;
-                  modules = [
+                  modules = modules ++ [
                     configuration.path
                   ];
                 }
@@ -349,7 +349,8 @@ in
 
     homeConfigurations = optionalAttrs (homeConfigurationsDir != null) (useHomeConfigurations {
       inherit homeConfigurationsDir nixpkgsConfig overlay;
-      modules = homeConfigurationModules;
+      modules = homeConfigurationModules
+        ++ sharedChipModules;
     });
 
     devShells = optionalAttrs (devShellsDir != null) (useDevShells {
@@ -365,10 +366,6 @@ in
     in
       mapAttrs (n: v: mapAttrs (n: cfg: fromPath cfg) v) output;
 
-    devShellSecretsPerSystem = collectFromOutput ["arcanum" "secretRecipients"] devShells;
-    devShellsSecretsFlat = flatten (mapAttrsToList (system: devShell: (mapAttrsToList (devShellName: secrets: secrets) devShell)) devShellSecretsPerSystem);
-    mergedDevShellSecrets = foldAttrs (recipients: carry: unique (carry ++ recipients)) (arcanum.adminRecipients or []) devShellsSecretsFlat;
-
     mergeListOfSystemAttrs = input: builtins.foldl' (acc: curr: acc // curr) {} input;
   in {
     inherit checks apps packages nixosConfigurations;
@@ -377,11 +374,15 @@ in
     nixosModules.default = nixosModules ++ projectNixosModules;
     overlays.default = overlay;
     lib = {
-      devShellsSecrets = mergedDevShellSecrets;
       manual = mkManual {modules = mergedNixosModules;};
-      arcanum =
-        (chipsLib.recipientsFromConfigurations nixosConfigurations)
-        // mergedDevShellSecrets
-        // (mapAttrs' (name: file: nameValuePair file.source ((file.recipients or []) ++ arcanum.adminRecipients)) (arcanum.files or {}));
+      arcanum = {
+        nixos = mapAttrs (hostname: node: { inherit (node.config.arcanum) files adminRecipients; }) nixosConfigurations;
+        devShells = mapAttrs (system: value: mapAttrs (userHost: config: { inherit (config.arcanum) files adminRecipients; }) value) devShells;
+        homeManager = mapAttrs (name: home: (mapAttrs (name: user: { inherit (user.config.arcanum) files adminRecipients; }) home.homeConfigurations)) homeConfigurations;
+        flake = {
+          files = arcanum.files or {};
+          adminRecipients = arcanum.adminRecipients or [];
+        };
+      };
     };
   }
