@@ -21,11 +21,15 @@ with nixpkgs.lib; let
   sharedChipModules = nixFilesIn ../modules/shared;
   homeManagerChipModules = nixFilesIn ../modules/home-manager;
 
+  chipsAppsDir = nixFilesIn ../apps;
+
   useApps = {
     appsDir,
     overlay,
   }: let
-    allApps = (
+    allApps =
+      chipsAppsDir
+      ++ (
         if appsDir != null
         then nixFilesIn appsDir
         else []
@@ -49,12 +53,11 @@ with nixpkgs.lib; let
       .apps;
 
   mkPackagesOverlay = packagesDir: final: prev: let
-    packages =
-      (
-        if packagesDir != null
-        then nixFilesIn packagesDir
-        else []
-      );
+    packages = (
+      if packagesDir != null
+      then nixFilesIn packagesDir
+      else []
+    );
   in
     listToAttrs (map (name: {
         name = removeSuffix ".nix" (baseNameOf name);
@@ -230,9 +233,11 @@ with nixpkgs.lib; let
               nameValuePair configuration.name (
                 home-manager.lib.homeManagerConfiguration {
                   inherit pkgs;
-                  modules = modules ++ [
-                    configuration.path
-                  ];
+                  modules =
+                    modules
+                    ++ [
+                      configuration.path
+                    ];
                 }
               ))
             configurations);
@@ -334,7 +339,7 @@ in
       modules = mergedNixosModules;
     });
 
-    apps = optionalAttrs (appsDir != null) (useApps {inherit appsDir overlay;});
+    apps = useApps {inherit appsDir overlay;};
 
     nixosConfigurations = optionalAttrs (nixosConfigurationsDir != null) (useNixosConfigurations {
       inherit nixosConfigurationsDir overlay;
@@ -344,7 +349,8 @@ in
 
     homeConfigurations = optionalAttrs (homeConfigurationsDir != null) (useHomeConfigurations {
       inherit homeConfigurationsDir nixpkgsConfig overlay;
-      modules = homeConfigurationModules
+      modules =
+        homeConfigurationModules
         ++ homeManagerChipModules
         ++ sharedChipModules;
     });
@@ -372,9 +378,9 @@ in
     lib = {
       manual = mkManual {modules = mergedNixosModules;};
       arcanum = {
-        nixos = mapAttrs (hostname: node: { inherit (node.config.arcanum) files adminRecipients; }) nixosConfigurations;
-        devShells = mapAttrs (system: value: mapAttrs (userHost: config: { inherit (config.arcanum) files adminRecipients; }) value) devShells;
-        homeManager = mapAttrs (name: home: (mapAttrs (name: user: { inherit (user.config.arcanum) files adminRecipients; }) home.homeConfigurations)) homeConfigurations;
+        nixos = mapAttrs (hostname: node: {inherit (node.config.arcanum) files adminRecipients;}) nixosConfigurations;
+        devShells = mapAttrs (system: value: mapAttrs (userHost: config: {inherit (config.arcanum) files adminRecipients;}) value) devShells;
+        homeManager = mapAttrs (name: home: (mapAttrs (name: user: {inherit (user.config.arcanum) files adminRecipients;}) home.homeConfigurations)) homeConfigurations;
         flake = {
           files = arcanum.files or {};
           adminRecipients = arcanum.adminRecipients or [];

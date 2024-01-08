@@ -30,7 +30,7 @@ in {
   options = {};
 
   config = {
-    home.activation =  {
+    home.activation = {
       arcanum = lib.hm.dag.entryAfter ["writeBoundary"] (concatStringsSep "\n" (mapAttrsToList (name: secret: "${decryptSecret} ${secret.source} ${secret.dest}") filesWithDest));
     };
   };
