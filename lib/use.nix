@@ -19,6 +19,7 @@ with nixpkgs.lib; let
   nixosChipModules = nixFilesIn ../modules/nixos;
   nixosShimModules = nixFilesIn ../modules/nixos-shims;
   sharedChipModules = nixFilesIn ../modules/shared;
+  homeManagerChipModules = nixFilesIn ../modules/home-manager;
 
   useApps = {
     appsDir,
@@ -344,6 +345,7 @@ in
     homeConfigurations = optionalAttrs (homeConfigurationsDir != null) (useHomeConfigurations {
       inherit homeConfigurationsDir nixpkgsConfig overlay;
       modules = homeConfigurationModules
+        ++ homeManagerChipModules
         ++ sharedChipModules;
     });
 
