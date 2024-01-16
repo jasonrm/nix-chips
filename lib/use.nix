@@ -23,6 +23,17 @@ with nixpkgs.lib; let
 
   chipsAppsDir = nixFilesIn ../apps;
 
+  # via: https://github.com/numtide/flake-utils/issues/16#issuecomment-1647192629
+  # Another aux function, to merge two whole output sets. The key insight
+  # is that we only merge recursively down to two levels.
+  mergeOutputs = let
+    inherit (builtins) length;
+    inherit (nixpkgs.lib.attrsets) recursiveUpdateUntil;
+    mergeDepth = depth:
+      recursiveUpdateUntil (path: l: r: length path > depth);
+  in
+    builtins.foldl' (mergeDepth 2) {};
+
   useApps = {
     appsDir,
     overlay,
@@ -303,6 +314,8 @@ in
     overlays ? [],
     arcanum ? {},
     nixpkgsConfig ? {},
+    additionalPackages ? (pkgs: {}),
+    additionalApps ? (pkgs: {}),
     ...
   }: let
     projectNixosModules =
@@ -368,23 +381,37 @@ in
     in
       mapAttrs (n: v: mapAttrs (n: cfg: fromPath cfg) v) output;
 
-    mergeListOfSystemAttrs = input: builtins.foldl' (acc: curr: acc // curr) {} input;
-  in {
-    inherit checks apps packages nixosConfigurations;
-    legacyPackages = mergeListOfSystemAttrs [homeConfigurations dockerImages];
-    devShells = collectFromOutput ["devShell" "output"] devShells;
-    nixosModules.default = nixosModules ++ projectNixosModules;
-    overlays.default = overlay;
-    lib = {
-      manual = mkManual {modules = mergedNixosModules;};
-      arcanum = {
-        nixos = mapAttrs (hostname: node: {inherit (node.config.arcanum) files adminRecipients;}) nixosConfigurations;
-        devShells = mapAttrs (system: value: mapAttrs (userHost: config: {inherit (config.arcanum) files adminRecipients;}) value) devShells;
-        homeManager = mapAttrs (name: home: (mapAttrs (name: user: {inherit (user.config.arcanum) files adminRecipients;}) home.homeConfigurations)) homeConfigurations;
-        flake = {
-          files = arcanum.files or {};
-          adminRecipients = arcanum.adminRecipients or [];
+    additionalAttrs = utils.lib.eachDefaultSystem (system: let
+      pkgs = import nixpkgs {
+        inherit system;
+      };
+    in {
+      packages = additionalPackages pkgs;
+      apps = additionalApps pkgs;
+    });
+
+    chipsOutput = {
+      inherit checks apps packages nixosConfigurations;
+      legacyPackages = dockerImages;
+      devShells = collectFromOutput ["devShell" "output"] devShells;
+      nixosModules.default = nixosModules ++ projectNixosModules;
+      overlays.default = overlay;
+      lib = {
+        manual = mkManual {modules = mergedNixosModules;};
+        arcanum = {
+          nixos = mapAttrs (hostname: node: {inherit (node.config.arcanum) files adminRecipients;}) nixosConfigurations;
+          devShells = mapAttrs (system: value: mapAttrs (userHost: config: {inherit (config.arcanum) files adminRecipients;}) value) devShells;
+          homeManager = mapAttrs (name: home: (mapAttrs (name: user: {inherit (user.config.arcanum) files adminRecipients;}) home.homeConfigurations)) homeConfigurations;
+          flake = {
+            files = arcanum.files or {};
+            adminRecipients = arcanum.adminRecipients or [];
+          };
         };
       };
     };
-  }
+  in
+    mergeOutputs [
+      {legacyPackages = homeConfigurations;}
+      additionalAttrs
+      chipsOutput
+    ]
