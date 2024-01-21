@@ -33,11 +33,11 @@ with lib; let
 in {
   imports = [];
 
-  options = {};
+  options = with types; {};
 
   config = {
     home.activation = {
-      arcanum = lib.hm.dag.entryAfter ["writeBoundary"] (concatStringsSep "\n" (mapAttrsToList (name: secret: "${decryptSecret} ${cfg.relativeRoot}/${secret.source} ${secret.dest}") filesWithDest));
+      arcanum = lib.hm.dag.entryAfter ["writeBoundary"] (concatStringsSep "\n" (mapAttrsToList (name: secret: "${decryptSecret} ${cfg.relativeRoot}/${escapeShellArg secret.source} ${escapeShellArg secret.dest}") filesWithDest));
     };
   };
 }
