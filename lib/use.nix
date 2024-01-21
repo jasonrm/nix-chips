@@ -278,6 +278,7 @@ with nixpkgs.lib; let
               specialArgs =
                 specialArgs
                 // {
+                  inherit home-manager sharedChipModules nixosShimModules;
                   # expose `name` as an input to NixOS configurations
                   name = configuration.name;
                   nodes = nixosConfigurations;
