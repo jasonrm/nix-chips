@@ -46,10 +46,16 @@
       chmod '${permissions}' ${escapeShellArg dest}
     '';
   };
+  #  arcanumOptions = ((import ../shared/arcanum.nix) {inherit lib pkgs config;}).options.arcanum;
 in {
-  imports = [];
+  imports = [
+  ];
 
-  options = {};
+  options = {
+    #    arcanum = mkOption {
+    #      type = attrsOf (submodule arcanumOptions);
+    #    };
+  };
 
   config = {
     systemd.services = let
