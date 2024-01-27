@@ -14,8 +14,13 @@ in {
     programs.nodejs = {
       enable = mkEnableOption "nodejs support";
 
-      nodePackages = mkOption {
+      pkg = mkOption {
         type = package;
+        default = config.programs.nodejs.nodePackages.nodejs;
+      };
+
+      nodePackages = mkOption {
+        type = attrs;
         default = pkgs.nodePackages;
       };
     };
@@ -23,9 +28,6 @@ in {
 
   config = {
     devShell = mkIf cfg.enable {
-      shellHooks = ''
-        echo node: ${cfg.pkg}/bin/node
-      '';
       environment = [
         "PATH=$PATH:${config.dir.project}/node_modules/.bin"
       ];
@@ -34,13 +36,5 @@ in {
         pnpm
       ];
     };
-
-    #    outputs.apps.node = {
-    #      program = "${cfg.pkg}/bin/node";
-    #    };
-    #
-    #    outputs.apps.npm = {
-    #      program = "${cfg.pkg}/bin/npm";
-    #    };
   };
 }
