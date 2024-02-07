@@ -28,8 +28,13 @@ in {
 
   config = {
     devShell = mkIf cfg.enable {
-      environment = [
-        "PATH=$PATH:${config.dir.project}/node_modules/.bin"
+      environment = let
+        projectDir =
+          if config.dir.project != "/dev/null"
+          then config.dir.project
+          else "$PWD";
+      in [
+        "PATH=$PATH:${projectDir}/node_modules/.bin"
       ];
       contents = with cfg.nodePackages; [
         nodejs

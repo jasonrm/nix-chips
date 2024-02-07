@@ -70,8 +70,13 @@ in {
       shellHooks = ''
         echo php: ${php}/bin/php
       '';
-      environment = [
-        "PATH=$PATH:${config.dir.project}/vendor/bin"
+      environment = let
+        projectDir =
+          if config.dir.project != "/dev/null"
+          then config.dir.project
+          else "$PWD";
+      in [
+        "PATH=$PATH:${projectDir}/vendor/bin"
       ];
       contents = [
         flamegraph
