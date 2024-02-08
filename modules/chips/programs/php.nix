@@ -14,6 +14,9 @@ with lib; let
     check = "${pkgs.php}/bin/php -l";
   };
 
+  writePhpBin = name:
+    writePhp "/bin/${name}";
+
   cfg = config.programs.php;
 
   flamegraph = writeBashBin "flamegraph-php" ''
@@ -38,7 +41,7 @@ with lib; let
     inherit (cfg) extraConfig extensions;
   };
 
-  updatePhpWorkspaceProjectConfiguration = writePhp "updatePhpWorkspaceProjectConfiguration" ''
+  update-jetbrains-project-php-interpreter = writePhpBin "update-jetbrains-project-php-interpreter" ''
     <?php
     if (!file_exists('.idea/workspace.xml') || !file_exists('.idea/php.xml')) {
         exit;
@@ -142,7 +145,7 @@ in {
   config = {
     devShell = mkIf cfg.enable {
       shellHooks = ''
-        ${updatePhpWorkspaceProjectConfiguration}
+        ${update-jetbrains-project-php-interpreter}/bin/update-jetbrains-project-php-interpreter
         echo php: ${php}/bin/php
       '';
       environment = let
@@ -159,6 +162,7 @@ in {
         php-xdebug
         php
         php.packages.composer
+        update-jetbrains-project-php-interpreter
       ];
     };
 
