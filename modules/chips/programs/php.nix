@@ -50,9 +50,13 @@ with lib; let
     $query = '//component[@name="PhpWorkspaceProjectConfiguration"]';
 
     $entries = $xpath->query($query);
-
     foreach ($entries as $entry) {
         $entry->setAttribute('interpreter_name', '${pkgs.php}/bin/php');
+    }
+
+    $nodes = $xpath->query("//component[@name='ComposerSettings']/execution/executable");
+    foreach ($nodes as $node) {
+        $node->setAttribute("path", '${php.packages.composer}/bin/composer');
     }
 
     $doc->save('.idea/workspace.xml');
