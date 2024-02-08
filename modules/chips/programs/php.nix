@@ -108,7 +108,7 @@ with lib; let
         }
 
         $doc->save('.idea/php.xml');
-    '';
+  '';
 in {
   options = with lib.types; {
     programs.php = {
