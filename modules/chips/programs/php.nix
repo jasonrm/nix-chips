@@ -40,9 +40,24 @@ with lib; let
 
   updatePhpWorkspaceProjectConfiguration = writePhp "updatePhpWorkspaceProjectConfiguration" ''
     <?php
-    if (!file_exists('.idea/workspace.xml')) {
-      return;
+    if (!file_exists('.idea/workspace.xml') || !file_exists('.idea/php.xml')) {
+        exit;
     }
+
+    // UUID from PHP path
+    $pathHash = md5("${pkgs.php}");
+    $chunks = [
+        substr($pathHash, 0, 8),
+        substr($pathHash, 8, 4),
+        substr($pathHash, 12, 4),
+        substr($pathHash, 16, 4),
+        substr($pathHash, 20, 12)
+    ];
+    $pathUUID = implode('-', $chunks);
+    $phpVersion = phpversion();
+    $interpreterName = "Project PHP $phpVersion (" . substr($pathHash, 0, 8) . ")";
+    echo "$pathUUID : $interpreterName" . PHP_EOL;
+
     $doc = new DOMDocument;
     $doc->load('.idea/workspace.xml');
 
@@ -51,16 +66,46 @@ with lib; let
 
     $entries = $xpath->query($query);
     foreach ($entries as $entry) {
-        $entry->setAttribute('interpreter_name', '${pkgs.php}/bin/php');
+        $entry->setAttribute('interpreter_name', $interpreterName);
     }
-
     $nodes = $xpath->query("//component[@name='ComposerSettings']/execution/executable");
     foreach ($nodes as $node) {
         $node->setAttribute("path", '${php.packages.composer}/bin/composer');
     }
 
     $doc->save('.idea/workspace.xml');
-  '';
+
+    $doc = new DOMDocument;
+    $doc->load('.idea/php.xml');
+    $xpath = new DOMXPath($doc);
+    $nodes = $xpath->query("//component[@name='PhpInterpreters']");
+        $interpreter = $doc->createElement('interpreter');
+        $interpreter->setAttribute('id', $pathUUID);
+        $interpreter->setAttribute('name', $interpreterName);
+        $interpreter->setAttribute('home', "${pkgs.php}/bin/php");
+        $interpreter->setAttribute('auto', 'true');
+        $interpreter->setAttribute('debugger_id', 'php.debugger.XDebug');
+
+        if ($nodes->length === 0) {
+            $interpreters = $doc->createElement('interpreters');
+            $interpreters->appendChild($interpreter);
+            $component = $doc->createElement('component');
+            $component->setAttribute('name', 'PhpInterpreters');
+            $component->appendChild($interpreters);
+            $doc->documentElement->appendChild($component);
+        } else {
+            $interpreters = $nodes->item(0)->getElementsByTagName('interpreters')->item(0);
+            $interpreters->nodeValue = "";
+            $interpreters->appendChild($interpreter);
+        }
+        // Find and delete PhpInterpretersPhpInfoCache
+        $nodes = $xpath->query("//component[@name='PhpInterpretersPhpInfoCache']");
+        foreach ($nodes as $node) {
+            $node->parentNode->removeChild($node);
+        }
+
+        $doc->save('.idea/php.xml');
+    '';
 in {
   options = with lib.types; {
     programs.php = {
