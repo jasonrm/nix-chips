@@ -6,8 +6,13 @@
   ...
 }:
 with lib; let
-  inherit (pkgs.writers) writeBashBin;
+  inherit (pkgs.writers) writeBashBin makeScriptWriter;
   inherit (pkgs) terraform symlinkJoin mkShell;
+
+  writePhp = makeScriptWriter {
+    interpreter = "${pkgs.php}/bin/php";
+    check = "${pkgs.php}/bin/php -l";
+  };
 
   cfg = config.programs.php;
 
@@ -32,6 +37,26 @@ with lib; let
   php = cfg.pkg.buildEnv {
     inherit (cfg) extraConfig extensions;
   };
+
+  updatePhpWorkspaceProjectConfiguration = writePhp "updatePhpWorkspaceProjectConfiguration" ''
+    <?php
+    if (!file_exists('.idea/workspace.xml')) {
+      return;
+    }
+    $doc = new DOMDocument;
+    $doc->load('.idea/workspace.xml');
+
+    $xpath = new DOMXPath($doc);
+    $query = '//component[@name="PhpWorkspaceProjectConfiguration"]';
+
+    $entries = $xpath->query($query);
+
+    foreach ($entries as $entry) {
+        $entry->setAttribute('interpreter_name', '${pkgs.php}/bin/php');
+    }
+
+    $doc->save('.idea/workspace.xml');
+  '';
 in {
   options = with lib.types; {
     programs.php = {
@@ -68,6 +93,7 @@ in {
   config = {
     devShell = mkIf cfg.enable {
       shellHooks = ''
+        ${updatePhpWorkspaceProjectConfiguration}
         echo php: ${php}/bin/php
       '';
       environment = let
