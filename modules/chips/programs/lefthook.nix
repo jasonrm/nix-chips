@@ -19,18 +19,37 @@ with lib; let
       run = mkOption {
         type = str;
       };
+      skip = mkOption {
+        type = bool;
+        default = false;
+      };
     };
   };
 
   lefthookConfig = with types; {
     options = {
       commands = mkOption {
-        type = attrsOf (submodule lefthookCommand);
-        default = {};
+        type = nullOr (attrsOf (submodule lefthookCommand));
       };
       parallel = mkOption {
-        type = bool;
-        default = true;
+        type = nullOr bool;
+      };
+    };
+  };
+
+  lefthookGlobalConfig = with types; {
+    options = {
+      skip_output = mkOption {
+        type = listOf str;
+        default = [];
+      };
+      pre-commit = mkOption {
+        type = submodule lefthookConfig;
+        default = {};
+      };
+      pre-push = mkOption {
+        type = submodule lefthookConfig;
+        default = {};
       };
     };
   };
@@ -39,7 +58,7 @@ in {
     programs.lefthook = with types; {
       enable = mkEnableOption "lefthook support";
       config = mkOption {
-        type = attrsOf (submodule lefthookConfig);
+        type = submodule lefthookGlobalConfig;
         default = {};
       };
     };
@@ -47,23 +66,31 @@ in {
 
   config = mkIf cfg.enable {
     programs.lefthook.config = {
+      skip_output = [
+        "meta"
+        "execution"
+        "execution_out"
+      ];
       pre-commit = {
         commands = {
           alejandra = {
-            glob = "*.nix";
-            run = "${pkgs.alejandra}/bin/alejandra --quiet {staged_files} && git add {staged_files}";
+            glob = mkDefault "*.nix";
+            run = mkDefault "${pkgs.alejandra}/bin/alejandra --quiet {staged_files} && git add {staged_files}";
           };
           jpegtran = {
-            glob = "*.{jpg,jpeg}";
-            run = "for $FILE in {staged_files}; do jpegtran -copy none -optimize -progressive -outfile $FILE $FILE; done && git add {staged_files}";
+            glob = mkDefault "*.{jpg,jpeg}";
+            run = mkDefault "for $FILE in {staged_files}; do jpegtran -copy none -optimize -progressive -outfile $FILE $FILE; done && git add {staged_files}";
           };
           oxipng = {
-            glob = "*.png";
-            run = "${pkgs.oxipng}/bin/oxipng -o 3 -i 0 --strip safe {staged_files} && git add {staged_files}";
+            glob = mkDefault "*.png";
+            run = mkDefault "${pkgs.oxipng}/bin/oxipng -o 3 -i 0 --strip safe {staged_files} && git add {staged_files}";
           };
           sort-json = {
-            glob = "*.json";
-            run = "for $FILE in {staged_files}; do jq -S . $FILE > $FILE.tmp && mv $FILE.tmp $FILE; done && git add {staged_files}";
+            glob = mkDefault "*.json";
+            run = mkDefault "for $FILE in {staged_files}; do jq -S . $FILE > $FILE.tmp && mv $FILE.tmp $FILE; done && git add {staged_files}";
+          };
+          unresovled-conflicts = {
+            run = mkDefault ''{pkgs.ripgrep}/bin/rg "(^[<>=]{5,})$" . ; if [[ $? -ne 1 ]]; then false; else true; fi'';
           };
         };
         parallel = true;

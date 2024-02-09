@@ -164,13 +164,25 @@ in {
     };
 
     programs.lefthook.config = {
-      pre-commit.commands.php-cs-fixer = {
-        glob = "*.php";
-        run = "./vendor/bin/php-cs-fixer fix --config .php-cs-fixer.php {staged_files} && git add {staged_files}";
+      pre-commit.commands = {
+        php-cs-fixer = {
+          glob = mkDefault "*.php";
+          run = mkDefault "${pkgs.php} ./vendor/bin/php-cs-fixer fix --config .php-cs-fixer.php {staged_files} && git add {staged_files}";
+        };
+        phpstan = {
+          glob = mkDefault "*.php";
+          run = mkDefault "${pkgs.php} ./vendor/bin/phpstan analyse --memory-limit 4G";
+        };
       };
-      pre-push.commands.php-cs-fixer = {
-        glob = "*.php";
-        run = "./vendor/bin/php-cs-fixer fix --config .php-cs-fixer.php --dry-run";
+      pre-push.commands = {
+        composer-validate = {
+          glob = mkDefault "composer.{json,lock}";
+          run = mkDefault "composer validate --strict --no-check-all";
+        };
+        php-cs-fixer = {
+          glob = mkDefault "*.php";
+          run = mkDefault "${pkgs.php} ./vendor/bin/php-cs-fixer fix --config .php-cs-fixer.php --dry-run";
+        };
       };
     };
 

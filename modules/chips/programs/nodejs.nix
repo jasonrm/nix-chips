@@ -31,8 +31,8 @@ in {
       pre-commit = {
         commands = {
           eslint = {
-            glob = "*.{js,ts,jsx,tsx}";
-            run = "./node_modules/.bin/eslint --fix --max-warnings 0 {staged_files} && git add {staged_files}";
+            glob = mkDefault "*.{js,ts,jsx,tsx}";
+            run = mkDefault "./node_modules/.bin/eslint --fix --max-warnings 0 {staged_files} && git add {staged_files}";
           };
           # tsc = {
           #   glob = "*.{ts,tsx}";
@@ -43,12 +43,12 @@ in {
       pre-push = {
         commands = {
           eslint = {
-            glob = "*.{js,ts,jsx,tsx}";
-            run = "./node_modules/.bin/eslint --cache --max-warnings 0 .";
+            glob = mkDefault "*.{js,ts,jsx,tsx}";
+            run = mkDefault "${pkgs.nodejs}/bin/node ./node_modules/.bin/eslint --cache --max-warnings 0 .";
           };
           tsc = {
-            glob = "*.{ts,tsx}";
-            run = "tsc --noEmit --project tsconfig.json";
+            glob = mkDefault "*.{ts,tsx}";
+            run = mkDefault "${pkgs.typescript}/bin/tsc --noEmit --project tsconfig.json";
           };
         };
       };
