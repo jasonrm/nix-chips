@@ -72,6 +72,7 @@ in {
       relativeRoot = mkOption {
         type = path;
         description = "relative path to use for file sources";
+        default = "$PWD";
       };
       adminRecipients = mkOption {
         type = listOf str;
