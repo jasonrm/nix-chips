@@ -152,7 +152,7 @@ in {
           then config.dir.project
           else "$PWD";
       in [
-        "PATH=$PATH:${projectDir}/vendor/bin"
+        "PATH=$PATH:$PWD/vendor/bin"
       ];
       contents = [
         flamegraph

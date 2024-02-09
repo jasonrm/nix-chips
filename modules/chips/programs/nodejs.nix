@@ -61,7 +61,7 @@ in {
           then config.dir.project
           else "$PWD";
       in [
-        "PATH=$PATH:${projectDir}/node_modules/.bin"
+        "PATH=$PATH:$PWD/node_modules/.bin"
       ];
       contents = with cfg.nodePackages; [
         nodejs
