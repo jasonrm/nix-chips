@@ -26,8 +26,35 @@ in {
     };
   };
 
-  config = {
-    devShell = mkIf cfg.enable {
+  config = mkIf cfg.enable {
+    programs.lefthook.config = {
+      pre-commit = {
+        commands = {
+          eslint = {
+            glob = "*.{js,ts,jsx,tsx}";
+            run = "./node_modules/.bin/eslint --fix --max-warnings 0 {staged_files} && git add {staged_files}";
+          };
+          # tsc = {
+          #   glob = "*.{ts,tsx}";
+          #   run = "tsx ./tools/tsconfig-lint-staged.ts {staged_files} && tsc --noEmit --project tsconfig-lint-staged.json";
+          # };
+        };
+      };
+      pre-push = {
+        commands = {
+          eslint = {
+            glob = "*.{js,ts,jsx,tsx}";
+            run = "./node_modules/.bin/eslint --cache --max-warnings 0 .";
+          };
+          tsc = {
+            glob = "*.{ts,tsx}";
+            run = "tsc --noEmit --project tsconfig.json";
+          };
+        };
+      };
+    };
+
+    devShell = {
       environment = let
         projectDir =
           if config.dir.project != "/dev/null"

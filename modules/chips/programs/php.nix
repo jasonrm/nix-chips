@@ -41,7 +41,7 @@ with lib; let
     inherit (cfg) extraConfig extensions;
   };
 
-  update-jetbrains-project-php-interpreter = writePhpBin "update-jetbrains-project-php-interpreter" ''
+  update-jetbrains = writePhpBin "update-jetbrains" ''
     <?php
     if (!file_exists('.idea/workspace.xml') || !file_exists('.idea/php.xml')) {
         exit;
@@ -59,7 +59,6 @@ with lib; let
     $pathUUID = implode('-', $chunks);
     $phpVersion = phpversion();
     $interpreterName = "Project PHP $phpVersion (" . substr($pathHash, 0, 8) . ")";
-    echo "$pathUUID : $interpreterName" . PHP_EOL;
 
     $doc = new DOMDocument;
     $doc->load('.idea/workspace.xml');
@@ -142,11 +141,10 @@ in {
     };
   };
 
-  config = {
-    devShell = mkIf cfg.enable {
+  config = mkIf cfg.enable {
+    devShell = {
       shellHooks = ''
-        ${update-jetbrains-project-php-interpreter}/bin/update-jetbrains-project-php-interpreter
-        echo php: ${php}/bin/php
+        ${update-jetbrains}/bin/update-jetbrains
       '';
       environment = let
         projectDir =
@@ -162,8 +160,18 @@ in {
         php-xdebug
         php
         php.packages.composer
-        update-jetbrains-project-php-interpreter
       ];
+    };
+
+    programs.lefthook.config = {
+      pre-commit.commands.php-cs-fixer = {
+        glob = "*.php";
+        run = "./vendor/bin/php-cs-fixer fix --config .php-cs-fixer.php {staged_files} && git add {staged_files}";
+      };
+      pre-push.commands.php-cs-fixer = {
+        glob = "*.php";
+        run = "./vendor/bin/php-cs-fixer fix --config .php-cs-fixer.php --dry-run";
+      };
     };
 
     #    outputs.apps.php = {
