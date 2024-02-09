@@ -31,7 +31,7 @@ in {
     devShell = let
       filesWithDest = filterAttrs (n: secret: secret.dest != null) cfg.files;
     in {
-      shellHooks = mkOrder 750 (concatStringsSep "\n" (mapAttrsToList (name: secret: "${decryptSecret} ${secret.source} ${secret.dest}") filesWithDest));
+      shellHooks = mkOrder 750 (concatStringsSep "\n" (mapAttrsToList (name: secret: "${decryptSecret} ${cfg.relativeRoot}/${secret.source} ${secret.dest}") filesWithDest));
     };
   };
 }
