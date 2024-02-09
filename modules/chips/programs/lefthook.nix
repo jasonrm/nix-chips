@@ -90,7 +90,7 @@ in {
             run = mkDefault "for $FILE in {staged_files}; do jq -S . $FILE > $FILE.tmp && mv $FILE.tmp $FILE; done && git add {staged_files}";
           };
           unresovled-conflicts = {
-            run = mkDefault ''{pkgs.ripgrep}/bin/rg "(^[<>=]{5,})$" . ; if [[ $? -ne 1 ]]; then false; else true; fi'';
+            run = mkDefault ''${pkgs.ripgrep}/bin/rg "(^[<>=]{5,})$" . ; if [[ $? -ne 1 ]]; then false; else true; fi'';
           };
         };
         parallel = true;
