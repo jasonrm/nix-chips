@@ -79,7 +79,7 @@ in {
           };
           jpegtran = {
             glob = mkDefault "*.{jpg,jpeg}";
-            run = mkDefault "for $FILE in {staged_files}; do jpegtran -copy none -optimize -progressive -outfile $FILE $FILE; done && git add {staged_files}";
+            run = mkDefault "for FILE in {staged_files}; do jpegtran -copy none -optimize -progressive -outfile $FILE $FILE; done && git add {staged_files}";
           };
           oxipng = {
             glob = mkDefault "*.png";
@@ -87,7 +87,7 @@ in {
           };
           sort-json = {
             glob = mkDefault "*.json";
-            run = mkDefault "for $FILE in {staged_files}; do jq -S . $FILE > $FILE.tmp && mv $FILE.tmp $FILE; done && git add {staged_files}";
+            run = mkDefault "for FILE in {staged_files}; do jq -S . $FILE > $FILE.tmp && mv $FILE.tmp $FILE; done && git add {staged_files}";
           };
           unresovled-conflicts = {
             run = mkDefault ''${pkgs.ripgrep}/bin/rg "(^[<>=]{5,})$" . ; if [[ $? -ne 1 ]]; then false; else true; fi'';
