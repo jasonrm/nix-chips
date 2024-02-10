@@ -167,11 +167,11 @@ in {
       pre-commit.commands = {
         php-cs-fixer = {
           glob = mkDefault "*.php";
-          run = mkDefault "${pkgs.php} ./vendor/bin/php-cs-fixer fix --config .php-cs-fixer.php {staged_files} && git add {staged_files}";
+          run = mkDefault "${pkgs.php}/bin/php ./vendor/bin/php-cs-fixer fix --config .php-cs-fixer.php {staged_files} && git add {staged_files}";
         };
         phpstan = {
           glob = mkDefault "*.php";
-          run = mkDefault "${pkgs.php} ./vendor/bin/phpstan analyse --memory-limit 4G";
+          run = mkDefault "${pkgs.php}/bin/php ./vendor/bin/phpstan analyse --memory-limit 4G";
         };
       };
       pre-push.commands = {
@@ -181,7 +181,7 @@ in {
         };
         php-cs-fixer = {
           glob = mkDefault "*.php";
-          run = mkDefault "${pkgs.php} ./vendor/bin/php-cs-fixer fix --config .php-cs-fixer.php --dry-run";
+          run = mkDefault "${pkgs.php}/bin/php ./vendor/bin/php-cs-fixer fix --config .php-cs-fixer.php --dry-run";
         };
       };
     };
