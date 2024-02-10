@@ -171,7 +171,7 @@ in {
         };
         phpstan = {
           glob = mkDefault "*.php";
-          run = mkDefault "${pkgs.php}/bin/php ./vendor/bin/phpstan analyse --memory-limit 4G";
+          run = mkDefault "if [ -f phpstan.neon ]; then ${pkgs.php}/bin/php ./vendor/bin/phpstan analyse; fi";
         };
       };
       pre-push.commands = {
