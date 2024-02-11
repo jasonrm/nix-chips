@@ -27,28 +27,73 @@ in {
   };
 
   config = mkIf cfg.enable {
+    programs.taskfile.config.tasks = {
+      install-npm = {
+        cmds = ["${pkgs.nodePackages.pnpm}/bin/pnpm install"];
+        generates = ["node_modules/.modules.yaml"];
+        desc = "Install Node.JS Dependencies";
+        sources = ["package.json" "pnpm-lock.yaml"];
+      };
+      update-npm = {
+        cmds = ["${pkgs.nodePackages.pnpm}/bin/pnpm update"];
+        desc = "Update Node.JS Dependencies";
+        sources = ["package.json"];
+      };
+      build-npm = {
+        cmds = ["${pkgs.nodePackages.pnpm}/bin/pnpm run build"];
+        desc = "Build Node.JS Project";
+        deps = ["install-npm"];
+      };
+
+      format-eslint = {
+        cmds = [''${pkgs.nodejs}/bin/node ./node_modules/eslint/bin/eslint.js --cache --fix --max-warnings 0 {{.CLI_ARGS}}''];
+        preconditions = [
+          "test -f ./node_modules/eslint/bin/eslint.js"
+        ];
+        desc = "Format JavaScript and TypeScript files";
+      };
+      check-eslint = {
+        cmds = [''${pkgs.nodejs}/bin/node ./node_modules/eslint/bin/eslint.js --cache --max-warnings 0''];
+        preconditions = [
+          "test -f ./node_modules/eslint/bin/eslint.js"
+        ];
+        desc = "Check JavaScript and TypeScript files";
+      };
+
+      check-tsc = {
+        cmds = ["${pkgs.typescript}/bin/tsc --noEmit --project tsconfig.json"];
+        preconditions = [
+          "test -f tsconfig.json"
+        ];
+        desc = "Check TypeScript files";
+      };
+
+      format.deps = ["format-eslint"];
+      check.deps = ["check-eslint" "check-tsc"];
+      install.deps = ["install-npm"];
+      update.deps = ["update-npm"];
+      build.deps = ["build-npm"];
+    };
+
     programs.lefthook.config = {
       pre-commit = {
         commands = {
-          eslint = {
+          format-eslint = {
             glob = mkDefault "*.{js,ts,jsx,tsx}";
-            run = mkDefault "./node_modules/.bin/eslint --fix --max-warnings 0 {staged_files} && git add {staged_files}";
+            run = mkDefault "${pkgs.go-task}/bin/task format-eslint -- {staged_files}";
+            stage_fixed = true;
           };
-          # tsc = {
-          #   glob = "*.{ts,tsx}";
-          #   run = "tsx ./tools/tsconfig-lint-staged.ts {staged_files} && tsc --noEmit --project tsconfig-lint-staged.json";
-          # };
         };
       };
       pre-push = {
         commands = {
-          eslint = {
+          check-eslint = {
             glob = mkDefault "*.{js,ts,jsx,tsx}";
-            run = mkDefault "${pkgs.nodejs}/bin/node ./node_modules/.bin/eslint --cache --max-warnings 0 .";
+            run = mkDefault "${pkgs.go-task}/bin/task check-eslint";
           };
-          tsc = {
+          check-tsc = {
             glob = mkDefault "*.{ts,tsx}";
-            run = mkDefault "${pkgs.typescript}/bin/tsc --noEmit --project tsconfig.json";
+            run = mkDefault "${pkgs.go-task}/bin/task check-tsc";
           };
         };
       };
