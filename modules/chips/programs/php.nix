@@ -163,25 +163,74 @@ in {
       ];
     };
 
+    programs.taskfile.config.tasks = {
+      install-composer = {
+        cmds = ["${pkgs.php.packages.composer}/bin/composer install"];
+        generates = ["vendor/composer/installed.json" "vendor/autoload.php"];
+        desc = "Install Composer Dependencies";
+        sources = ["composer.json" "composer.lock"];
+      };
+      update-composer = {
+        cmds = ["${pkgs.php.packages.composer}/bin/composer update"];
+        desc = "Update Composer Dependencies";
+        sources = ["composer.json"];
+      };
+      check-composer = {
+        cmds = ["${pkgs.php.packages.composer}/bin/composer validate --strict --no-check-all"];
+        generates = ["composer.lock"];
+        desc = "Update Composer Dependencies";
+        sources = ["composer.json"];
+      };
+
+      format-php-cs-fixer = {
+        cmds = ["${pkgs.php}/bin/php ./vendor/bin/php-cs-fixer fix --config .php-cs-fixer.php {{.CLI_ARGS}}"];
+        preconditions = [
+          "test -f .php-cs-fixer.php"
+        ];
+        desc = "Format PHP files with PHP-CS-Fixer";
+      };
+      check-php-cs-fixer = {
+        cmds = ["${pkgs.php}/bin/php ./vendor/bin/php-cs-fixer fix --config .php-cs-fixer.php --dry-run {{.CLI_ARGS}}"];
+        preconditions = [
+          "test -f .php-cs-fixer.php"
+        ];
+        desc = "Check PHP files with PHP-CS-Fixer";
+      };
+
+      check-phpstan = {
+        cmds = ["${pkgs.php}/bin/php ./vendor/bin/phpstan analyse"];
+        preconditions = [
+          "test -f phpstan.neon"
+        ];
+        desc = "Check PHP files with PHPStan";
+      };
+
+      check.deps = ["check-php-cs-fixer" "check-phpstan" "check-composer"];
+      format.deps = ["format-php-cs-fixer"];
+      install.deps = ["install-composer"];
+      update.deps = ["update-composer"];
+    };
+
     programs.lefthook.config = {
       pre-commit.commands = {
-        php-cs-fixer = {
+        format-php-cs-fixer = {
           glob = mkDefault "*.php";
-          run = mkDefault "${pkgs.php}/bin/php ./vendor/bin/php-cs-fixer fix --config .php-cs-fixer.php {staged_files} && git add {staged_files}";
-        };
-        phpstan = {
-          glob = mkDefault "*.php";
-          run = mkDefault "if [ -f phpstan.neon ]; then ${pkgs.php}/bin/php ./vendor/bin/phpstan analyse; fi";
+          run = mkDefault "${pkgs.go-task}/bin/task format-php-cs-fixer -- {staged_files}";
+          stage_fixed = true;
         };
       };
       pre-push.commands = {
-        composer-validate = {
+        check-composer = {
           glob = mkDefault "composer.{json,lock}";
-          run = mkDefault "composer validate --strict --no-check-all";
+          run = mkDefault "${pkgs.go-task}/bin/task check-composer";
         };
-        php-cs-fixer = {
+        check-phpstan = {
           glob = mkDefault "*.php";
-          run = mkDefault "${pkgs.php}/bin/php ./vendor/bin/php-cs-fixer fix --config .php-cs-fixer.php --dry-run";
+          run = mkDefault "${pkgs.go-task}/bin/task check-phpstan";
+        };
+        check-php-cs-fixer = {
+          glob = mkDefault "*.php";
+          run = mkDefault "${pkgs.go-task}/bin/task check-php-cs-fixer";
         };
       };
     };
