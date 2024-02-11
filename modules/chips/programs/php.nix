@@ -183,16 +183,16 @@ in {
       };
 
       format-php-cs-fixer = {
-        cmds = ["${pkgs.php}/bin/php ./vendor/bin/php-cs-fixer fix --config .php-cs-fixer.php {{.CLI_ARGS}}"];
+        cmds = ["${pkgs.php}/bin/php ./vendor/bin/php-cs-fixer fix --config .php-cs-fixer.dist.php {{.CLI_ARGS}}"];
         preconditions = [
-          "test -f .php-cs-fixer.php"
+          "test -f .php-cs-fixer.dist.php"
         ];
         desc = "Format PHP files with PHP-CS-Fixer";
       };
       check-php-cs-fixer = {
-        cmds = ["${pkgs.php}/bin/php ./vendor/bin/php-cs-fixer fix --config .php-cs-fixer.php --dry-run {{.CLI_ARGS}}"];
+        cmds = ["${pkgs.php}/bin/php ./vendor/bin/php-cs-fixer fix --config .php-cs-fixer.dist.php --dry-run {{.CLI_ARGS}}"];
         preconditions = [
-          "test -f .php-cs-fixer.php"
+          "test -f .php-cs-fixer.dist.php"
         ];
         desc = "Check PHP files with PHP-CS-Fixer";
       };
