@@ -76,11 +76,11 @@ in {
       };
       check-gitleaks-detect = {
         desc = "Check For Secrets In Git History";
-        cmds = [''${pkgs.gitleaks}/bin/gitleaks detect''];
+        cmds = [''${pkgs.gitleaks}/bin/gitleaks --baseline-path gitleaks-report.json detect -v''];
       };
       check-gitleaks-protect = {
         desc = "Check For Secrets In Git History";
-        cmds = [''${pkgs.gitleaks}/bin/gitleaks protect --staged''];
+        cmds = [''${pkgs.gitleaks}/bin/gitleaks --baseline-path gitleaks-report.json protect --staged -v''];
       };
 
       check = {
