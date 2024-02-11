@@ -23,6 +23,10 @@ with lib; let
         type = bool;
         default = false;
       };
+      stage_fixed = mkOption {
+        type = bool;
+        default = false;
+      };
     };
   };
 
@@ -65,6 +69,17 @@ in {
   };
 
   config = mkIf cfg.enable {
+    programs.taskfile.config.tasks = {
+      check-unresovled-conflicts = {
+        desc = "Check For Unresolved Git Conflicts";
+        cmds = [''! ${pkgs.ripgrep}/bin/rg "(^[<>=]{5,})$" --with-filename --count {{.CLI_ARGS | default "."}}''];
+      };
+
+      check = {
+        deps = ["check-unresovled-conflicts"];
+      };
+    };
+
     programs.lefthook.config = {
       skip_output = [
         "meta"
@@ -73,24 +88,28 @@ in {
       ];
       pre-commit = {
         commands = {
-          alejandra = {
+          format-nix = {
             glob = mkDefault "*.nix";
-            run = mkDefault "${pkgs.alejandra}/bin/alejandra --quiet {staged_files} && git add {staged_files}";
+            run = mkDefault "${pkgs.go-task}/bin/task format-nix -- {staged_files}";
+            stage_fixed = true;
           };
           jpegtran = {
             glob = mkDefault "*.{jpg,jpeg}";
-            run = mkDefault "for FILE in {staged_files}; do jpegtran -copy none -optimize -progressive -outfile $FILE $FILE; done && git add {staged_files}";
+            run = mkDefault "for FILE in {staged_files}; do jpegtran -copy none -optimize -progressive -outfile $FILE $FILE; done";
+            stage_fixed = true;
           };
           oxipng = {
             glob = mkDefault "*.png";
-            run = mkDefault "${pkgs.oxipng}/bin/oxipng -o 3 -i 0 --strip safe {staged_files} && git add {staged_files}";
+            run = mkDefault "${pkgs.oxipng}/bin/oxipng -o 3 -i 0 --strip safe {staged_files}";
+            stage_fixed = true;
           };
-          sort-json = {
+          format-json = {
             glob = mkDefault "*.json";
-            run = mkDefault "for FILE in {staged_files}; do jq -S . $FILE > $FILE.tmp && mv $FILE.tmp $FILE; done && git add {staged_files}";
+            run = mkDefault "${pkgs.go-task}/bin/task format-json -- {staged_files}";
+            stage_fixed = true;
           };
-          unresovled-conflicts = {
-            run = mkDefault ''${pkgs.ripgrep}/bin/rg "(^[<>=]{5,})$" . ; if [[ $? -ne 1 ]]; then false; else true; fi'';
+          check-unresovled-conflicts = {
+            run = mkDefault "${pkgs.go-task}/bin/task check-unresovled-conflicts -- {staged_files}";
           };
         };
         parallel = true;
