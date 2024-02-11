@@ -44,6 +44,11 @@ in {
         desc = "Build Node.JS Project";
         deps = ["install-npm"];
       };
+      check-npm = {
+        cmds = ["${pkgs.nodePackages.pnpm}/bin/pnpm install --frozen-lockfile"];
+        desc = "Check Node.JS Project";
+        sources = ["package.json" "pnpm-lock.yaml"];
+      };
 
       format-eslint = {
         cmds = [''${pkgs.nodejs}/bin/node ./node_modules/eslint/bin/eslint.js --cache --fix --max-warnings 0 {{.CLI_ARGS}}''];
@@ -69,7 +74,7 @@ in {
       };
 
       format.deps = ["format-eslint"];
-      check.deps = ["check-eslint" "check-tsc"];
+      check.deps = ["check-eslint" "check-tsc" "check-npm"];
       install.deps = ["install-npm"];
       update.deps = ["update-npm"];
       build.deps = ["build-npm"];
@@ -94,6 +99,10 @@ in {
           check-tsc = {
             glob = mkDefault "*.{ts,tsx}";
             run = mkDefault "${pkgs.go-task}/bin/task check-tsc";
+          };
+          check-npm = {
+            glob = mkDefault "{package.json,pnpm-lock.yaml}";
+            run = mkDefault "${pkgs.go-task}/bin/task check-npm";
           };
         };
       };
