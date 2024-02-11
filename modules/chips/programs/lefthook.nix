@@ -74,6 +74,10 @@ in {
         desc = "Check For Unresolved Git Conflicts";
         cmds = [''! ${pkgs.ripgrep}/bin/rg "(^[<>=]{5,})$" --with-filename --count {{.CLI_ARGS | default "."}}''];
       };
+      check-gitleaks = {
+        desc = "Check For Secrets In Git History";
+        cmds = [''! ${pkgs.gitleaks}/bin/gitleaks detect --source {{.CLI_ARGS | default "."}}''];
+      };
 
       check = {
         deps = ["check-unresovled-conflicts"];
@@ -111,11 +115,18 @@ in {
           check-unresovled-conflicts = {
             run = mkDefault "${pkgs.go-task}/bin/task check-unresovled-conflicts -- {staged_files}";
           };
+          check-gitleaks = {
+            run = mkDefault "${pkgs.go-task}/bin/task check-gitleaks -- {staged_files}";
+          };
         };
         parallel = true;
       };
       pre-push = {
-        commands = {};
+        commands = {
+          check-gitleaks = {
+            run = mkDefault "${pkgs.go-task}/bin/task check-gitleaks";
+          };
+        };
         parallel = true;
       };
     };
