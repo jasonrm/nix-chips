@@ -70,7 +70,7 @@ in {
   options = with types; {
     arcanum = {
       relativeRoot = mkOption {
-        type = path;
+        type = oneOf [path str];
         description = "relative path to use for file sources";
         default = "$PWD";
       };
