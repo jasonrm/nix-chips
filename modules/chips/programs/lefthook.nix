@@ -139,7 +139,7 @@ in {
         pkgs.lefthook
       ];
       shellHooks = ''
-        ln -sf ${leftHookConfigFile} lefthook-local.yml
+        ln -sf ${leftHookConfigFile} lefthook.yml
         ${pkgs.lefthook}/bin/lefthook install
       '';
     };
