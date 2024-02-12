@@ -65,6 +65,10 @@ in {
         type = submodule lefthookGlobalConfig;
         default = {};
       };
+      filename = mkOption {
+        type = str;
+        default = "lefthook.yml";
+      };
     };
   };
 
@@ -139,7 +143,12 @@ in {
         pkgs.lefthook
       ];
       shellHooks = ''
-        ln -sf ${leftHookConfigFile} lefthook.yml
+        ln -sf ${leftHookConfigFile} ${cfg.filename}
+        if [ -d .git ]; then
+          if ! grep -q "^${cfg.filename}$" .git/info/exclude; then
+           echo "${cfg.filename}" >> .git/info/exclude
+          fi
+        fi
         ${pkgs.lefthook}/bin/lefthook install
       '';
     };
