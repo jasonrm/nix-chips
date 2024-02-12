@@ -69,6 +69,10 @@ in {
         type = str;
         default = "lefthook.yml";
       };
+      addToGitIgnore = mkOption {
+        type = bool;
+        default = false;
+      };
     };
   };
 
@@ -144,12 +148,13 @@ in {
       ];
       shellHooks = ''
         ln -sf ${leftHookConfigFile} ${cfg.filename}
+        ${pkgs.lefthook}/bin/lefthook install
+      '' + optionalString cfg.addToGitIgnore ''
         if [ -d .git ]; then
           if ! grep -q "^${cfg.filename}$" .git/info/exclude; then
            echo "${cfg.filename}" >> .git/info/exclude
           fi
         fi
-        ${pkgs.lefthook}/bin/lefthook install
       '';
     };
   };
