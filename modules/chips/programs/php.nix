@@ -141,7 +141,7 @@ in {
 
       php-cs-fixer = {
         filename = mkOption {
-          type = string;
+          type = str;
           default = ".php-cs-fixer.dist.php";
         };
         addToGitIgnore = mkOption {
