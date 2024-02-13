@@ -138,6 +138,17 @@ in {
         type = lines;
         default = "";
       };
+
+      php-cs-fixer = {
+        filename = mkOption {
+          type = string;
+          default = ".php-cs-fixer.dist.php";
+        };
+        addToGitIgnore = mkOption {
+          type = bool;
+          default = false;
+        };
+      };
     };
   };
 
@@ -145,7 +156,13 @@ in {
     devShell = {
       shellHooks = ''
         ${update-jetbrains}/bin/update-jetbrains
-      '';
+        '' + optionalString cfg.php-cs-fixer.addToGitIgnore ''
+          if [ -d .git ]; then
+            if ! grep -q "^${cfg.php-cs-fixer.filename}$" .git/info/exclude; then
+             echo "${cfg.php-cs-fixer.filename}" >> .git/info/exclude
+            fi
+          fi
+        '';
       environment = let
         projectDir =
           if config.dir.project != "/dev/null"
@@ -183,16 +200,16 @@ in {
       };
 
       format-php-cs-fixer = {
-        cmds = ["${pkgs.php}/bin/php ./vendor/bin/php-cs-fixer fix --config .php-cs-fixer.dist.php {{.CLI_ARGS}}"];
+        cmds = ["${pkgs.php}/bin/php ./vendor/bin/php-cs-fixer fix --config ${cfg.php-cs-fixer.filename} {{.CLI_ARGS}}"];
         preconditions = [
-          "test -f .php-cs-fixer.dist.php"
+          "test -f ${cfg.php-cs-fixer.filename}"
         ];
         desc = "Format PHP files with PHP-CS-Fixer";
       };
       check-php-cs-fixer = {
-        cmds = ["${pkgs.php}/bin/php ./vendor/bin/php-cs-fixer fix --config .php-cs-fixer.dist.php --dry-run {{.CLI_ARGS}}"];
+        cmds = ["${pkgs.php}/bin/php ./vendor/bin/php-cs-fixer fix --config ${cfg.php-cs-fixer.filename} --dry-run {{.CLI_ARGS}}"];
         preconditions = [
-          "test -f .php-cs-fixer.dist.php"
+          "test -f ${cfg.php-cs-fixer.filename}"
         ];
         desc = "Check PHP files with PHP-CS-Fixer";
       };
