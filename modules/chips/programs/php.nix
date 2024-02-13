@@ -9,15 +9,15 @@ with lib; let
   inherit (pkgs.writers) writeBashBin makeScriptWriter;
   inherit (pkgs) terraform symlinkJoin mkShell;
 
+  cfg = config.programs.php;
+
   writePhp = makeScriptWriter {
-    interpreter = "${pkgs.php}/bin/php";
-    check = "${pkgs.php}/bin/php -l";
+    interpreter = "${php}/bin/php";
+    check = "${php}/bin/php -l";
   };
 
   writePhpBin = name:
     writePhp "/bin/${name}";
-
-  cfg = config.programs.php;
 
   flamegraph = writeBashBin "flamegraph-php" ''
     ${cfg.pkg}/bin/php ${pkgs.flamegraph.src}/stackcollapse-xdebug.php $1 | ${pkgs.flamegraph}/bin/flamegraph.pl > $2
@@ -48,7 +48,7 @@ with lib; let
     }
 
     // UUID from PHP path
-    $pathHash = md5("${pkgs.php}");
+    $pathHash = md5("${php}");
     $chunks = [
         substr($pathHash, 0, 8),
         substr($pathHash, 8, 4),
@@ -84,7 +84,7 @@ with lib; let
         $interpreter = $doc->createElement('interpreter');
         $interpreter->setAttribute('id', $pathUUID);
         $interpreter->setAttribute('name', $interpreterName);
-        $interpreter->setAttribute('home', "${pkgs.php}/bin/php");
+        $interpreter->setAttribute('home', "${php}/bin/php");
         $interpreter->setAttribute('auto', 'true');
         $interpreter->setAttribute('debugger_id', 'php.debugger.XDebug');
 
@@ -115,7 +115,7 @@ in {
 
       pkg = mkOption {
         type = package;
-        default = pkgs.php;
+        default = pkgs.php83;
       };
 
       env = mkOption {
@@ -154,9 +154,11 @@ in {
 
   config = mkIf cfg.enable {
     devShell = {
-      shellHooks = ''
-        ${update-jetbrains}/bin/update-jetbrains
-        '' + optionalString cfg.php-cs-fixer.addToGitIgnore ''
+      shellHooks =
+        ''
+          ${update-jetbrains}/bin/update-jetbrains
+        ''
+        + optionalString cfg.php-cs-fixer.addToGitIgnore ''
           if [ -d .git ]; then
             if ! grep -q "^${cfg.php-cs-fixer.filename}$" .git/info/exclude; then
              echo "${cfg.php-cs-fixer.filename}" >> .git/info/exclude
@@ -182,32 +184,32 @@ in {
 
     programs.taskfile.config.tasks = {
       install-composer = {
-        cmds = ["${pkgs.php.packages.composer}/bin/composer install"];
+        cmds = ["${php.packages.composer}/bin/composer install"];
         generates = ["vendor/composer/installed.json" "vendor/autoload.php"];
         desc = "Install Composer Dependencies";
         sources = ["composer.json" "composer.lock"];
       };
       update-composer = {
-        cmds = ["${pkgs.php.packages.composer}/bin/composer update"];
+        cmds = ["${php.packages.composer}/bin/composer update"];
         desc = "Update Composer Dependencies";
         sources = ["composer.json"];
       };
       check-composer = {
-        cmds = ["${pkgs.php.packages.composer}/bin/composer validate --strict --no-check-all"];
+        cmds = ["${php.packages.composer}/bin/composer validate --strict --no-check-all"];
         generates = ["composer.lock"];
         desc = "Update Composer Dependencies";
         sources = ["composer.json"];
       };
 
       format-php-cs-fixer = {
-        cmds = ["${pkgs.php}/bin/php ./vendor/bin/php-cs-fixer fix --config ${cfg.php-cs-fixer.filename} {{.CLI_ARGS}}"];
+        cmds = ["${php}/bin/php ./vendor/bin/php-cs-fixer fix --config ${cfg.php-cs-fixer.filename} {{.CLI_ARGS}}"];
         preconditions = [
           "test -f ${cfg.php-cs-fixer.filename}"
         ];
         desc = "Format PHP files with PHP-CS-Fixer";
       };
       check-php-cs-fixer = {
-        cmds = ["${pkgs.php}/bin/php ./vendor/bin/php-cs-fixer fix --config ${cfg.php-cs-fixer.filename} --dry-run {{.CLI_ARGS}}"];
+        cmds = ["${php}/bin/php ./vendor/bin/php-cs-fixer fix --config ${cfg.php-cs-fixer.filename} --dry-run {{.CLI_ARGS}}"];
         preconditions = [
           "test -f ${cfg.php-cs-fixer.filename}"
         ];
@@ -215,7 +217,7 @@ in {
       };
 
       check-phpstan = {
-        cmds = ["${pkgs.php}/bin/php ./vendor/bin/phpstan analyse"];
+        cmds = ["${php}/bin/php ./vendor/bin/phpstan analyse"];
         preconditions = [
           "test -f phpstan.neon"
         ];
