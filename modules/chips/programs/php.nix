@@ -37,7 +37,7 @@ with lib; let
       $*
   '';
 
-  php = cfg.pkg.buildEnv {
+  php = if cfg.pkg != null then cfg.pkg else cfg.pkg.buildEnv {
     inherit (cfg) extraConfig extensions;
   };
 
@@ -114,8 +114,7 @@ in {
       enable = mkEnableOption "PHP support";
 
       pkg = mkOption {
-        type = package;
-        default = pkgs.php83;
+        type = nullOr package;
       };
 
       env = mkOption {
