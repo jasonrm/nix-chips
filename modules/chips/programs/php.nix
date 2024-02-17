@@ -11,9 +11,39 @@ with lib; let
 
   cfg = config.programs.php;
 
+  phpEnv = cfg.pkg.buildEnv {
+    inherit (cfg) extraConfig extensions;
+  };
+
+  extendExtensions = baseFn: additional: {...} @ args: (baseFn args) ++ additional;
+
+  phpDebugEnv = cfg.pkg.buildEnv {
+    extraConfig = ''
+      ${cfg.extraConfig}
+
+      # xdebug
+      xdebug.mode=debug
+      xdebug.start_with_request=yes
+      ${cfg.xdebug.extraConfig}
+    '';
+    extensions = extendExtensions cfg.extensions [cfg.pkg.extensions.xdebug];
+  };
+  phpSpxEnv = cfg.pkg.buildEnv {
+    extraConfig = ''
+      ${cfg.extraConfig}
+
+      # spx
+      spx.http_enabled=1
+      spx.http_key="dev"
+      spx.http_ip_whitelist="127.0.0.1"
+      ${cfg.spx.extraConfig}
+    '';
+    extensions = extendExtensions cfg.extensions [cfg.pkg.extensions.spx];
+  };
+
   writePhp = makeScriptWriter {
-    interpreter = "${php}/bin/php";
-    check = "${php}/bin/php -l";
+    interpreter = "${phpEnv}/bin/php";
+    check = "${phpEnv}/bin/php -l";
   };
 
   writePhpBin = name:
@@ -24,22 +54,12 @@ with lib; let
   '';
 
   php-xdebug = writeBashBin "php-xdebug" ''
-    ${cfg.pkg}/bin/php \
-      -d zend_extension=${cfg.pkg.extensions.xdebug}/lib/php/extensions/xdebug.so \
-      -d xdebug.start_with_request=yes \
-      -d xdebug.mode=debug \
-      $*
+    ${phpDebugEnv}/bin/php $*
   '';
 
   php-spx = writeBashBin "php-spx" ''
-    SPX_ENABLED=1 ${cfg.pkg}/bin/php \
-      -d extension=${cfg.pkg.extensions.spx}/lib/php/extensions/spx.so \
-      $*
+    SPX_ENABLED=1 ${phpSpxEnv}/bin/php $*
   '';
-
-  php = if cfg.pkg != null then cfg.pkg else cfg.pkg.buildEnv {
-    inherit (cfg) extraConfig extensions;
-  };
 
   update-jetbrains = writePhpBin "update-jetbrains" ''
     <?php
@@ -48,7 +68,7 @@ with lib; let
     }
 
     // UUID from PHP path
-    $pathHash = md5("${php}");
+    $pathHash = md5("${phpEnv}");
     $chunks = [
         substr($pathHash, 0, 8),
         substr($pathHash, 8, 4),
@@ -72,7 +92,7 @@ with lib; let
     }
     $nodes = $xpath->query("//component[@name='ComposerSettings']/execution/executable");
     foreach ($nodes as $node) {
-        $node->setAttribute("path", '${php.packages.composer}/bin/composer');
+        $node->setAttribute("path", '${phpEnv.packages.composer}/bin/composer');
     }
 
     $doc->save('.idea/workspace.xml');
@@ -84,7 +104,7 @@ with lib; let
         $interpreter = $doc->createElement('interpreter');
         $interpreter->setAttribute('id', $pathUUID);
         $interpreter->setAttribute('name', $interpreterName);
-        $interpreter->setAttribute('home', "${php}/bin/php");
+        $interpreter->setAttribute('home', "${phpEnv}/bin/php");
         $interpreter->setAttribute('auto', 'true');
         $interpreter->setAttribute('debugger_id', 'php.debugger.XDebug');
 
@@ -114,13 +134,14 @@ in {
       enable = mkEnableOption "PHP support";
 
       pkg = mkOption {
-        type = nullOr package;
+        type = package;
+        default = pkgs.php;
       };
 
       env = mkOption {
         type = package;
         readOnly = true;
-        default = php;
+        default = phpEnv;
       };
 
       extensions = mkOption {
@@ -146,6 +167,30 @@ in {
         addToGitIgnore = mkOption {
           type = bool;
           default = false;
+        };
+      };
+
+      xdebug = {
+        env = mkOption {
+          type = package;
+          readOnly = true;
+          default = phpDebugEnv;
+        };
+        extraConfig = mkOption {
+          type = lines;
+          default = "";
+        };
+      };
+
+      spx = {
+        env = mkOption {
+          type = package;
+          readOnly = true;
+          default = phpSpxEnv;
+        };
+        extraConfig = mkOption {
+          type = lines;
+          default = "";
         };
       };
     };
@@ -174,41 +219,41 @@ in {
       ];
       contents = [
         flamegraph
-        # php-spx
+        php-spx
         php-xdebug
-        php
-        php.packages.composer
+        phpEnv
+        phpEnv.packages.composer
       ];
     };
 
     programs.taskfile.config.tasks = {
       install-composer = {
-        cmds = ["${php.packages.composer}/bin/composer install"];
+        cmds = ["${phpEnv.packages.composer}/bin/composer install"];
         generates = ["vendor/composer/installed.json" "vendor/autoload.php"];
         desc = "Install Composer Dependencies";
         sources = ["composer.json" "composer.lock"];
       };
       update-composer = {
-        cmds = ["${php.packages.composer}/bin/composer update"];
+        cmds = ["${phpEnv.packages.composer}/bin/composer update"];
         desc = "Update Composer Dependencies";
         sources = ["composer.json"];
       };
       check-composer = {
-        cmds = ["${php.packages.composer}/bin/composer validate --strict --no-check-all"];
+        cmds = ["${phpEnv.packages.composer}/bin/composer validate --strict --no-check-all"];
         generates = ["composer.lock"];
         desc = "Update Composer Dependencies";
         sources = ["composer.json"];
       };
 
       format-php-cs-fixer = {
-        cmds = ["${php}/bin/php ./vendor/bin/php-cs-fixer fix --config ${cfg.php-cs-fixer.filename} {{.CLI_ARGS}}"];
+        cmds = ["${cfg.pkg}/bin/php ./vendor/bin/php-cs-fixer fix --config ${cfg.php-cs-fixer.filename} {{.CLI_ARGS}}"];
         preconditions = [
           "test -f ${cfg.php-cs-fixer.filename}"
         ];
         desc = "Format PHP files with PHP-CS-Fixer";
       };
       check-php-cs-fixer = {
-        cmds = ["${php}/bin/php ./vendor/bin/php-cs-fixer fix --config ${cfg.php-cs-fixer.filename} --dry-run {{.CLI_ARGS}}"];
+        cmds = ["${cfg.pkg}/bin/php ./vendor/bin/php-cs-fixer fix --config ${cfg.php-cs-fixer.filename} --dry-run {{.CLI_ARGS}}"];
         preconditions = [
           "test -f ${cfg.php-cs-fixer.filename}"
         ];
@@ -216,7 +261,7 @@ in {
       };
 
       check-phpstan = {
-        cmds = ["${php}/bin/php ./vendor/bin/phpstan analyse"];
+        cmds = ["${cfg.pkg}/bin/php ./vendor/bin/phpstan analyse"];
         preconditions = [
           "test -f phpstan.neon"
         ];
@@ -252,18 +297,5 @@ in {
         };
       };
     };
-
-    #    outputs.apps.php = {
-    #      program = "${php}/bin/php";
-    #    };
-    #    outputs.apps.flamegraph-php = {
-    #      program = "${flamegraph}/bin/flamegraph-php";
-    #    };
-    #    outputs.apps.php-xdebug = {
-    #      program = "${php-xdebug}/bin/php-xdebug";
-    #    };
-    #    outputs.apps.php-spx = {
-    #      program = "${php-spx}/bin/php-spx";
-    #    };
   };
 }
