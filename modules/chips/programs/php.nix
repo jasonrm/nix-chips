@@ -246,14 +246,14 @@ in {
       };
 
       format-php-cs-fixer = {
-        cmds = ["${cfg.pkg}/bin/php ./vendor/bin/php-cs-fixer fix --config ${cfg.php-cs-fixer.filename} {{.CLI_ARGS}}"];
+        cmds = ["${phpEnv}/bin/php ./vendor/bin/php-cs-fixer fix --config ${cfg.php-cs-fixer.filename} {{.CLI_ARGS}}"];
         preconditions = [
           "test -f ${cfg.php-cs-fixer.filename}"
         ];
         desc = "Format PHP files with PHP-CS-Fixer";
       };
       check-php-cs-fixer = {
-        cmds = ["${cfg.pkg}/bin/php ./vendor/bin/php-cs-fixer fix --config ${cfg.php-cs-fixer.filename} --dry-run {{.CLI_ARGS}}"];
+        cmds = ["${phpEnv}/bin/php ./vendor/bin/php-cs-fixer fix --config ${cfg.php-cs-fixer.filename} --dry-run {{.CLI_ARGS}}"];
         preconditions = [
           "test -f ${cfg.php-cs-fixer.filename}"
         ];
@@ -261,7 +261,7 @@ in {
       };
 
       check-phpstan = {
-        cmds = ["${cfg.pkg}/bin/php --memory-limit 4G -- ./vendor/phpstan/phpstan/phpstan.phar analyse"];
+        cmds = ["${phpEnv}/bin/php ./vendor/phpstan/phpstan/phpstan.phar analyse"];
         preconditions = [
           "test -f phpstan.neon"
         ];
