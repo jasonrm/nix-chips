@@ -59,6 +59,10 @@ with lib; let
         type = nullOr (listOf str);
         default = null;
       };
+      env = mkOption {
+        type = attrsOf str;
+        default = {};
+      };
       sources = mkOption {
         type = listOf (oneOf [str (submodule taskSourceSubmodule)]);
         default = [];
