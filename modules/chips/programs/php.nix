@@ -261,7 +261,7 @@ in {
       };
 
       check-phpstan = {
-        cmds = ["${phpEnv}/bin/php ./vendor/phpstan/phpstan/phpstan.phar analyse"];
+        cmds = ["${phpEnv}/bin/php ./vendor/phpstan/phpstan/phpstan.phar --memory-limit=4G analyse"];
         preconditions = [
           "test -f phpstan.neon"
         ];
