@@ -385,6 +385,8 @@ in
     additionalAttrs = utils.lib.eachDefaultSystem (system: let
       pkgs = import nixpkgs {
         inherit system;
+        config = nixpkgsConfig;
+        overlays = [overlay];
       };
     in {
       packages = additionalPackages pkgs;
