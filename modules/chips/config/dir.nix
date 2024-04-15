@@ -31,6 +31,10 @@ in
     };
 
     config = mkIf (cfg.project != "/dev/null") {
+      devShell.environment = [
+        "NIX_CHIPS_DIR_PROJECT=${cfg.project}"
+        "NIX_CHIPS_DIR_DATA=${cfg.data}"
+      ];
       dir.ensureExists = [
         cfg.data
       ];
