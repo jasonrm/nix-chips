@@ -107,10 +107,10 @@ in {
         desc = "Format Nix Files";
         cmds = [''${pkgs.alejandra}/bin/alejandra {{.CLI_ARGS | default "." }}''];
       };
-      # format-json = {
-      #   desc = "Format JSON Files";
-      #   cmds = [''for FILE in {{.CLI_ARGS | default "*.json" }}; do ${pkgs.jq}/bin/jq --sort-keys --indent 2 . "$FILE" > "$FILE".tmp && mv "$FILE".tmp "$FILE"; done''];
-      # };
+      format-json = {
+        desc = "Format JSON Files";
+        cmds = [''for FILE in {{.CLI_ARGS | default "*.json" }}; do ${pkgs.jq}/bin/jq --sort-keys --indent 2 . "$FILE" > "$FILE".tmp && mv "$FILE".tmp "$FILE"; done''];
+      };
 
       check = {
         desc = "Run All Check Tasks";
