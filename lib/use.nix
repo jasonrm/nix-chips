@@ -267,6 +267,7 @@ with nixpkgs.lib; let
 
     configurations = map (n: {
       name = builtins.baseNameOf (builtins.dirOf n);
+      system = if (hasInfix "/aarch64/" (toString n)) then "aarch64-linux" else "x86_64-linux";
       path = n;
     }) (builtins.filter onlyDefaultNix (nixFilesIn nixosConfigurationsDir));
 
@@ -274,7 +275,7 @@ with nixpkgs.lib; let
         configuration:
           nameValuePair configuration.name (
             nixpkgs.lib.nixosSystem {
-              system = "x86_64-linux";
+              system = configuration.system;
               specialArgs =
                 specialArgs
                 // {
