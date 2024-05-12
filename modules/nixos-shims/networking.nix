@@ -10,6 +10,9 @@ with lib; {
         type = bool;
         default = true;
       };
+      firewall = mkOption {
+        type = attrs;
+      };
     };
   };
 }
