@@ -19,7 +19,7 @@
           traefik = {
             entryPoints = ["http"] ++ optionals httpsEnabled ["https"];
             service = "api@internal";
-            rule = "Host(`traefik.localhost`, `traefik.${elemAt cfg.domains 0}`)";
+            rule = "Host(`traefik.localhost`) || Host(`traefik.${elemAt cfg.domains 0}`)";
           };
         }
         // cfg.routers;
