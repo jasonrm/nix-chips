@@ -8,7 +8,7 @@
 in {
   options = {
     services.dynamodb = with lib.types; {
-    enable = lib.mkEnableOption "enable dynamodb";
+      enable = lib.mkEnableOption "enable dynamodb";
       port = lib.mkOption {
         type = int;
         default = config.ports.dynamodb;
