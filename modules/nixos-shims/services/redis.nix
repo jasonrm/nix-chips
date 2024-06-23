@@ -32,7 +32,7 @@ in {
   config = mkIf (enabledServers != {}) {
     systemd.services = mapAttrs' (name: conf: let
       newSettings = removeAttrs conf.settings ["dir" "unixsocket" "unixsocketperm"];
-      in
+    in
       nameValuePair (redisName name) {
         serviceConfig = {
           ExecStart = mkForce "${cfg.package}/bin/${cfg.package.serverBin or "redis-server"} ${redisConfig newSettings} ${escapeShellArgs conf.extraParams}";

@@ -38,6 +38,11 @@ with lib; let
   legoEnsureCerts = pkgs.writeScriptBin "lego-ensure-certs" ''
     set -o errexit -o nounset -o pipefail
 
+    if [ ! -f "${cfg.envFile}" ]; then
+      echo "Environment file not found: ${cfg.envFile}"
+      exit 1
+    fi
+
     set -o allexport
     source ${cfg.envFile}
     set +o allexport
@@ -70,7 +75,9 @@ in {
 
       domains = mkOption {
         type = listOf str;
-        default = [];
+        default = [
+          "*.${config.project.domainSuffix}"
+        ];
       };
 
       additionalArgs = mkOption {
@@ -107,7 +114,8 @@ in {
       contents = [
         legoEnsureCerts
       ];
-      shellHooks = optionalString (cfg.domains != [] && cfg.envFile != null) "${legoEnsureCerts}/bin/lego-ensure-certs";
+      # Run after arcanum to ensure that the secrets are available
+      shellHooks = optionalString (cfg.domains != [] && cfg.envFile != null) mkOrder 790 "${legoEnsureCerts}/bin/lego-ensure-certs";
     };
 
     #    outputs.apps.go = {

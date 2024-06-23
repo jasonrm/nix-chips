@@ -15,8 +15,18 @@ in {
       name = mkOption {
         type = str;
       };
+      domainSuffix = mkOption {
+        type = str;
+        default = "bitnix.dev";
+      };
     };
   };
 
-  config = {};
+  config = {
+    devShell = {
+      environment = [
+        "DOMAIN_SUFFIX=${cfg.domainSuffix}"
+      ];
+    };
+  };
 }
