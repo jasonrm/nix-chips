@@ -50,7 +50,7 @@ in {
       update-npm =
         if cfg.packageManager == "pnpm"
         then {
-          cmds = ["${pkgs.nodePackages.pnpm}/bin/pnpm} update"];
+          cmds = ["${pkgs.nodePackages.pnpm}/bin/pnpm update"];
           desc = "Update Node.JS Dependencies (pnpm)";
           sources = ["package.json"];
         }
@@ -62,7 +62,7 @@ in {
       build-npm =
         if cfg.packageManager == "pnpm"
         then {
-          cmds = ["${pkgs.nodePackages.pnpm}/bin/pnpm} run build"];
+          cmds = ["${pkgs.nodePackages.pnpm}/bin/pnpm run build"];
           desc = "Build Node.JS Project (pnpm)";
           deps = ["install-npm"];
         }
@@ -74,7 +74,7 @@ in {
       check-npm =
         if cfg.packageManager == "pnpm"
         then {
-          cmds = ["${pkgs.nodePackages.pnpm}/bin/pnpm} install --frozen-lockfile"];
+          cmds = ["${pkgs.nodePackages.pnpm}/bin/pnpm install --frozen-lockfile"];
           desc = "Check Node.JS Project";
           sources = ["package.json" "pnpm-lock.yaml"];
         }
