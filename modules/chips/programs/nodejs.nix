@@ -25,7 +25,7 @@ in {
       };
 
       packageManager = mkOption {
-        type = string;
+        type = str;
         default = "pnpm";
       };
     };
