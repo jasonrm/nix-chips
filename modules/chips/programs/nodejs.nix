@@ -23,32 +23,66 @@ in {
         type = attrs;
         default = pkgs.nodePackages;
       };
+
+      packageManager = mkOption {
+        type = string;
+        default = "pnpm";
+      };
     };
   };
 
   config = mkIf cfg.enable {
     programs.taskfile.config.tasks = {
-      install-npm = {
-        cmds = ["${pkgs.nodePackages.pnpm}/bin/pnpm install"];
-        generates = ["node_modules/.modules.yaml"];
-        desc = "Install Node.JS Dependencies";
-        sources = ["package.json" "pnpm-lock.yaml"];
-      };
-      update-npm = {
-        cmds = ["${pkgs.nodePackages.pnpm}/bin/pnpm update"];
-        desc = "Update Node.JS Dependencies";
-        sources = ["package.json"];
-      };
-      build-npm = {
-        cmds = ["${pkgs.nodePackages.pnpm}/bin/pnpm run build"];
-        desc = "Build Node.JS Project";
-        deps = ["install-npm"];
-      };
-      check-npm = {
-        cmds = ["${pkgs.nodePackages.pnpm}/bin/pnpm install --frozen-lockfile"];
-        desc = "Check Node.JS Project";
-        sources = ["package.json" "pnpm-lock.yaml"];
-      };
+      install-npm =
+        if cfg.packageManager == "pnpm"
+        then {
+          cmds = ["${pkgs.nodePackages.pnpm}/bin/pnpm install"];
+          generates = ["node_modules/.modules.yaml"];
+          desc = "Install Node.JS Dependencies (pnpm)";
+          sources = ["package.json" "pnpm-lock.yaml"];
+        }
+        else {
+          cmds = ["${pkgs.nodePackages.npm}/bin/npm install"];
+          generates = ["node_modules/.package-lock.json"];
+          desc = "Install Node.JS Dependencies (npm)";
+          sources = ["package.json" "package-lock.json"];
+        };
+      update-npm =
+        if cfg.packageManager == "pnpm"
+        then {
+          cmds = ["${pkgs.nodePackages.pnpm}/bin/pnpm} update"];
+          desc = "Update Node.JS Dependencies (pnpm)";
+          sources = ["package.json"];
+        }
+        else {
+          cmds = ["${pkgs.nodePackages.npm}/bin/npm update"];
+          desc = "Update Node.JS Dependencies (npm)";
+          sources = ["package.json"];
+        };
+      build-npm =
+        if cfg.packageManager == "pnpm"
+        then {
+          cmds = ["${pkgs.nodePackages.pnpm}/bin/pnpm} run build"];
+          desc = "Build Node.JS Project (pnpm)";
+          deps = ["install-npm"];
+        }
+        else {
+          cmds = ["${pkgs.nodePackages.npm}/bin/npm run build"];
+          desc = "Build Node.JS Project (npm)";
+          deps = ["install-npm"];
+        };
+      check-npm =
+        if cfg.packageManager == "pnpm"
+        then {
+          cmds = ["${pkgs.nodePackages.pnpm}/bin/pnpm} install --frozen-lockfile"];
+          desc = "Check Node.JS Project";
+          sources = ["package.json" "pnpm-lock.yaml"];
+        }
+        else {
+          cmds = ["${pkgs.nodePackages.npm}/bin/npm ci"];
+          desc = "Check Node.JS Project";
+          sources = ["package.json" "package-lock.json"];
+        };
 
       format-eslint = {
         cmds = [''${pkgs.nodejs}/bin/node ./node_modules/eslint/bin/eslint.js --cache --fix --max-warnings 0 {{.CLI_ARGS}}''];
