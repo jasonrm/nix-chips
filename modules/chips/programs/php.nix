@@ -250,6 +250,7 @@ in {
         preconditions = [
           "test -f ${cfg.php-cs-fixer.filename}"
         ];
+        deps = ["install-composer"];
         desc = "Format PHP files with PHP-CS-Fixer";
       };
       check-php-cs-fixer = {
@@ -257,6 +258,7 @@ in {
         preconditions = [
           "test -f ${cfg.php-cs-fixer.filename}"
         ];
+        deps = ["install-composer"];
         desc = "Check PHP files with PHP-CS-Fixer";
       };
 
@@ -265,6 +267,7 @@ in {
         preconditions = [
           "test -f phpstan.neon"
         ];
+        deps = ["install-composer"];
         desc = "Check PHP files with PHPStan";
       };
 

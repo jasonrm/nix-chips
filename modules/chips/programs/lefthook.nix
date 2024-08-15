@@ -111,7 +111,7 @@ in {
           };
           jpegtran = {
             glob = mkDefault "*.{jpg,jpeg}";
-            run = mkDefault "for FILE in {staged_files}; do jpegtran -copy none -optimize -progressive -outfile $FILE $FILE; done";
+            run = mkDefault "for FILE in {staged_files}; do ${pkgs.libjpeg}/bin/jpegtran -copy none -optimize -progressive -outfile $FILE $FILE; done";
             stage_fixed = true;
           };
           oxipng = {

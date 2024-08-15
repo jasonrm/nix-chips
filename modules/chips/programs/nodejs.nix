@@ -89,6 +89,7 @@ in {
         preconditions = [
           "test -f ./node_modules/eslint/bin/eslint.js"
         ];
+        deps = ["install-npm"];
         desc = "Format JavaScript and TypeScript files";
       };
       check-eslint = {
@@ -96,6 +97,7 @@ in {
         preconditions = [
           "test -f ./node_modules/eslint/bin/eslint.js"
         ];
+        deps = ["install-npm"];
         desc = "Check JavaScript and TypeScript files";
       };
 
