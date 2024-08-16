@@ -11,6 +11,7 @@ in {
       enable = lib.mkEnableOption "Enable elasticmq.";
       configFile = lib.mkOption {
         type = nullOr path;
+        default = null;
       };
     };
   };
