@@ -25,7 +25,7 @@ in {
       };
 
       packageManager = mkOption {
-        type = enum [ "npm" "pnpm" ];
+        type = enum ["npm" "pnpm"];
         default = "pnpm";
       };
     };
