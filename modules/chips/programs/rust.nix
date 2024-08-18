@@ -7,6 +7,23 @@
 }:
 with lib; let
   cfg = config.programs.rust;
+
+  toolchain-with-path = pkgs.stdenv.mkDerivation {
+    pname = "toolchain-with-path";
+    version = "0.1.0";
+    dontUnpack = true;
+    nativeBuildInputs = [
+      pkgs.makeWrapper
+    ];
+    installPhase = ''
+      mkdir -p $out/bin
+      ln -s ${cfg.toolchain}/bin/* $out/bin/
+      for i in $out/bin/*; do
+          wrapProgram "$i" --prefix PATH : ${lib.makeBinPath [cfg.toolchain]}
+      done
+    '';
+  };
+
 in {
   options = with lib.types; {
     programs.rust = {
@@ -34,7 +51,7 @@ in {
   config = {
     devShell = mkIf cfg.enable {
       nativeBuildInputs = [
-        cfg.toolchain
+        toolchain-with-path
       ];
       contents = [
         pkgs.libiconv
