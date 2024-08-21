@@ -28,6 +28,11 @@ in {
         type = enum ["npm" "pnpm"];
         default = "pnpm";
       };
+
+      nodeModulesDir = mkOption {
+        type = str;
+        default = "node_modules";
+      };
     };
   };
 
