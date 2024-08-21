@@ -40,6 +40,7 @@ in {
   };
 
   config = mkIf cfg.enable {
+    programs.taskfile.enable = mkDefault true;
     programs.taskfile.config.tasks = {
       install-npm =
         if cfg.packageManager == "pnpm"

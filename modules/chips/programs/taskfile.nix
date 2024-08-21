@@ -70,6 +70,9 @@ with lib; let
       desc = mkOption {
         type = str;
       };
+      dir = mkOption {
+        type = nullOr str;
+      };
     };
   };
 

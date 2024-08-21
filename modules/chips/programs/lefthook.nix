@@ -77,6 +77,7 @@ in {
   };
 
   config = mkIf cfg.enable {
+    programs.taskfile.enable = mkDefault true;
     programs.taskfile.config.tasks = {
       check-unresovled-conflicts = {
         desc = "Check For Unresolved Git Conflicts";

@@ -226,6 +226,7 @@ in {
       ];
     };
 
+    programs.taskfile.enable = mkDefault true;
     programs.taskfile.config.tasks = {
       install-composer = {
         cmds = ["${phpEnv.packages.composer}/bin/composer install"];
