@@ -72,6 +72,7 @@ with lib; let
       };
       dir = mkOption {
         type = nullOr str;
+        default = null;
       };
     };
   };
