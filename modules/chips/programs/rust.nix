@@ -23,7 +23,6 @@ with lib; let
       done
     '';
   };
-
 in {
   options = with lib.types; {
     programs.rust = {

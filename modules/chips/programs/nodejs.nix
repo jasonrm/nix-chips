@@ -29,9 +29,12 @@ in {
         default = "pnpm";
       };
 
-      nodeModulesDir = mkOption {
-        type = str;
-        default = "node_modules";
+      workingDirectory = mkOption {
+        type = nullOr str;
+        default =
+          if config.dir.project != "/dev/null"
+          then config.dir.project
+          else null;
       };
     };
   };
@@ -41,12 +44,14 @@ in {
       install-npm =
         if cfg.packageManager == "pnpm"
         then {
+          dir = cfg.workingDirectory;
           cmds = ["${pkgs.nodePackages.pnpm}/bin/pnpm install"];
           generates = ["node_modules/.modules.yaml"];
           desc = "Install Node.JS Dependencies (pnpm)";
           sources = ["package.json" "pnpm-lock.yaml"];
         }
         else {
+          dir = cfg.workingDirectory;
           cmds = ["${pkgs.nodePackages.npm}/bin/npm install"];
           generates = ["node_modules/.package-lock.json"];
           desc = "Install Node.JS Dependencies (npm)";
@@ -55,11 +60,13 @@ in {
       update-npm =
         if cfg.packageManager == "pnpm"
         then {
+          dir = cfg.workingDirectory;
           cmds = ["${pkgs.nodePackages.pnpm}/bin/pnpm update"];
           desc = "Update Node.JS Dependencies (pnpm)";
           sources = ["package.json"];
         }
         else {
+          dir = cfg.workingDirectory;
           cmds = ["${pkgs.nodePackages.npm}/bin/npm update"];
           desc = "Update Node.JS Dependencies (npm)";
           sources = ["package.json"];
@@ -67,11 +74,13 @@ in {
       build-npm =
         if cfg.packageManager == "pnpm"
         then {
+          dir = cfg.workingDirectory;
           cmds = ["${pkgs.nodePackages.pnpm}/bin/pnpm run build"];
           desc = "Build Node.JS Project (pnpm)";
           deps = ["install-npm"];
         }
         else {
+          dir = cfg.workingDirectory;
           cmds = ["${pkgs.nodePackages.npm}/bin/npm run build"];
           desc = "Build Node.JS Project (npm)";
           deps = ["install-npm"];
@@ -79,17 +88,20 @@ in {
       check-npm =
         if cfg.packageManager == "pnpm"
         then {
+          dir = cfg.workingDirectory;
           cmds = ["${pkgs.nodePackages.pnpm}/bin/pnpm install --frozen-lockfile"];
           desc = "Check Node.JS Project";
           sources = ["package.json" "pnpm-lock.yaml"];
         }
         else {
+          dir = cfg.workingDirectory;
           cmds = ["${pkgs.nodePackages.npm}/bin/npm ci"];
           desc = "Check Node.JS Project";
           sources = ["package.json" "package-lock.json"];
         };
 
       format-eslint = {
+        dir = cfg.workingDirectory;
         cmds = [''${pkgs.nodejs}/bin/node ./node_modules/eslint/bin/eslint.js --cache --fix --max-warnings 0 {{.CLI_ARGS}}''];
         preconditions = [
           "test -f ./node_modules/eslint/bin/eslint.js"
@@ -98,6 +110,7 @@ in {
         desc = "Format JavaScript and TypeScript files";
       };
       check-eslint = {
+        dir = cfg.workingDirectory;
         cmds = [''${pkgs.nodejs}/bin/node ./node_modules/eslint/bin/eslint.js --cache --max-warnings 0''];
         preconditions = [
           "test -f ./node_modules/eslint/bin/eslint.js"
@@ -107,6 +120,7 @@ in {
       };
 
       check-tsc = {
+        dir = cfg.workingDirectory;
         cmds = ["${pkgs.typescript}/bin/tsc --noEmit --project tsconfig.json"];
         preconditions = [
           "test -f tsconfig.json"
@@ -150,13 +164,8 @@ in {
     };
 
     devShell = {
-      environment = let
-        projectDir =
-          if config.dir.project != "/dev/null"
-          then config.dir.project
-          else "$PWD";
-      in [
-        "PATH=$PATH:$PWD/node_modules/.bin"
+      environment = [
+        "PATH=$PATH:${cfg.workingDirectory or "$PWD"}/node_modules/.bin"
       ];
       contents = with cfg.nodePackages; [
         nodejs
