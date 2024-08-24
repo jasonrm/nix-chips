@@ -165,8 +165,13 @@ in {
     };
 
     devShell = {
-      environment = [
-        "PATH=$PATH:${cfg.workingDirectory or "$PWD"}/node_modules/.bin"
+      environment = let
+        workingDirectory =
+          if cfg.workingDirectory != null
+          then cfg.workingDirectory
+          else "$PWD";
+      in [
+        "PATH=$PATH:${workingDirectory}/node_modules/.bin"
       ];
       contents = with cfg.nodePackages; [
         nodejs
