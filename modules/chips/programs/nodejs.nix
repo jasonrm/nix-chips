@@ -64,13 +64,11 @@ in {
           dir = cfg.workingDirectory;
           cmds = ["${pkgs.nodePackages.pnpm}/bin/pnpm update"];
           desc = "Update Node.JS Dependencies (pnpm)";
-          sources = ["package.json"];
         }
         else {
           dir = cfg.workingDirectory;
           cmds = ["${pkgs.nodePackages.npm}/bin/npm update"];
           desc = "Update Node.JS Dependencies (npm)";
-          sources = ["package.json"];
         };
       build-npm =
         if cfg.packageManager == "pnpm"
