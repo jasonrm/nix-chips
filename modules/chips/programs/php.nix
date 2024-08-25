@@ -237,12 +237,11 @@ in {
       update-composer = {
         cmds = ["${phpEnv.packages.composer}/bin/composer update"];
         desc = "Update Composer Dependencies";
-        sources = ["composer.json"];
       };
       check-composer = {
         cmds = ["${phpEnv.packages.composer}/bin/composer validate --strict --no-check-all"];
         generates = ["composer.lock"];
-        desc = "Update Composer Dependencies";
+        desc = "Check Composer Lock File";
         sources = ["composer.json"];
       };
 
