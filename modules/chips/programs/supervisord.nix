@@ -54,6 +54,7 @@ with lib; let
         autostart = mkOption {
           type = bool;
           default = true;
+          description = "Should the supervised command run on supervisord start? Defaults to true.";
         };
         autorestart = mkOption {
           type = bool;
@@ -73,6 +74,7 @@ with lib; let
         };
         command = mkOption {
           type = oneOf [path str];
+          description = "Command to supervise. It can be given as full path to executable or can be calculated via PATH variable. Command line parameters also should be supplied in this string.";
         };
         stdout_logfile = mkOption {
           type = path;
@@ -117,6 +119,46 @@ with lib; let
         depends_on = mkOption {
           type = listOf str;
           default = [];
+        };
+        restartpause = mkOption {
+          type = nullOr int;
+          default = null;
+          description = "Wait (at least) this amount of seconds after stpping suprevised program before strt it again.";
+        };
+        restart_when_binary_changed = mkOption {
+          type = bool;
+          default = false;
+          description = "Boolean value (false or true) to control if the supervised command should be restarted when its executable binary changes. Defaults to false.";
+        };
+        restart_cmd_when_binary_changed = mkOption {
+          type = nullOr str;
+          default = null;
+          description = "The command to restart the program if the program binary itself is changed.";
+        };
+        restart_signal_when_binary_changed = mkOption {
+          type = nullOr str;
+          default = null;
+          description = "The signal sent to the program for restarting if the program binary is changed.";
+        };
+        restart_directory_monitor = mkOption {
+          type = nullOr str;
+          default = null;
+          description = "Path to be monitored for restarting purpose.";
+        };
+        restart_file_pattern = mkOption {
+          type = nullOr str;
+          default = null;
+          description = "If a file changes under restart_directory_monitor and filename matches this pattern, the supervised command will be restarted.";
+        };
+        restart_cmd_when_file_changed = mkOption {
+          type = nullOr str;
+          default = null;
+          description = "The command to restart the program if any monitored files under restart_directory_monitor with pattern restart_file_pattern are changed.";
+        };
+        restart_signal_when_file_changed = mkOption {
+          type = nullOr str;
+          default = null;
+          description = "The signal will be sent to the proram, such as Nginx, for restarting if any monitored files under restart_directory_monitor with pattern restart_file_pattern are changed.";
         };
       };
     };
