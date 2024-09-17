@@ -271,7 +271,16 @@ in {
         desc = "Check PHP files with PHPStan";
       };
 
-      check.deps = ["check-php-cs-fixer" "check-phpstan" "check-composer"];
+      check-psalm = {
+        cmds = ["${cfg.pkg}/bin/php ./vendor/bin/psalm --config=psalm.xml --memory-limit=8G"];
+        preconditions = [
+          "test -f psalm.xml"
+        ];
+        deps = ["install-composer"];
+        desc = "Check PHP files with Psalm";
+      };
+
+      check.deps = ["check-php-cs-fixer" "check-phpstan" "check-psalm" "check-composer"];
       format.deps = ["format-php-cs-fixer"];
       install.deps = ["install-composer"];
       update.deps = ["update-composer"];
