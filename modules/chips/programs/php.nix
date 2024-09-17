@@ -240,6 +240,9 @@ in {
       };
       check-composer = {
         cmds = ["${phpEnv.packages.composer}/bin/composer validate --strict --no-check-all"];
+        preconditions = [
+          "test -f composer.json"
+        ];
         generates = ["composer.lock"];
         desc = "Check Composer Lock File";
         sources = ["composer.json"];
