@@ -58,7 +58,9 @@ with lib; let
   '';
 
   php-spx = writeBashBin "php-spx" ''
-    SPX_ENABLED=1 ${phpSpxEnv}/bin/php $*
+    export SPX_ENABLED=''${SPX_ENABLED:-1}
+    export SPX_REPORT=''${SPX_REPORT:-full}
+    ${phpSpxEnv}/bin/php $*
   '';
 
   update-jetbrains = writePhpBin "update-jetbrains" ''
