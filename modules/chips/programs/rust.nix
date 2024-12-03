@@ -31,7 +31,7 @@ in {
       enable = mkEnableOption "rust support";
 
       contents = mkOption {
-        type = list;
+        type = listOf package;
         default = [
           pkgs.rustc
           pkgs.cargo
