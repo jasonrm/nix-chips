@@ -10,6 +10,7 @@
     # systemd doesn't work on non-linux so we need to replace it
     # with a harmless package that can be in the path of the supervisord programs
     systemd.package = pkgs.hello;
+    systemd.enableStrictShellChecks = false;
   };
 
   utils = pkgs.callPackage "${pkgs.path}/nixos/lib/utils.nix" {config = configShim;};
