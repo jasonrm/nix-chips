@@ -69,6 +69,8 @@ with types; let
 in {
   options = with types; {
     arcanum = {
+      enable = mkEnableOption "Enable arcanum encrypted secret management";
+
       relativeRoot = mkOption {
         type = oneOf [path str];
         description = "relative path to use for file sources";
@@ -104,5 +106,8 @@ in {
         description = "Identity file to use for decryption.";
       };
     };
+  };
+  config = {
+    arcanum.enable = mkDefault (cfg.files != {});
   };
 }

@@ -7,7 +7,7 @@
 with lib; let
   cfg = config.arcanum;
 in {
-  config = {
+  config = mkIf cfg.enable {
     devShell.contents = [
       pkgs.arcanum
     ];
