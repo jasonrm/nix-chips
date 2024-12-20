@@ -80,7 +80,7 @@ in {
   };
 
   config = {
-    devShell.output = pkgs.mkShell.override {stdenv = opts.stdenv;} {
+    devShell.output = pkgs.mkShell.override {stdenv = cfg.stdenv;} {
       nativeBuildInputs = cfg.nativeBuildInputs;
       buildInputs =
         cfg.contents
