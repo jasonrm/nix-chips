@@ -53,6 +53,12 @@ in {
         };
         description = "The rust toolchain to use";
       };
+
+      toolchainOutput = mkOption {
+        type = package;
+        default = toolchain-with-path;
+        readOnly = true;
+      };
     };
   };
 
