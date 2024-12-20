@@ -25,6 +25,9 @@ with lib; let
         --initialize \
         --initialize-insecure \
         --defaults-file=${configFile} \
+        --log-bin=${logDir}/binlog \
+        --relay-log=${logDir}/relaylog \
+        --innodb-log-group-home-dir=${logDir}/logs \
         --authentication-policy="mysql_native_password" \
         ${
       if cfg.initialScript != null
