@@ -24,7 +24,7 @@ with lib; let
       ${cfg.package}/bin/mysqld \
         --initialize \
         --initialize-insecure \
-        --disable-log-bin \
+        --defaults-file=${configFile} \
         --authentication-policy="mysql_native_password" \
         ${
       if cfg.initialScript != null
@@ -37,7 +37,6 @@ with lib; let
 
     exec ${cfg.package}/bin/mysqld \
       --defaults-file=${configFile} \
-      --disable-log-bin \
       --init-file=${ensureFile} \
       ${mysqldOptions}
   '';
@@ -89,6 +88,9 @@ in {
           mysqlx = 0;
           socket = "${runDir}/mysqld.sock";
           authentication-policy = "mysql_native_password";
+          log_bin = "${logDir}/binlog";
+          relay_log = "${logDir}/relaylog";
+          innodb_log_group_home_dir = "${logDir}/logs";
         };
       };
     };
