@@ -22,20 +22,19 @@ with lib; let
       mkdir -p "${runDir}" "${logDir}" "${dataDir}"
       echo 'Initializing database...'
       ${cfg.package}/bin/mysqld \
+        --defaults-file=${configFile} \
+        --log-bin=${logDir} \
+        --relay-log=${logDir} \
+        --innodb-log-group-home-dir=${logDir} \
         --initialize \
         --initialize-insecure \
-        --defaults-file=${configFile} \
-        --log-bin=${logDir}/binlog \
-        --relay-log=${logDir}/relaylog \
-        --innodb-log-group-home-dir=${logDir}/logs \
         --authentication-policy="mysql_native_password" \
         ${
       if cfg.initialScript != null
       then "--init-file=${cfg.initialScript}"
       else ""
     } \
-        ${mysqldOptions} \
-      > /dev/null
+        ${mysqldOptions}
     fi
 
     exec ${cfg.package}/bin/mysqld \
@@ -91,9 +90,9 @@ in {
           mysqlx = 0;
           socket = "${runDir}/mysqld.sock";
           authentication-policy = "mysql_native_password";
-          log_bin = "${logDir}/binlog";
-          relay_log = "${logDir}/relaylog";
-          innodb_log_group_home_dir = "${logDir}/logs";
+          log_bin = "${logDir}";
+          relay_log = "${logDir}";
+          innodb_log_group_home_dir = "${logDir}";
         };
       };
     };
