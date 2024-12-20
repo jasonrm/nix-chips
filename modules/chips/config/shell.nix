@@ -47,6 +47,11 @@ in {
         default = [];
       };
 
+      stdenv = mkOption {
+        type = package;
+        default = pkgs.stdenv;
+      };
+
       shellHooks = mkOption {
         type = lines;
         default = "";
@@ -75,7 +80,7 @@ in {
   };
 
   config = {
-    devShell.output = pkgs.mkShell {
+    devShell.output = pkgs.mkShell.override {stdenv = opts.stdenv;} {
       nativeBuildInputs = cfg.nativeBuildInputs;
       buildInputs =
         cfg.contents
