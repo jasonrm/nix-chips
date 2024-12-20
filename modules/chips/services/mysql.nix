@@ -24,6 +24,7 @@ with lib; let
       ${cfg.package}/bin/mysqld \
         --initialize \
         --initialize-insecure \
+        --disable-log-bin \
         --authentication-policy="mysql_native_password" \
         ${
       if cfg.initialScript != null
@@ -36,6 +37,7 @@ with lib; let
 
     exec ${cfg.package}/bin/mysqld \
       --defaults-file=${configFile} \
+      --disable-log-bin \
       --init-file=${ensureFile} \
       ${mysqldOptions}
   '';
