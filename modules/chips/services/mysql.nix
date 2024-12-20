@@ -19,13 +19,13 @@ with lib; let
   mysqld = pkgs.writeShellScriptBin "mysqld" ''
     echo "Initializing MySQL..."
     if [ ! -d "${dataDir}" ]; then
-      mkdir -p "${runDir}" "${logDir}" "${dataDir}"
+      mkdir -p "${runDir}" "${logDir}" "${dataDir}" "${config.services.mysql.settings.mysqld.log_bin}" "${config.services.mysql.settings.mysqld.relay_log}" "${config.services.mysql.settings.mysqld.innodb_log_group_home_dir}"
       echo 'Initializing database...'
       ${cfg.package}/bin/mysqld \
         --defaults-file=${configFile} \
-        --log-bin=${logDir} \
-        --relay-log=${logDir} \
-        --innodb-log-group-home-dir=${logDir} \
+        --log-bin=${config.services.mysql.settings.mysqld.log_bin} \
+        --relay-log=${config.services.mysql.settings.mysqld.relay_log} \
+        --innodb-log-group-home-dir=${config.services.mysql.settings.mysqld.innodb_log_group_home_dir} \
         --initialize \
         --initialize-insecure \
         --authentication-policy="mysql_native_password" \
@@ -90,8 +90,8 @@ in {
           mysqlx = 0;
           socket = "${runDir}/mysqld.sock";
           authentication-policy = "mysql_native_password";
-          log_bin = "${logDir}";
-          relay_log = "${logDir}";
+          log_bin = "${logDir}/binlog";
+          relay_log = "${logDir}/relaylog";
           innodb_log_group_home_dir = "${logDir}";
         };
       };
