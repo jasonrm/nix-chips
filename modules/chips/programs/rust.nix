@@ -72,7 +72,7 @@ in {
       ];
       environment = [
         "RUST_TOOLCHAIN_BIN=${cfg.toolchain}/bin"
-        "RUST_STD_LIB=${toolchain-with-path}/lib/rustlib/src/rust/library"
+        "RUST_STD_LIB=${toolchain-with-path}/library"
       ];
       shellHooks = ''
         echo RUST_TOOLCHAIN_BIN $RUST_TOOLCHAIN_BIN
