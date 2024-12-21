@@ -39,8 +39,6 @@ in {
           pkgs.rustfmt
           pkgs.cargo-watch
           pkgs.rust-analyzer
-          pkgs.rustPlatform.rustcSrc
-          pkgs.rustPlatform.rustLibSrc
         ];
         description = "Additional packages to include in the dev shell";
       };
@@ -72,7 +70,7 @@ in {
       ];
       environment = [
         "RUST_TOOLCHAIN_BIN=${cfg.toolchain}/bin"
-        "RUST_STD_LIB=${toolchain-with-path}/library"
+        "RUST_STD_LIB=${pkgs.rustPlatform.rustLibSrc}"
       ];
       shellHooks = ''
         echo RUST_TOOLCHAIN_BIN $RUST_TOOLCHAIN_BIN
