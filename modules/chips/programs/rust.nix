@@ -57,6 +57,15 @@ in {
         default = toolchain-with-path;
         readOnly = true;
       };
+
+      standardLibraryOutput = mkOption {
+        type = oneOf [
+          package
+          path
+        ];
+        default = pkgs.rustPlatform.rustLibSrc;
+        readOnly = true;
+      };
     };
   };
 
@@ -70,7 +79,7 @@ in {
       ];
       environment = [
         "RUST_TOOLCHAIN_BIN=${cfg.toolchain}/bin"
-        "RUST_STD_LIB=${pkgs.rustPlatform.rustLibSrc}"
+        "RUST_STD_LIB=${cfg.standardLibraryOutput}"
       ];
       shellHooks = ''
         echo RUST_TOOLCHAIN_BIN $RUST_TOOLCHAIN_BIN
