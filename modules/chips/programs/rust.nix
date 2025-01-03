@@ -86,8 +86,14 @@ in {
         echo RUST_STD_LIB       $RUST_STD_LIB
         if [ -f .idea/workspace.xml ]; then
             echo "Updating RustProjectSettings"
-            ${pkgs.xmlstarlet}/bin/xmlstarlet ed -L -u 'project/component[@name="RustProjectSettings"]/option[@name="explicitPathToStdlib"]/@value' -v "$RUST_STD_LIB" .idea/workspace.xml
-            ${pkgs.xmlstarlet}/bin/xmlstarlet ed -L -u 'project/component[@name="RustProjectSettings"]/option[@name="toolchainHomeDirectory"]/@value' -v "$RUST_TOOLCHAIN_BIN" .idea/workspace.xml
+            ${pkgs.xmlstarlet}/bin/xmlstarlet ed -L \
+                -u 'project/component[@name="RustProjectSettings"]/option[@name="explicitPathToStdlib"]/@value' \
+                -v "$RUST_STD_LIB" \
+                .idea/workspace.xml
+            ${pkgs.xmlstarlet}/bin/xmlstarlet ed -L \
+                -u 'project/component[@name="RustProjectSettings"]/option[@name="toolchainHomeDirectory"]/@value' \
+                -v "$RUST_TOOLCHAIN_BIN" \
+                .idea/workspace.xml
         fi
       '';
     };
