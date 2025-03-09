@@ -88,7 +88,7 @@ in {
         mysqld = {
           tls_version = "";
           mysqlx = 0;
-          socket = "${runDir}/mysqld.sock";
+          socket = ["${runDir}/mysqld.sock"];
           authentication-policy = "mysql_native_password";
           log_bin = "${logDir}/binlog";
           relay_log = "${logDir}/relaylog";
