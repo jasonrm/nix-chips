@@ -1,9 +1,6 @@
+{ pkgs, lib, ... }:
+with lib;
 {
-  pkgs,
-  lib,
-  ...
-}:
-with lib; {
   options = with types; {
     system = {
       stateVersion = mkOption {

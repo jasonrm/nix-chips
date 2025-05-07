@@ -4,8 +4,9 @@
   config,
   ...
 }:
-with lib; let
-  format = pkgs.formats.ini {listsAsDuplicateKeys = true;};
+with lib;
+let
+  format = pkgs.formats.ini { listsAsDuplicateKeys = true; };
 
   cfg = config.services.mysql;
   runDir = cfg.dataDir + "/run";
@@ -29,11 +30,7 @@ with lib; let
         --initialize \
         --initialize-insecure \
         --authentication-policy="mysql_native_password" \
-        ${
-      if cfg.initialScript != null
-      then "--init-file=${cfg.initialScript}"
-      else ""
-    } \
+        ${if cfg.initialScript != null then "--init-file=${cfg.initialScript}" else ""} \
         ${mysqldOptions}
     fi
 
@@ -44,21 +41,19 @@ with lib; let
   '';
 
   ensureFile = pkgs.writeText "ensure.sql" ''
-    ${concatMapStrings (
-        database: "CREATE DATABASE IF NOT EXISTS `${database}`;"
-      )
-      cfg.ensureDatabases}
+    ${concatMapStrings (database: "CREATE DATABASE IF NOT EXISTS `${database}`;") cfg.ensureDatabases}
 
-    ${concatMapStrings (user: (
-        concatStringsSep "\n" ([
-            "CREATE USER IF NOT EXISTS '${user.name}'@'localhost';"
-          ]
-          ++ (mapAttrsToList (
-              database: permission: "GRANT ${permission} ON ${database} TO '${user.name}'@'localhost';"
-            )
-            user.ensurePermissions))
+    ${concatMapStrings (
+      user:
+      (concatStringsSep "\n" (
+        [
+          "CREATE USER IF NOT EXISTS '${user.name}'@'localhost';"
+        ]
+        ++ (mapAttrsToList (
+          database: permission: "GRANT ${permission} ON ${database} TO '${user.name}'@'localhost';"
+        ) user.ensurePermissions)
       ))
-      cfg.ensureUsers}
+    ) cfg.ensureUsers}
   '';
 
   mysql = pkgs.writeShellScriptBin "mysql" ''
@@ -72,9 +67,9 @@ with lib; let
       --defaults-file=${configFile} \
       $@
   '';
-in {
-  imports = [
-  ];
+in
+{
+  imports = [ ];
 
   config = lib.mkIf cfg.enable {
     services.mysql = {

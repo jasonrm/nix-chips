@@ -5,24 +5,23 @@
   chips,
   ...
 }:
-with lib; let
+with lib;
+let
   inherit (chips.lib.traefik) hostRegexp;
 
   cfg = config.programs.vite;
   nginx = config.services.nginx;
 
-  schema =
-    if config.programs.lego.enable
-    then "https"
-    else "http";
-in {
+  schema = if config.programs.lego.enable then "https" else "http";
+in
+{
   options = with types; {
     programs.vite = {
       enable = mkEnableOption (mdDoc "Enable Vite dev server.");
 
       virtualHost = mkOption {
         type = submodule (import "${pkgs.path}/nixos/modules/services/web-servers/nginx/vhost-options.nix");
-        default = {};
+        default = { };
         description = mdDoc ''
           Nginx configuration can be done by adapting {option}`services.nginx.virtualHosts`.
           See [](#opt-services.nginx.virtualHosts) for further information.
@@ -94,9 +93,7 @@ in {
       };
       services = {
         vite = {
-          loadBalancer.servers = [
-            {url = "http://127.0.0.1:${toString cfg.port}";}
-          ];
+          loadBalancer.servers = [ { url = "http://127.0.0.1:${toString cfg.port}"; } ];
         };
       };
     };

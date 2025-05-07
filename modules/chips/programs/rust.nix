@@ -4,16 +4,15 @@
   config,
   ...
 }:
-with lib; let
+with lib;
+let
   cfg = config.programs.rust;
 
   toolchain-with-path = pkgs.stdenv.mkDerivation {
     pname = "toolchain-with-path";
     version = "0.1.0";
     dontUnpack = true;
-    nativeBuildInputs = [
-      pkgs.makeWrapper
-    ];
+    nativeBuildInputs = [ pkgs.makeWrapper ];
     installPhase = ''
       mkdir -p $out
       ln -s ${cfg.toolchain}/* $out/
@@ -21,11 +20,12 @@ with lib; let
       mkdir -p $out/bin
       ln -s ${cfg.toolchain}/bin/* $out/bin/
       for i in $out/bin/*; do
-          wrapProgram "$i" --prefix PATH : ${lib.makeBinPath [cfg.toolchain]}
+          wrapProgram "$i" --prefix PATH : ${lib.makeBinPath [ cfg.toolchain ]}
       done
     '';
   };
-in {
+in
+{
   options = with lib.types; {
     programs.rust = {
       enable = mkEnableOption "rust support";
@@ -71,12 +71,8 @@ in {
 
   config = {
     devShell = mkIf cfg.enable {
-      nativeBuildInputs = [
-        toolchain-with-path
-      ];
-      contents = [
-        pkgs.libiconv
-      ];
+      nativeBuildInputs = [ toolchain-with-path ];
+      contents = [ pkgs.libiconv ];
       environment = [
         "RUST_TOOLCHAIN_BIN=${cfg.toolchain}/bin"
         "RUST_STD_LIB=${cfg.standardLibraryOutput}"

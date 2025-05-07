@@ -3,7 +3,8 @@
   pkgs,
   config,
   ...
-}: let
+}:
+let
   inherit (lib) mkOption mapAttrs types;
 
   defaults = {
@@ -37,12 +38,14 @@
     # vite = 2021;
   };
 
-  mkPortOption = name: port:
+  mkPortOption =
+    name: port:
     mkOption {
       type = types.int;
       default = port;
     };
-in {
+in
+{
   options = {
     ports = mapAttrs mkPortOption defaults;
   };

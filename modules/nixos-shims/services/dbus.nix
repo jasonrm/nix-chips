@@ -4,10 +4,9 @@
   modulesPath,
   ...
 }:
-with lib; {
+with lib;
+{
   options = with types; {
-    services.dbus = mkOption {
-      type = attrs;
-    };
+    services.dbus = mkOption { type = attrs; };
   };
 }

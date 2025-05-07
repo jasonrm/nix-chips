@@ -5,38 +5,40 @@
   config,
   ...
 }:
-with lib; let
+with lib;
+let
   cfg = config.programs.supervisord;
 
   inherit (builtins) concatStringsSep;
 
-  toStr = value:
-    if true == value
-    then "true"
-    else if false == value
-    then "false"
-    else toString value;
+  toStr =
+    value:
+    if true == value then
+      "true"
+    else if false == value then
+      "false"
+    else
+      toString value;
 
   programEntry = name: attrs: ''
     [program:${name}]
-    ${generators.toKeyValue {} (mapAttrs prepProgramAttrs (filterAttrs programAttrFilter attrs))}
+    ${generators.toKeyValue { } (mapAttrs prepProgramAttrs (filterAttrs programAttrFilter attrs))}
   '';
 
-  programAttrFilter = n: v:
-    if v == null
-    then false
-    else if v == ""
-    then false
-    else if v == {}
-    then false
-    else if v == []
-    then false
-    else true;
+  programAttrFilter =
+    n: v:
+    if v == null then
+      false
+    else if v == "" then
+      false
+    else if v == { } then
+      false
+    else if v == [ ] then
+      false
+    else
+      true;
 
-  prepProgramAttrs = name: value:
-    if isList value
-    then concatStringsSep "," value
-    else value;
+  prepProgramAttrs = name: value: if isList value then concatStringsSep "," value else value;
 
   programEntries = attrsets.mapAttrsToList programEntry cfg.programs;
   configuration = pkgs.writeText "supervisord.ini" ''
@@ -46,10 +48,13 @@ with lib; let
     ${(concatStringsSep "" programEntries)}
   '';
 
-  programOption = with types;
-    {name, ...}: let
+  programOption =
+    with types;
+    { name, ... }:
+    let
       programOption = cfg.programs.${name};
-    in {
+    in
+    {
       options = {
         autostart = mkOption {
           type = bool;
@@ -73,7 +78,10 @@ with lib; let
           default = null;
         };
         command = mkOption {
-          type = oneOf [path str];
+          type = oneOf [
+            path
+            str
+          ];
           description = "Command to supervise. It can be given as full path to executable or can be calculated via PATH variable. Command line parameters also should be supplied in this string.";
         };
         stdout_logfile = mkOption {
@@ -110,15 +118,20 @@ with lib; let
         };
         environment = mkOption {
           type = listOf str;
-          default = [];
+          default = [ ];
         };
         envFiles = mkOption {
-          type = nullOr (listOf (oneOf [path str]));
-          default = [];
+          type = nullOr (
+            listOf (oneOf [
+              path
+              str
+            ])
+          );
+          default = [ ];
         };
         depends_on = mkOption {
           type = listOf str;
-          default = [];
+          default = [ ];
         };
         restartpause = mkOption {
           type = nullOr int;
@@ -163,7 +176,9 @@ with lib; let
       };
     };
 
-  programRunDirectories = attrsets.mapAttrsToList (name: programOption: programOption.directory) cfg.programs;
+  programRunDirectories = attrsets.mapAttrsToList (
+    name: programOption: programOption.directory
+  ) cfg.programs;
 
   supervisord-debug = pkgs.writeShellScriptBin "supervisord-debug" ''
     cat ${configuration}
@@ -173,7 +188,8 @@ with lib; let
     ${pkgs.coreutils}/bin/mkdir -p ${concatStringsSep " " (map escapeShellArg programRunDirectories)}
     ${pkgs.supervisord-go}/bin/supervisord --configuration=${configuration} $*
   '';
-in {
+in
+{
   imports = [
     # paths to other modules
   ];
@@ -194,7 +210,7 @@ in {
         default = config.ports.supervisord;
       };
       programs = mkOption {
-        default = {};
+        default = { };
         type = attrsOf (submodule programOption);
       };
 
@@ -213,45 +229,46 @@ in {
       }
     ];
 
-    programs.supervisord.programs =
-      mapAttrs (
-        name: service: let
-          beforeServices = filter isString (mapAttrsToList (beforeName: service:
-            if (any (v: v == "${name}.service") service.before)
-            then beforeName
-            else null)
-          config.systemd.services);
-          afterServices = filter (v: hasAttrByPath [v] config.programs.supervisord.programs) (map (removeSuffix ".service") service.after);
-          baseEnvFile = pkgs.writeText "${name}.env" (concatStringsSep "\n" (mapAttrsToList (name: value: "${name}=${value}") service.environment));
-          additionalEnv = (
-            optionals (hasAttrByPath ["serviceConfig" "EnvironmentFile"] service) (
-              map toString (
-                if service.serviceConfig.EnvironmentFile == null
-                then []
-                else if isList service.serviceConfig.EnvironmentFile
-                then service.serviceConfig.EnvironmentFile
-                else [service.serviceConfig.EnvironmentFile]
-              )
+    programs.supervisord.programs = mapAttrs (
+      name: service:
+      let
+        beforeServices = filter isString (
+          mapAttrsToList (
+            beforeName: service: if (any (v: v == "${name}.service") service.before) then beforeName else null
+          ) config.systemd.services
+        );
+        afterServices = filter (v: hasAttrByPath [ v ] config.programs.supervisord.programs) (
+          map (removeSuffix ".service") service.after
+        );
+        baseEnvFile = pkgs.writeText "${name}.env" (
+          concatStringsSep "\n" (mapAttrsToList (name: value: "${name}=${value}") service.environment)
+        );
+        additionalEnv = (
+          optionals (hasAttrByPath [ "serviceConfig" "EnvironmentFile" ] service) (
+            map toString (
+              if service.serviceConfig.EnvironmentFile == null then
+                [ ]
+              else if isList service.serviceConfig.EnvironmentFile then
+                service.serviceConfig.EnvironmentFile
+              else
+                [ service.serviceConfig.EnvironmentFile ]
             )
-          );
-        in
-          filterAttrs (n: v: v != {}) {
-            autostart = mkDefault (service.wantedBy != []);
-            command = mkDefault "${service.serviceConfig.ExecStart}";
-            depends_on = mkDefault (beforeServices ++ afterServices);
-            envFiles = [baseEnvFile] ++ additionalEnv;
-          }
-          // (optionalAttrs (hasAttrByPath ["serviceConfig" "WorkingDirectory"] service) {
-            directory = "${service.serviceConfig.WorkingDirectory}";
-          })
-          // (optionalAttrs (hasAttrByPath ["serviceConfig" "Type"] service) {
-            autorestart =
-              if service.serviceConfig.Type == "oneshot"
-              then false
-              else true;
-          })
-      )
-      config.systemd.services;
+          )
+        );
+      in
+      filterAttrs (n: v: v != { }) {
+        autostart = mkDefault (service.wantedBy != [ ]);
+        command = mkDefault "${service.serviceConfig.ExecStart}";
+        depends_on = mkDefault (beforeServices ++ afterServices);
+        envFiles = [ baseEnvFile ] ++ additionalEnv;
+      }
+      // (optionalAttrs (hasAttrByPath [ "serviceConfig" "WorkingDirectory" ] service) {
+        directory = "${service.serviceConfig.WorkingDirectory}";
+      })
+      // (optionalAttrs (hasAttrByPath [ "serviceConfig" "Type" ] service) {
+        autorestart = if service.serviceConfig.Type == "oneshot" then false else true;
+      })
+    ) config.systemd.services;
 
     devShell = {
       contents = [
@@ -271,9 +288,7 @@ in {
       };
       services = {
         supervisord = {
-          loadBalancer.servers = [
-            {url = "http://127.0.0.1:${toString cfg.port}";}
-          ];
+          loadBalancer.servers = [ { url = "http://127.0.0.1:${toString cfg.port}"; } ];
         };
       };
     };

@@ -5,8 +5,7 @@
   lib,
   ...
 }:
-with lib; {
-  imports = [
-    (modulesPath + "/services/amqp/rabbitmq.nix")
-  ];
+with lib;
+{
+  imports = [ (modulesPath + "/services/amqp/rabbitmq.nix") ];
 }

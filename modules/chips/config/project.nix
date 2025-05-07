@@ -3,18 +3,17 @@
   pkgs,
   config,
   ...
-}: let
+}:
+let
   inherit (lib) mkOption types;
   cfg = config.project;
-in {
-  imports = [
-  ];
+in
+{
+  imports = [ ];
 
   options = with types; {
     project = {
-      name = mkOption {
-        type = str;
-      };
+      name = mkOption { type = str; };
       domainSuffix = mkOption {
         type = str;
         default = "bitnix.dev";
@@ -24,9 +23,7 @@ in {
 
   config = {
     devShell = {
-      environment = [
-        "DOMAIN_SUFFIX=${cfg.domainSuffix}"
-      ];
+      environment = [ "DOMAIN_SUFFIX=${cfg.domainSuffix}" ];
     };
   };
 }

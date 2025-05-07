@@ -3,19 +3,18 @@
   pkgs,
   config,
   ...
-}: let
+}:
+let
   inherit (lib) mkOption;
 
   cfg = config.services.minio;
-in {
-  imports = [
-  ];
+in
+{
+  imports = [ ];
 
   config = lib.mkIf cfg.enable {
     devShell = {
-      contents = [
-        pkgs.minio
-      ];
+      contents = [ pkgs.minio ];
     };
   };
 }

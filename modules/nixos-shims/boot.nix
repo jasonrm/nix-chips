@@ -1,9 +1,6 @@
+{ pkgs, lib, ... }:
+with lib;
 {
-  pkgs,
-  lib,
-  ...
-}:
-with lib; {
   options = with types; {
     boot = {
       kernel = mkOption {
@@ -12,11 +9,11 @@ with lib; {
       };
       kernelParams = mkOption {
         type = listOf str;
-        default = [];
+        default = [ ];
       };
       kernelModules = mkOption {
         type = listOf str;
-        default = [];
+        default = [ ];
       };
       kernelPackages = mkOption {
         type = attrs;

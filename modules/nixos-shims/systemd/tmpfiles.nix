@@ -5,13 +5,15 @@
   modulesPath,
   ...
 }:
-with lib; let
+with lib;
+let
   inherit (pkgs) path callPackage writeText;
   systemdTmpfiles = callPackage "${path}/nixos/modules/system/boot/systemd/tmpfiles.nix" {
-    utils = callPackage "${path}/nixos/lib/utils.nix" {};
+    utils = callPackage "${path}/nixos/lib/utils.nix" { };
   };
   tmpFilesRules = writeText "tmpfiles.conf" (concatStringsSep "\n" config.systemd.tmpfiles.rules);
-in {
+in
+{
   options = systemdTmpfiles.options;
   config = {
     devShell.shellHooks = ''

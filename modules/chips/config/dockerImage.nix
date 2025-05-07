@@ -5,7 +5,8 @@
   config,
   ...
 }:
-with lib; let
+with lib;
+let
   inherit (lib) mapAttrs types;
   inherit (pkgs.writers) writeBashBin;
   inherit (pkgs.stdenv) isDarwin;
@@ -18,84 +19,79 @@ with lib; let
     copyToRoot = cfg.baseContents;
   };
 
-  preEntry = image: (pkgs.writeShellScriptBin "pre-entry" ''
-    echo preEntry: entryCommands
-    ${lib.concatStringsSep "\n" image.entryCommands}
+  preEntry =
+    image:
+    (pkgs.writeShellScriptBin "pre-entry" ''
+      echo preEntry: entryCommands
+      ${lib.concatStringsSep "\n" image.entryCommands}
 
-    echo preEntry: tmp
-    mkdir -p /tmp/ && chmod 1777 /tmp/
+      echo preEntry: tmp
+      mkdir -p /tmp/ && chmod 1777 /tmp/
 
-    echo preEntry: done
-    exec ${pkgs.dumb-init}/bin/dumb-init $*
-  '');
+      echo preEntry: done
+      exec ${pkgs.dumb-init}/bin/dumb-init $*
+    '');
 
-  nonRootShadowSetup = {
-    user,
-    uid,
-    gid ? uid,
-  }:
-    with pkgs; [
-      (
-        writeTextDir "etc/shadow" ''
-          root:!x:::::::
-          nobody:!:1::::::
-          ${user}:!:::::::
-        ''
-      )
-      (
-        writeTextDir "etc/passwd" ''
-          root:x:0:0::/root:${runtimeShell}
-          nobody:x:65534:65534:Unprivileged account (don't use!):/var/empty:/run/current-system/sw/bin/nologin
-          ${user}:x:${toString uid}:${toString gid}::/home/${user}:
-        ''
-      )
-      (
-        writeTextDir "etc/group" ''
-          root:x:0:
-          nogroup:x:65534:
-          ${user}:x:${toString gid}:
-        ''
-      )
-      (
-        writeTextDir "etc/gshadow" ''
-          root:x::
-          nobody:!:1::::::
-          ${user}:x::
-        ''
-      )
+  nonRootShadowSetup =
+    {
+      user,
+      uid,
+      gid ? uid,
+    }:
+    with pkgs;
+    [
+      (writeTextDir "etc/shadow" ''
+        root:!x:::::::
+        nobody:!:1::::::
+        ${user}:!:::::::
+      '')
+      (writeTextDir "etc/passwd" ''
+        root:x:0:0::/root:${runtimeShell}
+        nobody:x:65534:65534:Unprivileged account (don't use!):/var/empty:/run/current-system/sw/bin/nologin
+        ${user}:x:${toString uid}:${toString gid}::/home/${user}:
+      '')
+      (writeTextDir "etc/group" ''
+        root:x:0:
+        nogroup:x:65534:
+        ${user}:x:${toString gid}:
+      '')
+      (writeTextDir "etc/gshadow" ''
+        root:x::
+        nobody:!:1::::::
+        ${user}:x::
+      '')
     ];
 
   dockerImageOption = with types; {
     options = {
       config = mkOption {
         type = attrs;
-        default = {};
+        default = { };
       };
       contents = mkOption {
         type = listOf package;
-        default = [];
+        default = [ ];
       };
       entryCommands = mkOption {
         type = listOf str;
-        default = [];
+        default = [ ];
       };
       command = mkOption {
         type = listOf str;
-        default = [];
+        default = [ ];
       };
       extraCommands = mkOption {
         type = listOf str;
-        default = [];
+        default = [ ];
       };
       environment = mkOption {
         type = listOf str;
-        default = [
-          "SSL_CERT_FILE=${pkgs.cacert.out}/etc/ssl/certs/ca-bundle.crt"
-        ];
+        default = [ "SSL_CERT_FILE=${pkgs.cacert.out}/etc/ssl/certs/ca-bundle.crt" ];
       };
     };
   };
-in {
+in
+{
   imports = [
     # paths to other modules
   ];
@@ -104,10 +100,10 @@ in {
     dockerImages = {
       baseContents = mkOption {
         type = listOf package;
-        default = [];
+        default = [ ];
       };
       images = mkOption {
-        default = {};
+        default = { };
         type = attrsOf (submodule dockerImageOption);
       };
 
@@ -119,28 +115,20 @@ in {
   };
 
   config = {
-    dockerImages.output =
-      mapAttrs
-      (k: image: (
-        dockerTools.buildImage {
-          name = k;
-          fromImage = baseImage;
-          extraCommands = lib.concatStringsSep "\n" image.extraCommands;
-          copyToRoot = image.contents;
-          # WIP
-          #  ++ (nonRootShadowSetup { user = "http"; uid = 999; })
-          config =
-            image.config
-            // {
-              Entrypoint = ["${preEntry image}/bin/pre-entry"];
-              Env =
-                (image.config.Env or [])
-                ++ [
-                  "IS_DOCKER=1"
-                ];
-            };
-        }
-      ))
-      config.dockerImages.images;
+    dockerImages.output = mapAttrs (
+      k: image:
+      (dockerTools.buildImage {
+        name = k;
+        fromImage = baseImage;
+        extraCommands = lib.concatStringsSep "\n" image.extraCommands;
+        copyToRoot = image.contents;
+        # WIP
+        #  ++ (nonRootShadowSetup { user = "http"; uid = 999; })
+        config = image.config // {
+          Entrypoint = [ "${preEntry image}/bin/pre-entry" ];
+          Env = (image.config.Env or [ ]) ++ [ "IS_DOCKER=1" ];
+        };
+      })
+    ) config.dockerImages.images;
   };
 }

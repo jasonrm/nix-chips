@@ -3,22 +3,29 @@
   pkgs,
   config,
   ...
-}: let
+}:
+let
   inherit (lib) mkOption;
 
-  appOption = with lib.types;
-    {name, ...}: let
+  appOption =
+    with lib.types;
+    { name, ... }:
+    let
       appOption = outputs.apps.${name};
-    in {
+    in
+    {
       options = {
         type = mkOption {
           type = str;
           default = "app";
         };
         program = mkOption {
-          type = oneOf [path str];
+          type = oneOf [
+            path
+            str
+          ];
         };
       };
     };
-in {
-}
+in
+{ }

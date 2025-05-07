@@ -5,9 +5,11 @@
   config,
   ...
 }:
-with lib; let
+with lib;
+let
   cfg = config.programs.go;
-in {
+in
+{
   options = with lib.types; {
     programs.go = {
       enable = mkEnableOption "go support";
@@ -20,11 +22,7 @@ in {
   };
 
   config = {
-    devShell = mkIf cfg.enable {
-      contents = [
-        cfg.pkg
-      ];
-    };
+    devShell = mkIf cfg.enable { contents = [ cfg.pkg ]; };
 
     #    outputs.apps.go = {
     #      program = "${cfg.pkg}/bin/go";

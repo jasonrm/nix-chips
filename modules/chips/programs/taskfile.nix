@@ -5,26 +5,26 @@
   config,
   ...
 }:
-with lib; let
+with lib;
+let
   cfg = config.programs.taskfile;
 
   taskfileConfigFile = pkgs.writeText "Taskfile.yml" (builtins.toJSON cfg.config);
 
   taskSourceSubmodule = with types; {
     options = {
-      exclude = mkOption {
-        type = str;
-      };
+      exclude = mkOption { type = str; };
     };
   };
 
   taskCommandSubmodule = with types; {
     options = {
-      cmd = mkOption {
-        type = str;
-      };
+      cmd = mkOption { type = str; };
       for = mkOption {
-        type = nullOr (oneOf [attrs str]);
+        type = nullOr (oneOf [
+          attrs
+          str
+        ]);
         default = null;
       };
     };
@@ -32,24 +32,26 @@ with lib; let
 
   taskPreconditionSubmodule = with types; {
     options = {
-      sh = mkOption {
-        type = str;
-      };
-      msg = mkOption {
-        type = str;
-      };
+      sh = mkOption { type = str; };
+      msg = mkOption { type = str; };
     };
   };
 
   taskSubmodule = with types; {
     options = {
       cmds = mkOption {
-        type = listOf (oneOf [str (submodule taskCommandSubmodule)]);
-        default = [];
+        type = listOf (oneOf [
+          str
+          (submodule taskCommandSubmodule)
+        ]);
+        default = [ ];
       };
       preconditions = mkOption {
-        type = listOf (oneOf [str (submodule taskPreconditionSubmodule)]);
-        default = [];
+        type = listOf (oneOf [
+          str
+          (submodule taskPreconditionSubmodule)
+        ]);
+        default = [ ];
       };
       deps = mkOption {
         type = nullOr (listOf str);
@@ -61,15 +63,16 @@ with lib; let
       };
       env = mkOption {
         type = attrsOf str;
-        default = {};
+        default = { };
       };
       sources = mkOption {
-        type = listOf (oneOf [str (submodule taskSourceSubmodule)]);
-        default = [];
+        type = listOf (oneOf [
+          str
+          (submodule taskSourceSubmodule)
+        ]);
+        default = [ ];
       };
-      desc = mkOption {
-        type = str;
-      };
+      desc = mkOption { type = str; };
       dir = mkOption {
         type = nullOr str;
         default = null;
@@ -81,7 +84,7 @@ with lib; let
     options = {
       tasks = mkOption {
         type = attrsOf (submodule taskSubmodule);
-        default = {};
+        default = { };
       };
       version = mkOption {
         type = str;
@@ -89,13 +92,14 @@ with lib; let
       };
     };
   };
-in {
+in
+{
   options = {
     programs.taskfile = with types; {
       enable = mkEnableOption "taskfile support";
       config = mkOption {
         type = submodule taskfileConfig;
-        default = {};
+        default = { };
       };
     };
   };
@@ -104,16 +108,18 @@ in {
     programs.taskfile.config.tasks = {
       update-nix = {
         desc = "Update Nix Flakes";
-        cmds = ["${pkgs.nix}/bin/nix flake update"];
+        cmds = [ "${pkgs.nix}/bin/nix flake update" ];
       };
 
       format-nix = {
         desc = "Format Nix Files";
-        cmds = [''${pkgs.alejandra}/bin/alejandra {{.CLI_ARGS | default "." }}''];
+        cmds = [ ''${pkgs.alejandra}/bin/alejandra {{.CLI_ARGS | default "." }}'' ];
       };
       format-json = {
         desc = "Format JSON Files";
-        cmds = [''for FILE in {{.CLI_ARGS | default "*.json" }}; do ${pkgs.jq}/bin/jq --sort-keys --indent 2 . "$FILE" > "$FILE".tmp && mv "$FILE".tmp "$FILE"; done''];
+        cmds = [
+          ''for FILE in {{.CLI_ARGS | default "*.json" }}; do ${pkgs.jq}/bin/jq --sort-keys --indent 2 . "$FILE" > "$FILE".tmp && mv "$FILE".tmp "$FILE"; done''
+        ];
       };
 
       check = {
@@ -121,23 +127,21 @@ in {
       };
       format = {
         desc = "Run All Format Tasks";
-        deps = ["format-nix"];
+        deps = [ "format-nix" ];
       };
       install = {
         desc = "Run All Install Tasks";
       };
       update = {
         desc = "Run All Update Tasks";
-        deps = ["update-nix"];
+        deps = [ "update-nix" ];
       };
       build = {
         desc = "Run All Build Tasks";
       };
     };
     devShell = {
-      contents = [
-        pkgs.go-task
-      ];
+      contents = [ pkgs.go-task ];
       shellHooks = ''
         ln -sf ${taskfileConfigFile} Taskfile.yml
       '';

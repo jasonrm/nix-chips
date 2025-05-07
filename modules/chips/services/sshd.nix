@@ -3,9 +3,11 @@
   pkgs,
   config,
   ...
-}: let
+}:
+let
   cfg = config.services.sshd;
-in {
+in
+{
   options = {
     services.sshd = {
       enable = lib.mkEnableOption "enable sshd";
@@ -30,9 +32,7 @@ in {
 
   config = lib.mkMerge [
     (lib.mkIf cfg.enable {
-      dockerImages.baseContents = [
-        pkgs.openssh
-      ];
+      dockerImages.baseContents = [ pkgs.openssh ];
       programs.supervisord.programs.sshd = {
         command = ''
           ${pkgs.openssh}/bin/sshd -D -e

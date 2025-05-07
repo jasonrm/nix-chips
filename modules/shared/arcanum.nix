@@ -5,7 +5,8 @@
   ...
 }:
 with lib;
-with types; let
+with types;
+let
   cfg = config.arcanum;
 
   secretFile = submodule {
@@ -61,40 +62,44 @@ with types; let
 
       before = mkOption {
         type = listOf str;
-        default = [];
+        default = [ ];
         description = "Ensure this secret is decrypted before these services are started.";
       };
     };
   };
-in {
+in
+{
   options = with types; {
     arcanum = {
       enable = mkEnableOption "Enable arcanum encrypted secret management";
 
       relativeRoot = mkOption {
-        type = oneOf [path str];
+        type = oneOf [
+          path
+          str
+        ];
         description = "relative path to use for file sources";
         default = "$PWD";
       };
       adminRecipients = mkOption {
         type = listOf str;
         description = "public keys to include as recipients for all secrets";
-        default = [];
+        default = [ ];
       };
       defaultRecipients = mkOption {
         type = listOf str;
         description = "default recipients for a secret";
-        default = [];
+        default = [ ];
       };
       wellKnownRecipients = mkOption {
         type = attrsOf str;
         description = "public keys of well known recipients";
-        default = {};
+        default = { };
       };
       files = mkOption {
         type = attrsOf secretFile;
         description = "secret configuration";
-        default = {};
+        default = { };
       };
       hostPublicKey = mkOption {
         type = str;
@@ -102,12 +107,15 @@ in {
       };
       identity = mkOption {
         default = "/etc/ssh/ssh_host_ed25519_key";
-        type = oneOf [str path];
+        type = oneOf [
+          str
+          path
+        ];
         description = "Identity file to use for decryption.";
       };
     };
   };
   config = {
-    arcanum.enable = mkDefault (cfg.files != {});
+    arcanum.enable = mkDefault (cfg.files != { });
   };
 }

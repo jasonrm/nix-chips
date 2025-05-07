@@ -4,8 +4,7 @@
   modulesPath,
   ...
 }:
-with lib; {
-  imports = [
-    (modulesPath + "/services/networking/haproxy.nix")
-  ];
+with lib;
+{
+  imports = [ (modulesPath + "/services/networking/haproxy.nix") ];
 }

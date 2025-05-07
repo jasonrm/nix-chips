@@ -5,7 +5,8 @@
   config,
   ...
 }:
-with lib; let
+with lib;
+let
   cfg = config.programs.lefthook;
 
   leftHookConfigFile = pkgs.writeText "lefthook.yml" (builtins.toJSON cfg.config);
@@ -16,9 +17,7 @@ with lib; let
         type = nullOr str;
         default = null;
       };
-      run = mkOption {
-        type = str;
-      };
+      run = mkOption { type = str; };
       skip = mkOption {
         type = bool;
         default = false;
@@ -32,12 +31,8 @@ with lib; let
 
   lefthookConfig = with types; {
     options = {
-      commands = mkOption {
-        type = nullOr (attrsOf (submodule lefthookCommand));
-      };
-      parallel = mkOption {
-        type = nullOr bool;
-      };
+      commands = mkOption { type = nullOr (attrsOf (submodule lefthookCommand)); };
+      parallel = mkOption { type = nullOr bool; };
     };
   };
 
@@ -45,25 +40,26 @@ with lib; let
     options = {
       skip_output = mkOption {
         type = listOf str;
-        default = [];
+        default = [ ];
       };
       pre-commit = mkOption {
         type = submodule lefthookConfig;
-        default = {};
+        default = { };
       };
       pre-push = mkOption {
         type = submodule lefthookConfig;
-        default = {};
+        default = { };
       };
     };
   };
-in {
+in
+{
   options = {
     programs.lefthook = with types; {
       enable = mkEnableOption "lefthook support";
       config = mkOption {
         type = submodule lefthookGlobalConfig;
-        default = {};
+        default = { };
       };
       filename = mkOption {
         type = str;
@@ -81,19 +77,23 @@ in {
     programs.taskfile.config.tasks = {
       check-unresovled-conflicts = {
         desc = "Check For Unresolved Git Conflicts";
-        cmds = [''! ${pkgs.ripgrep}/bin/rg "(^[<>=]{5,})$" --with-filename --count {{.CLI_ARGS | default "."}}''];
+        cmds = [
+          ''! ${pkgs.ripgrep}/bin/rg "(^[<>=]{5,})$" --with-filename --count {{.CLI_ARGS | default "."}}''
+        ];
       };
       check-gitleaks-detect = {
         desc = "Check For Secrets In Git History";
-        cmds = [''${pkgs.gitleaks}/bin/gitleaks --baseline-path gitleaks-report.json detect -v''];
+        cmds = [ ''${pkgs.gitleaks}/bin/gitleaks --baseline-path gitleaks-report.json detect -v'' ];
       };
       check-gitleaks-protect = {
         desc = "Check For Secrets In Git History";
-        cmds = [''${pkgs.gitleaks}/bin/gitleaks --baseline-path gitleaks-report.json protect --staged -v''];
+        cmds = [
+          ''${pkgs.gitleaks}/bin/gitleaks --baseline-path gitleaks-report.json protect --staged -v''
+        ];
       };
 
       check = {
-        deps = ["check-unresovled-conflicts"];
+        deps = [ "check-unresovled-conflicts" ];
       };
     };
 
@@ -144,9 +144,7 @@ in {
       };
     };
     devShell = {
-      contents = [
-        pkgs.lefthook
-      ];
+      contents = [ pkgs.lefthook ];
       shellHooks =
         ''
           ln -sf ${leftHookConfigFile} ${cfg.filename}

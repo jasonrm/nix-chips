@@ -5,7 +5,8 @@
   config,
   ...
 }:
-with lib; let
+with lib;
+let
   cfg = config.devShell;
 
   # Note: If this dies with an error like `error: cannot coerce a list to a string`
@@ -31,7 +32,8 @@ with lib; let
 
     ${cfg.shellHooks}
   '';
-in {
+in
+{
   imports = [
     # paths to other modules
   ];
@@ -44,7 +46,7 @@ in {
 
       environment = mkOption {
         type = listOf str;
-        default = [];
+        default = [ ];
       };
 
       stdenv = mkOption {
@@ -59,17 +61,17 @@ in {
 
       directories = mkOption {
         type = listOf str;
-        default = [];
+        default = [ ];
       };
 
       nativeBuildInputs = mkOption {
         type = listOf package;
-        default = [];
+        default = [ ];
       };
 
       contents = mkOption {
         type = listOf package;
-        default = [];
+        default = [ ];
       };
 
       output = mkOption {
@@ -80,13 +82,11 @@ in {
   };
 
   config = {
-    devShell.output = pkgs.mkShell.override {stdenv = cfg.stdenv;} {
+    devShell.output = pkgs.mkShell.override { stdenv = cfg.stdenv; } {
       nativeBuildInputs = cfg.nativeBuildInputs;
       buildInputs =
         cfg.contents
-        ++ lib.optionals pkgs.stdenv.isDarwin (with pkgs.darwin.apple_sdk.frameworks; [
-          CoreServices
-        ]);
+        ++ lib.optionals pkgs.stdenv.isDarwin (with pkgs.darwin.apple_sdk.frameworks; [ CoreServices ]);
 
       shellHook = ''
         set -o allexport

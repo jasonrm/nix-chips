@@ -19,8 +19,13 @@
       utils,
       ...
     }@inputs:
-    {
+    let
       lib = import ./lib inputs;
+      output = lib.use { devShellsDir = ./devShells; };
+    in
+    output
+    // {
+      inherit lib;
     }
     // {
       templates.default = {

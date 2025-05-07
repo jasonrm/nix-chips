@@ -1,4 +1,5 @@
-{config, ...}: {
+{ config, ... }:
+{
   config = {
     arcanum = {
       identity = "~/.ssh/id_ed25519";

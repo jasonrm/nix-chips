@@ -3,9 +3,11 @@
   pkgs,
   config,
   ...
-}: let
+}:
+let
   cfg = config.services.dynamodb;
-in {
+in
+{
   options = {
     services.dynamodb = with lib.types; {
       enable = lib.mkEnableOption "enable dynamodb";
@@ -22,12 +24,8 @@ in {
 
   config = lib.mkMerge [
     (lib.mkIf cfg.enable {
-      dir.ensureExists = [
-        cfg.dataDir
-      ];
-      devShell.environment = [
-        "AWS_ENDPOINT_URL_DYNAMODB=http://127.0.0.1:${toString cfg.port}"
-      ];
+      dir.ensureExists = [ cfg.dataDir ];
+      devShell.environment = [ "AWS_ENDPOINT_URL_DYNAMODB=http://127.0.0.1:${toString cfg.port}" ];
 
       programs.supervisord.programs = {
         dynamodb = {

@@ -5,7 +5,8 @@
   chips,
   ...
 }:
-with lib; let
+with lib;
+let
   inherit (pkgs) writeText;
   inherit (pkgs.writers) writeBashBin;
   inherit (chips.lib.traefik) hostRegexp;
@@ -19,9 +20,7 @@ with lib; let
 
   nginx = config.services.nginx;
 
-  phpBase = cfg.php.pkg.buildEnv {
-    inherit (cfg.php) extensions extraConfig;
-  };
+  phpBase = cfg.php.pkg.buildEnv { inherit (cfg.php) extensions extraConfig; };
 
   phpWithSpx = cfg.php.pkg.buildEnv {
     extraConfig = ''
@@ -31,7 +30,12 @@ with lib; let
       spx.http_key=A3F6E538
       spx.http_ip_whitelist=*
     '';
-    extensions = f: (concatMap (exts: exts f) [cfg.php.extensions ({all, ...}: [all.spx])]);
+    extensions =
+      f:
+      (concatMap (exts: exts f) [
+        cfg.php.extensions
+        ({ all, ... }: [ all.spx ])
+      ]);
   };
 
   phpWithXdebug = cfg.php.pkg.buildEnv {
@@ -40,12 +44,22 @@ with lib; let
       xdebug.mode=debug
       xdebug.start_with_request=trigger
     '';
-    extensions = f: (concatMap (exts: exts f) [cfg.php.extensions ({all, ...}: [all.xdebug])]);
+    extensions =
+      f:
+      (concatMap (exts: exts f) [
+        cfg.php.extensions
+        ({ all, ... }: [ all.xdebug ])
+      ]);
   };
 
   phpWithExcimer = cfg.php.pkg.buildEnv {
     inherit (cfg.php) extraConfig;
-    extensions = f: (concatMap (exts: exts f) [cfg.php.extensions ({all, ...}: [all.excimer])]);
+    extensions =
+      f:
+      (concatMap (exts: exts f) [
+        cfg.php.extensions
+        ({ all, ... }: [ all.excimer ])
+      ]);
   };
 
   # auto_prepend_file=${../php-pcov/entry.php}
@@ -56,7 +70,12 @@ with lib; let
       pcov.directory=${config.dir.project}
       pcov.exclude="~(vendor|tests|node_modules)~"
     '';
-    extensions = f: (concatMap (exts: exts f) [cfg.php.extensions ({all, ...}: [all.pcov])]);
+    extensions =
+      f:
+      (concatMap (exts: exts f) [
+        cfg.php.extensions
+        ({ all, ... }: [ all.pcov ])
+      ]);
   };
 
   php-pcov = writeBashBin "php-pcov" ''
@@ -90,7 +109,8 @@ with lib; let
     cd ${config.dir.project}
   '';
   # exec ${phpWithPcov}/bin/php ${../php-pcov/report.php} $*
-in {
+in
+{
   options = with types; {
     programs.phpApp = {
       enable = mkEnableOption (mdDoc "Enable PHP-FPM App");
@@ -114,19 +134,16 @@ in {
         };
         extensions = mkOption {
           type = functionTo (listOf package);
-          default = {
-            enabled,
-            all,
-            ...
-          }:
+          default =
+            { enabled, all, ... }:
             with all;
-              enabled
-              ++ [
-                memcached
-                imagick
-                igbinary
-                redis
-              ];
+            enabled
+            ++ [
+              memcached
+              imagick
+              igbinary
+              redis
+            ];
         };
         extraConfig = mkOption {
           type = lines;
@@ -135,7 +152,11 @@ in {
       };
 
       poolConfig = mkOption {
-        type = attrsOf (oneOf [str int bool]);
+        type = attrsOf (oneOf [
+          str
+          int
+          bool
+        ]);
         default = {
           "pm" = "static";
           "pm.max_children" = 4;
@@ -147,7 +168,11 @@ in {
       };
 
       phpEnv = mkOption {
-        type = attrsOf (oneOf [str int bool]);
+        type = attrsOf (oneOf [
+          str
+          int
+          bool
+        ]);
         default = {
           "SENTRY_DSN" = "";
           "SENTRY_ENVIRONMENT" = "dev";
@@ -226,7 +251,7 @@ in {
       services = {
         nginx = {
           loadBalancer.servers = [
-            {url = "http://127.0.0.1:${toString config.services.nginx.defaultHTTPListenPort}";}
+            { url = "http://127.0.0.1:${toString config.services.nginx.defaultHTTPListenPort}"; }
           ];
         };
       };
