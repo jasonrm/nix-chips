@@ -84,9 +84,7 @@ in
   config = {
     devShell.output = pkgs.mkShell.override { stdenv = cfg.stdenv; } {
       nativeBuildInputs = cfg.nativeBuildInputs;
-      buildInputs =
-        cfg.contents
-        ++ lib.optionals pkgs.stdenv.isDarwin (with pkgs.darwin.apple_sdk.frameworks; [ CoreServices ]);
+      buildInputs = cfg.contents;
 
       shellHook = ''
         set -o allexport
