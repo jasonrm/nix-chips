@@ -39,6 +39,7 @@ in
           pkgs.rustfmt
           pkgs.cargo-watch
           pkgs.cargo-outdated
+          pkgs.cargo-udeps
           pkgs.rust-analyzer
         ];
         description = "Additional packages to include in the dev shell";
