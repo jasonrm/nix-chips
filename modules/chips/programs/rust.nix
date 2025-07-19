@@ -95,17 +95,17 @@ in
     programs.taskfile.config.tasks = {
       build-cargo = {
         dir = cfg.workingDirectory;
-        description = "Build the project";
+        desc = "Build the project";
         cmds = [ "${cfg.toolchainOutput}/bin/cargo build" ];
       };
       check-cargo = {
         dir = cfg.workingDirectory;
-        description = "Run tests";
+        desc = "Run tests";
         cmds = [ "${cfg.toolchainOutput}/bin/cargo check" ];
       };
       update-cargo = {
         dir = cfg.workingDirectory;
-        description = "Update dependencies";
+        desc = "Update dependencies";
         cmds = [ "${cfg.toolchainOutput}/bin/cargo update" ];
       };
 
