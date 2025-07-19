@@ -67,10 +67,15 @@ in
         default = pkgs.rustPlatform.rustLibSrc;
         readOnly = true;
       };
+
+      workingDirectory = mkOption {
+        type = nullOr str;
+        default = if config.dir.project != "/dev/null" then config.dir.project else null;
+      };
     };
   };
 
-  config = {
+  config = mkIf cfg.enable {
     programs.zed.settings = {
       lsp = {
         rust-analyzer = {
@@ -85,7 +90,68 @@ in
         };
       };
     };
-    devShell = mkIf cfg.enable {
+
+    programs.taskfile.enable = mkDefault true;
+    programs.taskfile.config.tasks = {
+      build-cargo = {
+        dir = cfg.workingDirectory;
+        description = "Build the project";
+        cmds = [ "${cfg.toolchainOutput}/bin/cargo build" ];
+      };
+      check-cargo = {
+        dir = cfg.workingDirectory;
+        description = "Run tests";
+        cmds = [ "${cfg.toolchainOutput}/bin/cargo check" ];
+      };
+      update-cargo = {
+        dir = cfg.workingDirectory;
+        description = "Update dependencies";
+        cmds = [ "${cfg.toolchainOutput}/bin/cargo update" ];
+      };
+
+      check.deps = [ "check-cargo" ];
+      update.deps = [ "update-cargo" ];
+      build.deps = [ "build-cargo" ];
+    };
+
+    programs.lefthook.config = {
+      pre-commit = {
+        commands = {
+          format-cargo = {
+            glob = mkDefault "*.{rs}";
+            run = mkDefault "${cfg.toolchainOutput}/bin/cargo fmt -- {staged_files}";
+            stage_fixed = true;
+            root = mkDefault cfg.workingDirectory;
+          };
+          check-cargo = {
+            glob = mkDefault "*.{rs}";
+            run = mkDefault "${cfg.toolchainOutput}/bin/cargo check";
+            root = mkDefault cfg.workingDirectory;
+          };
+        };
+      };
+      pre-push = {
+        commands = {
+          check-cargo-fmt = {
+            glob = mkDefault "*.{rs}";
+            run = mkDefault "${cfg.toolchainOutput}/bin/cargo fmt --check";
+            root = mkDefault cfg.workingDirectory;
+          };
+          check-cargo-check = {
+            glob = mkDefault "*.{rs}";
+            run = mkDefault "${cfg.toolchainOutput}/bin/cargo check";
+            root = mkDefault cfg.workingDirectory;
+          };
+          check-cargo-test = {
+            glob = mkDefault "{package.json,pnpm-lock.yaml}";
+            run = mkDefault "${cfg.toolchainOutput}/bin/cargo test";
+            root = mkDefault cfg.workingDirectory;
+          };
+        };
+      };
+    };
+
+    devShell = {
       nativeBuildInputs = [ toolchain-with-path ];
       contents = [ pkgs.libiconv ];
       environment = [

@@ -159,6 +159,7 @@ in
             glob = mkDefault "*.{js,ts,jsx,tsx}";
             run = mkDefault "${pkgs.go-task}/bin/task format-eslint -- {staged_files}";
             stage_fixed = true;
+            root = mkDefault cfg.workingDirectory;
           };
         };
       };
@@ -167,14 +168,17 @@ in
           check-eslint = {
             glob = mkDefault "*.{js,ts,jsx,tsx}";
             run = mkDefault "${pkgs.go-task}/bin/task check-eslint";
+            root = mkDefault cfg.workingDirectory;
           };
           check-tsc = {
             glob = mkDefault "*.{ts,tsx}";
             run = mkDefault "${pkgs.go-task}/bin/task check-tsc";
+            root = mkDefault cfg.workingDirectory;
           };
           check-npm = {
             glob = mkDefault "{package.json,pnpm-lock.yaml}";
             run = mkDefault "${pkgs.go-task}/bin/task check-npm";
+            root = mkDefault cfg.workingDirectory;
           };
         };
       };
