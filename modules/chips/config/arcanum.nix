@@ -13,7 +13,7 @@ in
   config = mkIf cfg.enable {
     devShell.contents = [ pkgs.arcanum ];
 
-    devShell.shellHooks = mkOrder 800 (
+    devShell.shellHooks = mkOrder 751 (
       concatStringsSep "\n" (
         mapAttrsToList (
           name: secret: "set -o allexport; source ${secret.dest}; set +o allexport"
