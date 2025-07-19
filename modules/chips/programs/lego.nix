@@ -125,9 +125,9 @@ in
     devShell = mkIf cfg.enable {
       contents = [ legoEnsureCerts ];
       # Run after arcanum to ensure that the secrets are available
-      shellHooks = optionalString (
-        cfg.domains != [ ] && cfg.envFile != null
-      ) mkOrder 790 "${legoEnsureCerts}/bin/lego-ensure-certs";
+      shellHooks = mkOrder 790 (
+        optionalString (cfg.domains != [ ]) "${legoEnsureCerts}/bin/lego-ensure-certs"
+      );
     };
 
     #    outputs.apps.go = {
