@@ -95,7 +95,7 @@ in
         set -o allexport
         source ${envFile}
         set +o allexport
-        ${shellHook}/bin/dev-shell.init.sh
+        source ${shellHook}/bin/dev-shell.init.sh
       '';
     };
   };
