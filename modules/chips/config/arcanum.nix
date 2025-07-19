@@ -15,9 +15,12 @@ in
 
     devShell.shellHooks = mkOrder 751 (
       concatStringsSep "\n" (
-        mapAttrsToList (
-          name: secret: "set -o allexport; source ${secret.dest}; set +o allexport"
-        ) secretEnvFiles
+        mapAttrsToList (name: secret: ''
+          set -o allexport
+          echo "Loading ${secret.dest}"
+          source ${secret.dest}
+          set +o allexport
+        '') secretEnvFiles
       )
     );
   };
