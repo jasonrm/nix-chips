@@ -49,6 +49,11 @@ in
         default = [ ];
       };
 
+      envFiles = mkOption {
+        type = listOf path;
+        default = [ ];
+      };
+
       stdenv = mkOption {
         type = package;
         default = pkgs.stdenv;
@@ -89,6 +94,7 @@ in
       shellHook = ''
         set -o allexport
         source ${envFile}
+        ${concatStringsSep "\n" (map (envFile: "source ${envFile}") cfg.envFiles)}
         set +o allexport
         ${shellHook}/bin/dev-shell.init.sh
       '';

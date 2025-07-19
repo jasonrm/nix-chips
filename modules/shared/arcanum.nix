@@ -65,6 +65,12 @@ let
         default = [ ];
         description = "Ensure this secret is decrypted before these services are started.";
       };
+
+      isEnvFile = mkOption {
+        default = false;
+        type = bool;
+        description = "Whether to source this secret as an environment file in a devShell.";
+      };
     };
   };
 in
