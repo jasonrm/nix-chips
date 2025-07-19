@@ -14,14 +14,15 @@ in
     devShell.contents = [ pkgs.arcanum ];
 
     devShell.shellHooks = mkOrder 751 (
-      concatStringsSep "\n" (
-        mapAttrsToList (name: secret: ''
-          set -o allexport
-          echo "Loading ${secret.dest}"
-          source ${secret.dest}
-          set +o allexport
-        '') secretEnvFiles
-      )
+      optionalString (secretEnvFiles != { }) ''
+        set -o allexport
+        ${concatStringsSep "\n" (
+          mapAttrsToList (name: secret: ''
+            source ${secret.dest}
+          '') secretEnvFiles
+        )}
+        set +o allexport
+      ''
     );
   };
 
