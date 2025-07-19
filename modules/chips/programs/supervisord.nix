@@ -136,7 +136,7 @@ let
         restartpause = mkOption {
           type = nullOr int;
           default = null;
-          description = "Wait (at least) this amount of seconds after stpping suprevised program before strt it again.";
+          description = "Wait (at least) this amount of seconds after stopping supervised program before starting it again.";
         };
         restart_when_binary_changed = mkOption {
           type = bool;
