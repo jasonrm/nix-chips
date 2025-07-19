@@ -13,6 +13,13 @@ in
   config = mkIf cfg.enable {
     devShell.contents = [ pkgs.arcanum ];
 
-    devShell.envFiles = mapAttrsToList (name: secret: "${secret.dest}") secretEnvFiles;
+    devShell.shellHooks = mkOrder 800 (
+      concatStringsSep "\n" (
+        mapAttrsToList (
+          name: secret: "set -o allexport; source ${secret.dest}; set +o allexport"
+        ) secretEnvFiles
+      )
+    );
   };
+
 }
