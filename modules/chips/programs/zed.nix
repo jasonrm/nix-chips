@@ -25,12 +25,6 @@ in
 
   config = {
     devShell = mkIf cfg.enable {
-      nativeBuildInputs = [ toolchain-with-path ];
-      contents = [ pkgs.libiconv ];
-      environment = [
-        "RUST_TOOLCHAIN_BIN=${cfg.toolchain}/bin"
-        "RUST_STD_LIB=${cfg.standardLibraryOutput}"
-      ];
       shellHooks = ''
         mkdir -p .zed && ln -sf ${zedSettingsJson} .zed/settings.json
       '';
