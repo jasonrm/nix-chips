@@ -51,7 +51,7 @@ let
   legoEnsureCerts = pkgs.writeScriptBin "lego-ensure-certs" ''
     set -o errexit -o nounset -o pipefail
 
-    if [[ -n "${cfg.envFile}" ]]; then
+    ${optionalString (cfg.envFile != null) ''
       if [ ! -f "${cfg.envFile}" ]; then
         echo "Environment file not found: ${cfg.envFile}"
         exit 1
@@ -60,7 +60,7 @@ let
       set -o allexport
       source ${cfg.envFile}
       set +o allexport
-    fi
+    ''}
 
     LEGO_ARGS=(${runOpts})
     if [ -e ${outDir}/certificates/${keyName}.crt ]; then
