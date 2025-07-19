@@ -38,6 +38,7 @@ in
           pkgs.cargo-sort
           pkgs.rustfmt
           pkgs.cargo-watch
+          pkgs.cargo-outdated
           pkgs.rust-analyzer
         ];
         description = "Additional packages to include in the dev shell";
@@ -70,6 +71,20 @@ in
   };
 
   config = {
+    programs.zed.settings = {
+      lsp = {
+        rust-analyzer = {
+          initialization_options = {
+            cargo = {
+              allTargets = false;
+            };
+          };
+          binary = {
+            path = "${cfg.toolchainOutput}/bin/rust-analyzer";
+          };
+        };
+      };
+    };
     devShell = mkIf cfg.enable {
       nativeBuildInputs = [ toolchain-with-path ];
       contents = [ pkgs.libiconv ];
