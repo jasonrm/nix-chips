@@ -22,6 +22,10 @@ let
         type = bool;
         default = false;
       };
+      root = mkOption {
+        type = nullOr path;
+        default = null;
+      };
       stage_fixed = mkOption {
         type = bool;
         default = false;
