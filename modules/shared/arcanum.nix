@@ -123,6 +123,6 @@ in
     };
   };
   config = {
-    arcanum.enable = mkDefault ((cfg.hostPublicKey != null) && (cfg.files != { }));
+    arcanum.enable = mkDefault (cfg.files != { });
   };
 }
