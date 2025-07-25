@@ -108,7 +108,8 @@ in
         default = { };
       };
       hostPublicKey = mkOption {
-        type = str;
+        type = nullOr str;
+        default = null;
         description = "Host public key";
       };
       identity = mkOption {
@@ -122,6 +123,6 @@ in
     };
   };
   config = {
-    arcanum.enable = mkDefault (cfg.files != { });
+    arcanum.enable = mkDefault ((cfg.hostPublicKey != null) && (cfg.files != { }));
   };
 }
