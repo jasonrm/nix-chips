@@ -18,7 +18,11 @@ in
         set -o allexport
         ${concatStringsSep "\n" (
           mapAttrsToList (name: secret: ''
-            source ${secret.dest}
+            if [ -f "${secret.dest}" ]; then
+              source ${secret.dest}
+            else
+              echo "Skipped missing secret env file ${secret.dest}"
+            fi
           '') secretEnvFiles
         )}
         set +o allexport
