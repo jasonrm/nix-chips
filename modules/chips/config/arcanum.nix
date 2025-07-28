@@ -19,7 +19,11 @@ in
         ${concatStringsSep "\n" (
           mapAttrsToList (name: secret: ''
             if [ -f "${secret.dest}" ]; then
-              source ${secret.dest}
+              if source ${secret.dest} 2>/dev/null; then
+                echo "Loaded secret env file ${secret.dest}"
+              else
+                echo "Warning: Failed to source secret env file ${secret.dest}" >&2
+              fi
             else
               echo "Skipped missing secret env file ${secret.dest}"
             fi
@@ -29,5 +33,4 @@ in
       ''
     );
   };
-
 }
