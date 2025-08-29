@@ -260,7 +260,7 @@ in
         autostart = mkDefault (service.wantedBy != [ ]);
         command = mkDefault "${service.serviceConfig.ExecStart}";
         depends_on = mkDefault (beforeServices ++ afterServices);
-        envFiles = [ baseEnvFile ] ++ additionalEnv;
+        envFiles = concatStringsSep "," ([ baseEnvFile ] ++ additionalEnv);
       }
       // (optionalAttrs (hasAttrByPath [ "serviceConfig" "WorkingDirectory" ] service) {
         directory = "${service.serviceConfig.WorkingDirectory}";
