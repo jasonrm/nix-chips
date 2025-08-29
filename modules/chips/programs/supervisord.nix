@@ -121,8 +121,13 @@ let
           default = [ ];
         };
         envFiles = mkOption {
-          type = nullOr str;
-          default = null;
+          type = nullOr (
+            listOf (oneOf [
+              path
+              str
+            ])
+          );
+          default = [ ];
         };
         depends_on = mkOption {
           type = listOf str;
