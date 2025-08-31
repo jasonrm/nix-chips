@@ -4,8 +4,7 @@
   config,
   ...
 }:
-with lib;
-let
+with lib; let
   cfg = config.arcanum;
 
   decryptSecret = pkgs.writeShellScript "decrypt" ''
@@ -31,20 +30,19 @@ let
   '';
 
   filesWithDest = filterAttrs (n: secret: secret.dest != null) cfg.files;
-in
-{
-  imports = [ ];
+in {
+  imports = [];
 
-  options = with types; { };
+  options = with types; {};
 
   config = {
     home.activation = {
-      arcanum = lib.hm.dag.entryAfter [ "writeBoundary" ] (
+      arcanum = lib.hm.dag.entryAfter ["writeBoundary"] (
         concatStringsSep "\n" (
           mapAttrsToList (
-            name: secret:
-            "${decryptSecret} ${cfg.relativeRoot}/${escapeShellArg secret.source} ${escapeShellArg secret.dest}"
-          ) filesWithDest
+            name: secret: "${decryptSecret} ${cfg.relativeRoot}/${escapeShellArg secret.source} ${escapeShellArg secret.dest}"
+          )
+          filesWithDest
         )
       );
     };

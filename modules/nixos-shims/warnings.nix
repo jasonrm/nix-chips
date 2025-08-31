@@ -1,7 +1,10 @@
-{ pkgs, lib, ... }:
-with lib;
 {
+  pkgs,
+  lib,
+  ...
+}:
+with lib; {
   options = with types; {
-    warnings = mkOption { type = str; };
+    warnings = mkOption {type = str;};
   };
 }

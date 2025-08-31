@@ -1,7 +1,10 @@
-{ pkgs, lib, ... }:
-with lib;
 {
+  pkgs,
+  lib,
+  ...
+}:
+with lib; {
   options = with types; {
-    security = mkOption { type = attrs; };
+    security = mkOption {type = attrs;};
   };
 }

@@ -1,7 +1,10 @@
-{ pkgs, lib, ... }:
-with lib;
 {
+  pkgs,
+  lib,
+  ...
+}:
+with lib; {
   options = with types; {
-    environment = mkOption { type = str; };
+    environment = mkOption {type = str;};
   };
 }

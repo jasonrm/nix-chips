@@ -3,8 +3,7 @@
   pkgs,
   config,
   ...
-}:
-let
+}: let
   inherit (lib) mkOption;
 
   cfg = config.services.haproxy;
@@ -19,16 +18,15 @@ let
   haproxy-debug = pkgs.writeShellScriptBin "haproxy-debug" ''
     cat ${haproxyCfg}
   '';
-in
-{
-  imports = [ ];
+in {
+  imports = [];
 
   config = lib.mkIf cfg.enable {
     programs.supervisord.programs.haproxy = {
       command = "${pkgs.haproxy}/sbin/haproxy -W -f ${haproxyCfg}";
     };
     devShell = {
-      contents = [ haproxy-debug ];
+      contents = [haproxy-debug];
     };
   };
 }

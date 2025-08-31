@@ -5,7 +5,6 @@
   lib,
   ...
 }:
-with lib;
-{
-  imports = [ (modulesPath + "/services/networking/epmd.nix") ];
+with lib; {
+  imports = [(modulesPath + "/services/networking/epmd.nix")];
 }

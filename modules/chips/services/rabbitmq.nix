@@ -3,11 +3,9 @@
   pkgs,
   config,
   ...
-}:
-let
+}: let
   cfg = config.services.rabbitmq;
-in
-{
+in {
   config = lib.mkMerge [
     (lib.mkIf (cfg.enable && cfg.managementPlugin.enable) {
       services.traefik = {
@@ -19,7 +17,7 @@ in
         };
         services = {
           rabbitmq = {
-            loadBalancer.servers = [ { url = "http://127.0.0.1:${toString cfg.managementPlugin.port}"; } ];
+            loadBalancer.servers = [{url = "http://127.0.0.1:${toString cfg.managementPlugin.port}";}];
           };
         };
       };

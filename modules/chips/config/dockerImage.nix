@@ -5,8 +5,7 @@
   config,
   ...
 }:
-with lib;
-let
+with lib; let
   inherit (lib) mapAttrs types;
   inherit (pkgs.writers) writeBashBin;
   inherit (pkgs.stdenv) isDarwin;
@@ -19,27 +18,23 @@ let
     copyToRoot = cfg.baseContents;
   };
 
-  preEntry =
-    image:
-    (pkgs.writeShellScriptBin "pre-entry" ''
-      echo preEntry: entryCommands
-      ${lib.concatStringsSep "\n" image.entryCommands}
+  preEntry = image: (pkgs.writeShellScriptBin "pre-entry" ''
+    echo preEntry: entryCommands
+    ${lib.concatStringsSep "\n" image.entryCommands}
 
-      echo preEntry: tmp
-      mkdir -p /tmp/ && chmod 1777 /tmp/
+    echo preEntry: tmp
+    mkdir -p /tmp/ && chmod 1777 /tmp/
 
-      echo preEntry: done
-      exec ${pkgs.dumb-init}/bin/dumb-init $*
-    '');
+    echo preEntry: done
+    exec ${pkgs.dumb-init}/bin/dumb-init $*
+  '');
 
-  nonRootShadowSetup =
-    {
-      user,
-      uid,
-      gid ? uid,
-    }:
-    with pkgs;
-    [
+  nonRootShadowSetup = {
+    user,
+    uid,
+    gid ? uid,
+  }:
+    with pkgs; [
       (writeTextDir "etc/shadow" ''
         root:!x:::::::
         nobody:!:1::::::
@@ -66,32 +61,31 @@ let
     options = {
       config = mkOption {
         type = attrs;
-        default = { };
+        default = {};
       };
       contents = mkOption {
         type = listOf package;
-        default = [ ];
+        default = [];
       };
       entryCommands = mkOption {
         type = listOf str;
-        default = [ ];
+        default = [];
       };
       command = mkOption {
         type = listOf str;
-        default = [ ];
+        default = [];
       };
       extraCommands = mkOption {
         type = listOf str;
-        default = [ ];
+        default = [];
       };
       environment = mkOption {
         type = listOf str;
-        default = [ "SSL_CERT_FILE=${pkgs.cacert.out}/etc/ssl/certs/ca-bundle.crt" ];
+        default = ["SSL_CERT_FILE=${pkgs.cacert.out}/etc/ssl/certs/ca-bundle.crt"];
       };
     };
   };
-in
-{
+in {
   imports = [
     # paths to other modules
   ];
@@ -100,10 +94,10 @@ in
     dockerImages = {
       baseContents = mkOption {
         type = listOf package;
-        default = [ ];
+        default = [];
       };
       images = mkOption {
-        default = { };
+        default = {};
         type = attrsOf (submodule dockerImageOption);
       };
 
@@ -115,20 +109,23 @@ in
   };
 
   config = {
-    dockerImages.output = mapAttrs (
-      k: image:
-      (dockerTools.buildImage {
-        name = k;
-        fromImage = baseImage;
-        extraCommands = lib.concatStringsSep "\n" image.extraCommands;
-        copyToRoot = image.contents;
-        # WIP
-        #  ++ (nonRootShadowSetup { user = "http"; uid = 999; })
-        config = image.config // {
-          Entrypoint = [ "${preEntry image}/bin/pre-entry" ];
-          Env = (image.config.Env or [ ]) ++ [ "IS_DOCKER=1" ];
-        };
-      })
-    ) config.dockerImages.images;
+    dockerImages.output =
+      mapAttrs (
+        k: image: (dockerTools.buildImage {
+          name = k;
+          fromImage = baseImage;
+          extraCommands = lib.concatStringsSep "\n" image.extraCommands;
+          copyToRoot = image.contents;
+          # WIP
+          #  ++ (nonRootShadowSetup { user = "http"; uid = 999; })
+          config =
+            image.config
+            // {
+              Entrypoint = ["${preEntry image}/bin/pre-entry"];
+              Env = (image.config.Env or []) ++ ["IS_DOCKER=1"];
+            };
+        })
+      )
+      config.dockerImages.images;
   };
 }

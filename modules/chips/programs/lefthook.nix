@@ -5,8 +5,7 @@
   config,
   ...
 }:
-with lib;
-let
+with lib; let
   cfg = config.programs.lefthook;
 
   leftHookConfigFile = pkgs.writeText "lefthook.yml" (builtins.toJSON cfg.config);
@@ -17,7 +16,7 @@ let
         type = nullOr str;
         default = null;
       };
-      run = mkOption { type = str; };
+      run = mkOption {type = str;};
       skip = mkOption {
         type = bool;
         default = false;
@@ -35,8 +34,8 @@ let
 
   lefthookConfig = with types; {
     options = {
-      commands = mkOption { type = nullOr (attrsOf (submodule lefthookCommand)); };
-      parallel = mkOption { type = nullOr bool; };
+      commands = mkOption {type = nullOr (attrsOf (submodule lefthookCommand));};
+      parallel = mkOption {type = nullOr bool;};
     };
   };
 
@@ -44,26 +43,25 @@ let
     options = {
       skip_output = mkOption {
         type = listOf str;
-        default = [ ];
+        default = [];
       };
       pre-commit = mkOption {
         type = submodule lefthookConfig;
-        default = { };
+        default = {};
       };
       pre-push = mkOption {
         type = submodule lefthookConfig;
-        default = { };
+        default = {};
       };
     };
   };
-in
-{
+in {
   options = {
     programs.lefthook = with types; {
       enable = mkEnableOption "lefthook support";
       config = mkOption {
         type = submodule lefthookGlobalConfig;
-        default = { };
+        default = {};
       };
       filename = mkOption {
         type = str;
@@ -87,7 +85,7 @@ in
       };
       check-gitleaks-detect = {
         desc = "Check For Secrets In Git History";
-        cmds = [ ''${pkgs.gitleaks}/bin/gitleaks --baseline-path gitleaks-report.json detect -v'' ];
+        cmds = [''${pkgs.gitleaks}/bin/gitleaks --baseline-path gitleaks-report.json detect -v''];
       };
       check-gitleaks-protect = {
         desc = "Check For Secrets In Git History";
@@ -97,7 +95,7 @@ in
       };
 
       check = {
-        deps = [ "check-unresovled-conflicts" ];
+        deps = ["check-unresovled-conflicts"];
       };
     };
 
@@ -148,18 +146,19 @@ in
       };
     };
     devShell = {
-      contents = [ pkgs.lefthook ];
-      shellHooks = ''
-        ln -sf ${leftHookConfigFile} ${cfg.filename}
-        ${pkgs.lefthook}/bin/lefthook install
-      ''
-      + optionalString cfg.addToGitIgnore ''
-        if [ -d .git ]; then
-          if ! grep -q "^${cfg.filename}$" .git/info/exclude; then
-           echo "${cfg.filename}" >> .git/info/exclude
+      contents = [pkgs.lefthook];
+      shellHooks =
+        ''
+          ln -sf ${leftHookConfigFile} ${cfg.filename}
+          ${pkgs.lefthook}/bin/lefthook install
+        ''
+        + optionalString cfg.addToGitIgnore ''
+          if [ -d .git ]; then
+            if ! grep -q "^${cfg.filename}$" .git/info/exclude; then
+             echo "${cfg.filename}" >> .git/info/exclude
+            fi
           fi
-        fi
-      '';
+        '';
     };
   };
 }

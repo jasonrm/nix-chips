@@ -10,12 +10,10 @@
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs =
-    { ... }@inputs:
-    let
-      lib = import ./lib inputs;
-      output = lib.use { devShellsDir = ./devShells; };
-    in
+  outputs = {...} @ inputs: let
+    lib = import ./lib inputs;
+    output = lib.use {devShellsDir = ./devShells;};
+  in
     output
     // {
       inherit lib;

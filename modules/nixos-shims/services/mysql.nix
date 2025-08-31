@@ -5,9 +5,8 @@
   lib,
   ...
 }:
-with lib;
-{
-  imports = [ (modulesPath + "/services/databases/mysql.nix") ];
+with lib; {
+  imports = [(modulesPath + "/services/databases/mysql.nix")];
   config = {
     services.mysql = {
       package = mkDefault pkgs.mysql80;

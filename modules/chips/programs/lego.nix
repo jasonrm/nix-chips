@@ -5,8 +5,7 @@
   config,
   ...
 }:
-with lib;
-let
+with lib; let
   cfg = config.programs.lego;
 
   successHook = pkgs.writeShellScriptBin "success-hook" ''
@@ -16,20 +15,21 @@ let
     cp "$LEGO_CERT_KEY_PATH" "${cfg.keyFile}"
   '';
 
-  keyName = builtins.replaceStrings [ "*" ] [ "_" ] (head cfg.domains);
+  keyName = builtins.replaceStrings ["*"] ["_"] (head cfg.domains);
   requestedDomains = pipe cfg.domains [
     (domains: sort builtins.lessThan domains)
     (domains: concatStringsSep "," domains)
   ];
 
   outDir = "${config.dir.data}/lego";
-  globalOpts = [
-    "--email ${cfg.email}"
-    "--path ${outDir}"
-  ]
-  ++ (optionals cfg.acceptTermsOfService [ "--accept-tos" ])
-  ++ (map (d: "--domains ${d}") cfg.domains)
-  ++ cfg.additionalArgs;
+  globalOpts =
+    [
+      "--email ${cfg.email}"
+      "--path ${outDir}"
+    ]
+    ++ (optionals cfg.acceptTermsOfService ["--accept-tos"])
+    ++ (map (d: "--domains ${d}") cfg.domains)
+    ++ cfg.additionalArgs;
 
   runOpts = escapeShellArgs (
     globalOpts
@@ -71,8 +71,7 @@ let
     fi
     ${pkgs.lego}/bin/lego ''${LEGO_ARGS[@]}
   '';
-in
-{
+in {
   options = with types; {
     programs.lego = {
       enable = mkEnableOption "Enable Let’s Encrypt client.";
@@ -84,16 +83,16 @@ in
         default = pkgs.lego;
       };
 
-      email = mkOption { type = str; };
+      email = mkOption {type = str;};
 
       domains = mkOption {
         type = listOf str;
-        default = [ "*.${config.project.domainSuffix}" ];
+        default = ["*.${config.project.domainSuffix}"];
       };
 
       additionalArgs = mkOption {
         type = listOf str;
-        default = [ ];
+        default = [];
       };
 
       envFile = mkOption {
@@ -103,7 +102,7 @@ in
 
       runHooks = mkOption {
         type = lines;
-        default = [ ];
+        default = [];
       };
 
       keyFile = mkOption {
@@ -122,10 +121,10 @@ in
 
   config = {
     devShell = mkIf cfg.enable {
-      contents = [ legoEnsureCerts ];
+      contents = [legoEnsureCerts];
       # Run after arcanum to ensure that the secrets are available
       shellHooks = mkOrder 790 (
-        optionalString (cfg.domains != [ ]) "${legoEnsureCerts}/bin/lego-ensure-certs"
+        optionalString (cfg.domains != []) "${legoEnsureCerts}/bin/lego-ensure-certs"
       );
     };
 

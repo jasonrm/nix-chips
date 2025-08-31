@@ -3,8 +3,7 @@
   pkgs,
   config,
   ...
-}:
-let
+}: let
   cfg = config.services.promtail;
 
   promtailConfig = pkgs.writeText "promtail-local-config.yaml" (
@@ -16,33 +15,32 @@ let
       positions = {
         filename = "${cfg.logDir}/positions.yaml";
       };
-      clients = [ { url = ''''${LOKI_URI}''; } ];
+      clients = [{url = ''''${LOKI_URI}'';}];
       scrape_configs = cfg.scrapeConfigs;
     }
   );
 
   scrapeConfig = {
     options = {
-      job_name = lib.mkOption { type = lib.types.str; };
+      job_name = lib.mkOption {type = lib.types.str;};
       static_configs = lib.mkOption {
         type = with lib.types; listOf attrs;
-        default = [ ];
+        default = [];
       };
       pipeline_stages = lib.mkOption {
         type = with lib.types; listOf attrs;
-        default = [ ];
+        default = [];
       };
     };
   };
-in
-{
-  imports = [ ];
+in {
+  imports = [];
 
   options = {
     services.promtail = {
       enable = lib.mkEnableOption "enable promtail";
       scrapeConfigs = lib.mkOption {
-        default = [ ];
+        default = [];
         type = with lib.types; listOf (submodule scrapeConfig);
       };
 

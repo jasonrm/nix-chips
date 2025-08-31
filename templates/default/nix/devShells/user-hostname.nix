@@ -3,9 +3,8 @@
   pkgs,
   lib,
   ...
-}:
-{
-  imports = [ ./default.nix ];
+}: {
+  imports = [./default.nix];
 
   config = {
     dir.project = "$PWD";

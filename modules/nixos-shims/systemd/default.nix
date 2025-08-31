@@ -4,8 +4,7 @@
   lib,
   modulesPath,
   ...
-}:
-let
+}: let
   configShim = {
     systemd.path = "/dev/null";
     # systemd doesn't work on non-linux so we need to replace it
@@ -14,14 +13,13 @@ let
     systemd.enableStrictShellChecks = false;
   };
 
-  utils = pkgs.callPackage "${pkgs.path}/nixos/lib/utils.nix" { config = configShim; };
+  utils = pkgs.callPackage "${pkgs.path}/nixos/lib/utils.nix" {config = configShim;};
 
   systemdBootModule = pkgs.callPackage "${pkgs.path}/nixos/modules/system/boot/systemd.nix" {
     config = configShim;
     inherit utils;
   };
-in
-{
+in {
   # Copied from nixos/modules/system/boot/systemd.nix
   options = systemdBootModule.options;
 }

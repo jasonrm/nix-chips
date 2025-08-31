@@ -4,20 +4,18 @@
   config,
   ...
 }:
-with lib;
-let
+with lib; let
   cfg = config.programs.zed;
 
   zedSettingsJson = pkgs.writeText "zed-settings.json" (builtins.toJSON cfg.settings);
-in
-{
+in {
   options = with lib.types; {
     programs.zed = {
       enable = mkEnableOption "Zed support";
 
       settings = mkOption {
         type = attrs;
-        default = { };
+        default = {};
         description = "Project level settings";
       };
     };

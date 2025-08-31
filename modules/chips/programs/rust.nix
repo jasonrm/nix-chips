@@ -4,15 +4,14 @@
   config,
   ...
 }:
-with lib;
-let
+with lib; let
   cfg = config.programs.rust;
 
   toolchain-with-path = pkgs.stdenv.mkDerivation {
     pname = "toolchain-with-path";
     version = "0.1.0";
     dontUnpack = true;
-    nativeBuildInputs = [ pkgs.makeWrapper ];
+    nativeBuildInputs = [pkgs.makeWrapper];
     installPhase = ''
       mkdir -p $out
       ln -s ${cfg.toolchain}/* $out/
@@ -20,12 +19,11 @@ let
       mkdir -p $out/bin
       ln -s ${cfg.toolchain}/bin/* $out/bin/
       for i in $out/bin/*; do
-          wrapProgram "$i" --prefix PATH : ${lib.makeBinPath [ cfg.toolchain ]}
+          wrapProgram "$i" --prefix PATH : ${lib.makeBinPath [cfg.toolchain]}
       done
     '';
   };
-in
-{
+in {
   options = with lib.types; {
     programs.rust = {
       enable = mkEnableOption "rust support";
@@ -71,7 +69,10 @@ in
 
       workingDirectory = mkOption {
         type = nullOr str;
-        default = if config.dir.project != "/dev/null" then config.dir.project else null;
+        default =
+          if config.dir.project != "/dev/null"
+          then config.dir.project
+          else null;
       };
     };
   };
@@ -97,22 +98,22 @@ in
       build-cargo = {
         dir = cfg.workingDirectory;
         desc = "Build the project";
-        cmds = [ "${cfg.toolchainOutput}/bin/cargo build" ];
+        cmds = ["${cfg.toolchainOutput}/bin/cargo build"];
       };
       check-cargo = {
         dir = cfg.workingDirectory;
         desc = "Run tests";
-        cmds = [ "${cfg.toolchainOutput}/bin/cargo check" ];
+        cmds = ["${cfg.toolchainOutput}/bin/cargo check"];
       };
       update-cargo = {
         dir = cfg.workingDirectory;
         desc = "Update dependencies";
-        cmds = [ "${cfg.toolchainOutput}/bin/cargo update" ];
+        cmds = ["${cfg.toolchainOutput}/bin/cargo update"];
       };
 
-      check.deps = [ "check-cargo" ];
-      update.deps = [ "update-cargo" ];
-      build.deps = [ "build-cargo" ];
+      check.deps = ["check-cargo"];
+      update.deps = ["update-cargo"];
+      build.deps = ["build-cargo"];
     };
 
     programs.lefthook.config = {
@@ -153,8 +154,8 @@ in
     };
 
     devShell = {
-      nativeBuildInputs = [ toolchain-with-path ];
-      contents = [ pkgs.libiconv ];
+      nativeBuildInputs = [toolchain-with-path];
+      contents = [pkgs.libiconv];
       environment = [
         "RUST_TOOLCHAIN_BIN=${cfg.toolchain}/bin"
         "RUST_STD_LIB=${cfg.standardLibraryOutput}"

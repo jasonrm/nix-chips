@@ -1,5 +1,4 @@
-{ pkgs, ... }:
-let
+{pkgs, ...}: let
   template = pkgs.writeText "template.nix" ''
     {
       config,
@@ -57,8 +56,7 @@ let
     ${pkgs.gettext}/bin/envsubst < ${template} > $PWD/nix/devShells/$USER-$(hostname -s).nix
     ${pkgs.git}/bin/git add $PWD/nix/devShells/$USER-$(hostname -s).nix
   '';
-in
-{
+in {
   type = "app";
   program = "${init-dev-shell}/bin/init-dev-shell";
 }

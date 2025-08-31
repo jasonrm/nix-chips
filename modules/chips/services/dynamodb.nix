@@ -5,20 +5,18 @@
   chips,
   ...
 }:
-with lib;
-let
+with lib; let
   inherit (chips.lib.traefik) hostRegexp;
 
   cfg = config.services.dynamodb;
-in
-{
+in {
   options = with types; {
     services.dynamodb = {
       enable = mkEnableOption "enable dynamodb";
 
       virtualHost = mkOption {
         type = submodule (import "${pkgs.path}/nixos/modules/services/web-servers/nginx/vhost-options.nix");
-        default = { };
+        default = {};
         description = mdDoc ''
           Nginx configuration can be done by adapting {option}`services.nginx.virtualHosts`.
           See [](#opt-services.nginx.virtualHosts) for further information.
@@ -38,7 +36,7 @@ in
 
   config = mkMerge [
     (mkIf cfg.enable {
-      dir.ensureExists = [ cfg.dataDir ];
+      dir.ensureExists = [cfg.dataDir];
 
       devShell.environment = [
         "AWS_ENDPOINT_URL_DYNAMODB=http://127.0.0.1:${toString cfg.port}"
@@ -52,7 +50,6 @@ in
         };
       };
       programs = {
-
         supervisord.programs = {
           dynamodb = {
             directory = cfg.dataDir;
@@ -88,12 +85,12 @@ in
         routers = {
           dynamodb = {
             service = "dynamodb";
-            rule = hostRegexp [ "dynamodb" ] [ config.project.domainSuffix ];
+            rule = hostRegexp ["dynamodb"] [config.project.domainSuffix];
           };
         };
         services = {
           dynamodb = {
-            loadBalancer.servers = [ { url = "http://127.0.0.1:${toString cfg.port}"; } ];
+            loadBalancer.servers = [{url = "http://127.0.0.1:${toString cfg.port}";}];
           };
         };
       };

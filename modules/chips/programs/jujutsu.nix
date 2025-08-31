@@ -4,14 +4,12 @@
   config,
   ...
 }:
-with lib;
-let
+with lib; let
   cfg = config.programs.jujutsu;
 
-  format = pkgs.formats.toml { };
+  format = pkgs.formats.toml {};
   settingsFile = format.generate "config.toml" cfg.settings;
-in
-{
+in {
   options = with lib.types; {
     programs.jujutsu = {
       enable = mkEnableOption "Jujutsu support";
@@ -44,7 +42,7 @@ in
           "--strict"
           "--filename=$path"
         ];
-        patterns = [ "glob:'**/*.nix'" ];
+        patterns = ["glob:'**/*.nix'"];
       };
 
       "format-json" = {
@@ -54,12 +52,12 @@ in
           "2"
           "."
         ];
-        patterns = [ "glob:'**/*.json'" ];
+        patterns = ["glob:'**/*.json'"];
       };
     };
 
     devShell = {
-      contents = [ pkgs.jujutsu ];
+      contents = [pkgs.jujutsu];
       shellHooks = ''
         if [ -d .jj/repo ]; then
           mkdir -p .jj/repo/conf.d

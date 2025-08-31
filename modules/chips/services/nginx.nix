@@ -3,13 +3,12 @@
   pkgs,
   config,
   ...
-}:
-let
+}: let
   inherit (lib) mkOption;
 
   cfg = config.services.nginx;
 
-  customConfigPath = pkgs.runCommand "nginx.conf" { } ''
+  customConfigPath = pkgs.runCommand "nginx.conf" {} ''
     CONFIG_FILE=$(echo "${config.systemd.services.nginx.serviceConfig.ExecStart}" | sed "s/.*-c '\([^']*\)'.*/\1/g")
     cp $CONFIG_FILE $out
     substituteInPlace $out --replace "/run/nginx/" "${config.dir.data}/nginx/"
@@ -24,9 +23,8 @@ let
   nginx-debug = pkgs.writeShellScriptBin "nginx-debug" ''
     cat ${customConfigPath}
   '';
-in
-{
-  imports = [ ];
+in {
+  imports = [];
 
   config = lib.mkIf cfg.enable {
     services.nginx = {
@@ -49,7 +47,7 @@ in
       command = "${execCommand}/bin/nginx";
     };
     devShell = {
-      contents = [ nginx-debug ];
+      contents = [nginx-debug];
     };
     services.promtail.scrapeConfigs = [
       {

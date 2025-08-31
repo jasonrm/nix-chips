@@ -5,21 +5,20 @@
   config,
   ...
 }:
-with lib;
-let
+with lib; let
   cfg = config.programs.taskfile;
 
   taskfileConfigFile = pkgs.writeText "Taskfile.yml" (builtins.toJSON cfg.config);
 
   taskSourceSubmodule = with types; {
     options = {
-      exclude = mkOption { type = str; };
+      exclude = mkOption {type = str;};
     };
   };
 
   taskCommandSubmodule = with types; {
     options = {
-      cmd = mkOption { type = str; };
+      cmd = mkOption {type = str;};
       for = mkOption {
         type = nullOr (oneOf [
           attrs
@@ -32,8 +31,8 @@ let
 
   taskPreconditionSubmodule = with types; {
     options = {
-      sh = mkOption { type = str; };
-      msg = mkOption { type = str; };
+      sh = mkOption {type = str;};
+      msg = mkOption {type = str;};
     };
   };
 
@@ -44,14 +43,14 @@ let
           str
           (submodule taskCommandSubmodule)
         ]);
-        default = [ ];
+        default = [];
       };
       preconditions = mkOption {
         type = listOf (oneOf [
           str
           (submodule taskPreconditionSubmodule)
         ]);
-        default = [ ];
+        default = [];
       };
       deps = mkOption {
         type = nullOr (listOf str);
@@ -63,16 +62,16 @@ let
       };
       env = mkOption {
         type = attrsOf str;
-        default = { };
+        default = {};
       };
       sources = mkOption {
         type = listOf (oneOf [
           str
           (submodule taskSourceSubmodule)
         ]);
-        default = [ ];
+        default = [];
       };
-      desc = mkOption { type = str; };
+      desc = mkOption {type = str;};
       dir = mkOption {
         type = nullOr str;
         default = null;
@@ -84,7 +83,7 @@ let
     options = {
       tasks = mkOption {
         type = attrsOf (submodule taskSubmodule);
-        default = { };
+        default = {};
       };
       version = mkOption {
         type = str;
@@ -92,14 +91,13 @@ let
       };
     };
   };
-in
-{
+in {
   options = {
     programs.taskfile = with types; {
       enable = mkEnableOption "taskfile support";
       config = mkOption {
         type = submodule taskfileConfig;
-        default = { };
+        default = {};
       };
     };
   };
@@ -108,12 +106,12 @@ in
     programs.taskfile.config.tasks = {
       update-nix = {
         desc = "Update Nix Flakes";
-        cmds = [ "${pkgs.nix}/bin/nix flake update" ];
+        cmds = ["${pkgs.nix}/bin/nix flake update"];
       };
 
       format-nix = {
         desc = "Format Nix Files";
-        cmds = [ ''${pkgs.alejandra}/bin/alejandra {{.CLI_ARGS | default "." }}'' ];
+        cmds = [''${pkgs.alejandra}/bin/alejandra {{.CLI_ARGS | default "." }}''];
       };
       format-json = {
         desc = "Format JSON Files";
@@ -127,21 +125,21 @@ in
       };
       format = {
         desc = "Run All Format Tasks";
-        deps = [ "format-nix" ];
+        deps = ["format-nix"];
       };
       install = {
         desc = "Run All Install Tasks";
       };
       update = {
         desc = "Run All Update Tasks";
-        deps = [ "update-nix" ];
+        deps = ["update-nix"];
       };
       build = {
         desc = "Run All Build Tasks";
       };
     };
     devShell = {
-      contents = [ pkgs.go-task ];
+      contents = [pkgs.go-task];
       shellHooks = ''
         ln -sf ${taskfileConfigFile} Taskfile.yml
       '';

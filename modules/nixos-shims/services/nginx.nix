@@ -5,7 +5,6 @@
   lib,
   ...
 }:
-with lib;
-{
-  imports = [ (modulesPath + "/services/web-servers/nginx/default.nix") ];
+with lib; {
+  imports = [(modulesPath + "/services/web-servers/nginx/default.nix")];
 }

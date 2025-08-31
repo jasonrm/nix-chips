@@ -6,8 +6,7 @@
   utils,
   ...
 }:
-with nixpkgs.lib;
-let
+with nixpkgs.lib; let
   inherit (filesystem) listFilesRecursive;
   inherit (utils.lib) eachSystem eachDefaultSystem;
 
@@ -25,61 +24,66 @@ let
   # via: https://github.com/numtide/flake-utils/issues/16#issuecomment-1647192629
   # Another aux function, to merge two whole output sets. The key insight
   # is that we only merge recursively down to two levels.
-  mergeOutputs =
-    let
-      inherit (builtins) length;
-      inherit (nixpkgs.lib.attrsets) recursiveUpdateUntil;
-      mergeDepth =
-        depth:
-        recursiveUpdateUntil (
-          path: l: r:
+  mergeOutputs = let
+    inherit (builtins) length;
+    inherit (nixpkgs.lib.attrsets) recursiveUpdateUntil;
+    mergeDepth = depth:
+      recursiveUpdateUntil (
+        path: l: r:
           length path > depth
-        );
-    in
-    builtins.foldl' (mergeDepth 2) { };
+      );
+  in
+    builtins.foldl' (mergeDepth 2) {};
 
-  useApps =
-    { appsDir, overlay }:
-    let
-      allApps = chipsAppsDir ++ (if appsDir != null then nixFilesIn appsDir else [ ]);
-    in
+  useApps = {
+    appsDir,
+    overlay,
+  }: let
+    allApps =
+      chipsAppsDir
+      ++ (
+        if appsDir != null
+        then nixFilesIn appsDir
+        else []
+      );
+  in
     with utils.lib;
-    (eachDefaultSystem (
-      system:
-      let
-        pkgs = import nixpkgs {
-          inherit system;
-          overlays = [ overlay ];
-        };
-      in
-      {
-        apps = listToAttrs (
-          map (name: {
-            name = removeSuffix ".nix" (baseNameOf name);
-            value = pkgs.callPackage name { };
-          }) allApps
-        );
-      }
-    )).apps;
+      (eachDefaultSystem (
+        system: let
+          pkgs = import nixpkgs {
+            inherit system;
+            overlays = [overlay];
+          };
+        in {
+          apps = listToAttrs (
+            map (name: {
+              name = removeSuffix ".nix" (baseNameOf name);
+              value = pkgs.callPackage name {};
+            })
+            allApps
+          );
+        }
+      )).apps;
 
-  mkPackagesOverlay =
-    packagesDir: final: prev:
-    let
-      packages = (if packagesDir != null then nixFilesIn packagesDir else [ ]);
-    in
+  mkPackagesOverlay = packagesDir: final: prev: let
+    packages =
+      if packagesDir != null
+      then nixFilesIn packagesDir
+      else [];
+  in
     listToAttrs (
       map (name: {
         name = removeSuffix ".nix" (baseNameOf name);
-        value = prev.callPackage name { };
-      }) packages
+        value = prev.callPackage name {};
+      })
+      packages
     );
 
-  evalChipsModules =
-    {
-      pkgs,
-      system,
-      modules ? [ ],
-    }:
+  evalChipsModules = {
+    pkgs,
+    system,
+    modules ? [],
+  }:
     (evalModules {
       inherit modules;
       specialArgs = {
@@ -89,132 +93,122 @@ let
       };
     }).config;
 
-  useDevShells =
-    {
-      devShellsDir,
-      nixpkgsConfig,
-      modules,
-      overlay,
-    }:
-    let
-      nixFiles = nixFilesIn devShellsDir;
-    in
+  useDevShells = {
+    devShellsDir,
+    nixpkgsConfig,
+    modules,
+    overlay,
+  }: let
+    nixFiles = nixFilesIn devShellsDir;
+  in
     with utils.lib;
-    (eachDefaultSystem (
-      system:
-      let
-        pkgs = import nixpkgs {
-          inherit system;
-          config = nixpkgsConfig;
-          overlays = [ overlay ];
-        };
-      in
-      {
-        results = listToAttrs (
-          map (name: {
-            name = removeSuffix ".nix" (baseNameOf name);
-            value = evalChipsModules {
-              inherit pkgs system;
-              modules = modules ++ [ name ];
-            };
-          }) nixFiles
-        );
-      }
-    )).results;
-
-  useDockerImages =
-    {
-      dockerImagesDir,
-      modules,
-      overlay,
-    }:
-    let
-      nixFiles = nixFilesIn dockerImagesDir;
-    in
-    with utils.lib;
-    (eachDefaultSystem (
-      system:
-      let
-        pkgs = import nixpkgs {
-          inherit system;
-          overlays = [ overlay ];
-        };
-      in
-      {
-        legacyPackages = foldl recursiveUpdate { } (
-          map (nixFile: {
-            dockerImages =
-              (evalChipsModules {
-                inherit pkgs system;
-                modules = modules ++ [ nixFile ];
-              }).dockerImages.output;
-          }) nixFiles
-        );
-      }
-    )).legacyPackages;
-
-  usePackages =
-    { packagesDir, overlay }:
-    let
-      allPackages = nixFilesIn packagesDir;
-    in
-    with utils.lib;
-    (eachDefaultSystem (
-      system:
-      let
-        pkgs = import nixpkgs {
-          inherit system;
-          overlays = [ overlay ];
-        };
-      in
-      {
-        packages = listToAttrs (
-          map (name: {
-            name = removeSuffix ".nix" (baseNameOf name);
-            value = pkgs.callPackage name { };
-          }) allPackages
-        );
-      }
-    )).packages;
-
-  useChecks =
-    {
-      checksDir,
-      modules,
-      overlay,
-    }:
-    let
-      checks = nixFilesIn checksDir;
-      makeCheck =
-        system: check:
-        (import ./makeCheck.nix) (import check) {
-          self = {
-            nixosModules.default = modules;
-            overlays.default = overlay;
-          };
+      (eachDefaultSystem (
+        system: let
           pkgs = import nixpkgs {
             inherit system;
-            overlays = [ overlay ];
+            config = nixpkgsConfig;
+            overlays = [overlay];
           };
+        in {
+          results = listToAttrs (
+            map (name: {
+              name = removeSuffix ".nix" (baseNameOf name);
+              value = evalChipsModules {
+                inherit pkgs system;
+                modules = modules ++ [name];
+              };
+            })
+            nixFiles
+          );
+        }
+      )).results;
+
+  useDockerImages = {
+    dockerImagesDir,
+    modules,
+    overlay,
+  }: let
+    nixFiles = nixFilesIn dockerImagesDir;
+  in
+    with utils.lib;
+      (eachDefaultSystem (
+        system: let
+          pkgs = import nixpkgs {
+            inherit system;
+            overlays = [overlay];
+          };
+        in {
+          legacyPackages = foldl recursiveUpdate {} (
+            map (nixFile: {
+              dockerImages =
+                (evalChipsModules {
+                  inherit pkgs system;
+                  modules = modules ++ [nixFile];
+                }).dockerImages.output;
+            })
+            nixFiles
+          );
+        }
+      )).legacyPackages;
+
+  usePackages = {
+    packagesDir,
+    overlay,
+  }: let
+    allPackages = nixFilesIn packagesDir;
+  in
+    with utils.lib;
+      (eachDefaultSystem (
+        system: let
+          pkgs = import nixpkgs {
+            inherit system;
+            overlays = [overlay];
+          };
+        in {
+          packages = listToAttrs (
+            map (name: {
+              name = removeSuffix ".nix" (baseNameOf name);
+              value = pkgs.callPackage name {};
+            })
+            allPackages
+          );
+        }
+      )).packages;
+
+  useChecks = {
+    checksDir,
+    modules,
+    overlay,
+  }: let
+    checks = nixFilesIn checksDir;
+    makeCheck = system: check:
+      (import ./makeCheck.nix) (import check) {
+        self = {
+          nixosModules.default = modules;
+          overlays.default = overlay;
         };
-    in
-    ((eachSystem [ utils.lib.system.x86_64-linux ]) (system: {
+        pkgs = import nixpkgs {
+          inherit system;
+          overlays = [overlay];
+        };
+      };
+  in
+    ((eachSystem [utils.lib.system.x86_64-linux]) (system: {
       checks = listToAttrs (
         map (check: {
           name = removeSuffix ".nix" (baseNameOf check);
           value = makeCheck system check;
-        }) checks
+        })
+        checks
       );
     })).checks;
 
-  mkManual =
-    { modules }:
+  mkManual = {modules}:
     (nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
       modules = [
         (
-          { ... }:
-          {
+          {...}: {
             config = {
               documentation.nixos.extraModules = map toString modules;
             };
@@ -223,219 +217,223 @@ let
       ];
     }).config.system.build.manual;
 
-  useHomeConfigurations =
-    {
-      homeConfigurationsDir,
-      nixpkgsConfig,
-      modules,
-      overlay,
-    }:
-    let
-      onlyHomeNix = baseName: (hasSuffix "home.nix" baseName);
+  useHomeConfigurations = {
+    homeConfigurationsDir,
+    nixpkgsConfig,
+    modules,
+    overlay,
+  }: let
+    onlyHomeNix = baseName: (hasSuffix "home.nix" baseName);
 
-      configurations = map (n: {
-        name = builtins.baseNameOf (builtins.dirOf n);
-        path = n;
-      }) (builtins.filter onlyHomeNix (nixFilesIn homeConfigurationsDir));
-    in
+    configurations = map (n: {
+      name = builtins.baseNameOf (builtins.dirOf n);
+      path = n;
+    }) (builtins.filter onlyHomeNix (nixFilesIn homeConfigurationsDir));
+  in
     with utils.lib;
-    (eachDefaultSystem (
-      system:
-      let
-        pkgs = import nixpkgs {
-          inherit system;
-          config = nixpkgsConfig;
-          overlays = [ overlay ];
-        };
-      in
-      {
-        results = {
-          homeConfigurations = listToAttrs (
-            map (
-              configuration:
-              nameValuePair configuration.name (
-                home-manager.lib.homeManagerConfiguration {
-                  inherit pkgs;
-                  modules = modules ++ [ configuration.path ];
-                }
+      (eachDefaultSystem (
+        system: let
+          pkgs = import nixpkgs {
+            inherit system;
+            config = nixpkgsConfig;
+            overlays = [overlay];
+          };
+        in {
+          results = {
+            homeConfigurations = listToAttrs (
+              map (
+                configuration:
+                  nameValuePair configuration.name (
+                    home-manager.lib.homeManagerConfiguration {
+                      inherit pkgs;
+                      modules = modules ++ [configuration.path];
+                    }
+                  )
               )
-            ) configurations
-          );
-        };
-      }
-    )).results;
+              configurations
+            );
+          };
+        }
+      )).results;
 
-  useNixosConfigurations =
-    {
-      nixosConfigurationsDir,
-      modules,
-      overlay,
-      specialArgs,
-    }:
-    let
-      onlyDefaultNix = baseName: (hasSuffix "default.nix" baseName);
+  useNixosConfigurations = {
+    nixosConfigurationsDir,
+    modules,
+    overlay,
+    specialArgs,
+  }: let
+    onlyDefaultNix = baseName: (hasSuffix "default.nix" baseName);
 
-      configurations = map (n: {
-        name = builtins.baseNameOf (builtins.dirOf n);
-        system = if (hasInfix "/aarch64/" (toString n)) then "aarch64-linux" else "x86_64-linux";
-        path = n;
-      }) (builtins.filter onlyDefaultNix (nixFilesIn nixosConfigurationsDir));
+    configurations = map (n: {
+      name = builtins.baseNameOf (builtins.dirOf n);
+      system =
+        if (hasInfix "/aarch64/" (toString n))
+        then "aarch64-linux"
+        else "x86_64-linux";
+      path = n;
+    }) (builtins.filter onlyDefaultNix (nixFilesIn nixosConfigurationsDir));
 
-      nixosConfigurations = builtins.listToAttrs (
-        map (
-          configuration:
+    nixosConfigurations = builtins.listToAttrs (
+      map (
+        configuration:
           nameValuePair configuration.name (
             nixpkgs.lib.nixosSystem {
               system = configuration.system;
-              specialArgs = specialArgs // {
-                inherit home-manager sharedChipModules nixosShimModules;
-                # expose `name` as an input to NixOS configurations
-                name = configuration.name;
-                nodes = nixosConfigurations;
-              };
+              specialArgs =
+                specialArgs
+                // {
+                  inherit home-manager sharedChipModules nixosShimModules;
+                  # expose `name` as an input to NixOS configurations
+                  name = configuration.name;
+                  nodes = nixosConfigurations;
+                };
               modules =
                 [
                   (
-                    { ... }:
-                    {
+                    {...}: {
                       config = {
-                        nixpkgs.overlays = [ overlay ];
+                        nixpkgs.overlays = [overlay];
                       };
                     }
                   )
                 ]
                 ++ modules
-                ++ [ configuration.path ];
+                ++ [configuration.path];
             }
           )
-        ) configurations
-      );
-    in
+      )
+      configurations
+    );
+  in
     nixosConfigurations;
 in
-{
-  appsDir ? null,
-  checksDir ? null,
-  devShellsDir ? null,
-  packagesDir ? null,
-  nixosModulesDir ? null,
-  dockerImagesDir ? null,
-  nixosConfigurationsDir ? null,
-  homeConfigurationsDir ? null,
-  nixosSpecialArgs ? { },
-  nixosModules ? [ ],
-  homeConfigurationModules ? [ ],
-  overlays ? [ ],
-  arcanum ? { },
-  nixpkgsConfig ? { },
-  additionalPackages ? (pkgs: { }),
-  additionalApps ? (pkgs: { }),
-  ...
-}:
-let
-  projectNixosModules = if nixosModulesDir != null then nixFilesIn nixosModulesDir else [ ];
+  {
+    appsDir ? null,
+    checksDir ? null,
+    devShellsDir ? null,
+    packagesDir ? null,
+    nixosModulesDir ? null,
+    dockerImagesDir ? null,
+    nixosConfigurationsDir ? null,
+    homeConfigurationsDir ? null,
+    nixosSpecialArgs ? {},
+    nixosModules ? [],
+    homeConfigurationModules ? [],
+    overlays ? [],
+    arcanum ? {},
+    nixpkgsConfig ? {},
+    additionalPackages ? (pkgs: {}),
+    additionalApps ? (pkgs: {}),
+    ...
+  }: let
+    projectNixosModules =
+      if nixosModulesDir != null
+      then nixFilesIn nixosModulesDir
+      else [];
 
-  mergedNixosModules = nixosChipModules ++ nixosModules ++ sharedChipModules ++ projectNixosModules;
+    mergedNixosModules = nixosChipModules ++ nixosModules ++ sharedChipModules ++ projectNixosModules;
 
-  overlay = self.lib.mergeOverlays (
-    overlays
-    ++ [
-      (mkPackagesOverlay packagesDir)
-      nixpkgs-staging.overlays.default
-    ]
-  );
+    overlay = self.lib.mergeOverlays (
+      overlays
+      ++ [
+        (mkPackagesOverlay packagesDir)
+        nixpkgs-staging.overlays.default
+      ]
+    );
 
-  packages = optionalAttrs (packagesDir != null) (usePackages {
-    inherit overlay packagesDir;
-  });
+    packages = optionalAttrs (packagesDir != null) (usePackages {
+      inherit overlay packagesDir;
+    });
 
-  dockerImages = optionalAttrs (dockerImagesDir != null) (useDockerImages {
-    inherit dockerImagesDir overlay;
-    modules = nixChipModules ++ nixosShimModules ++ sharedChipModules;
-  });
+    dockerImages = optionalAttrs (dockerImagesDir != null) (useDockerImages {
+      inherit dockerImagesDir overlay;
+      modules = nixChipModules ++ nixosShimModules ++ sharedChipModules;
+    });
 
-  checks = optionalAttrs (checksDir != null) (useChecks {
-    inherit self checksDir overlay;
-    modules = mergedNixosModules;
-  });
+    checks = optionalAttrs (checksDir != null) (useChecks {
+      inherit self checksDir overlay;
+      modules = mergedNixosModules;
+    });
 
-  apps = useApps { inherit appsDir overlay; };
+    apps = useApps {inherit appsDir overlay;};
 
-  nixosConfigurations = optionalAttrs (nixosConfigurationsDir != null) (useNixosConfigurations {
-    inherit nixosConfigurationsDir overlay;
-    modules = mergedNixosModules;
-    specialArgs = nixosSpecialArgs;
-  });
+    nixosConfigurations = optionalAttrs (nixosConfigurationsDir != null) (useNixosConfigurations {
+      inherit nixosConfigurationsDir overlay;
+      modules = mergedNixosModules;
+      specialArgs = nixosSpecialArgs;
+    });
 
-  homeConfigurations = optionalAttrs (homeConfigurationsDir != null) (useHomeConfigurations {
-    inherit homeConfigurationsDir nixpkgsConfig overlay;
-    modules = homeConfigurationModules ++ homeManagerChipModules ++ sharedChipModules;
-  });
+    homeConfigurations = optionalAttrs (homeConfigurationsDir != null) (useHomeConfigurations {
+      inherit homeConfigurationsDir nixpkgsConfig overlay;
+      modules = homeConfigurationModules ++ homeManagerChipModules ++ sharedChipModules;
+    });
 
-  devShells = optionalAttrs (devShellsDir != null) (useDevShells {
-    inherit devShellsDir nixpkgsConfig overlay;
-    modules = nixChipModules ++ nixosShimModules ++ sharedChipModules;
-  });
+    devShells = optionalAttrs (devShellsDir != null) (useDevShells {
+      inherit devShellsDir nixpkgsConfig overlay;
+      modules = nixChipModules ++ nixosShimModules ++ sharedChipModules;
+    });
 
-  collectFromOutput =
-    attrPath: output:
-    let
+    collectFromOutput = attrPath: output: let
       fromPath = getAttrFromPath attrPath;
     in
-    mapAttrs (n: v: mapAttrs (n: cfg: fromPath cfg) v) output;
+      mapAttrs (n: v: mapAttrs (n: cfg: fromPath cfg) v) output;
 
-  additionalAttrs = utils.lib.eachDefaultSystem (
-    system:
-    let
-      pkgs = import nixpkgs {
-        inherit system;
-        config = nixpkgsConfig;
-        overlays = [ overlay ];
-      };
-    in
-    {
-      packages = additionalPackages pkgs;
-      apps = additionalApps pkgs;
-    }
-  );
+    additionalAttrs = utils.lib.eachDefaultSystem (
+      system: let
+        pkgs = import nixpkgs {
+          inherit system;
+          config = nixpkgsConfig;
+          overlays = [overlay];
+        };
+      in {
+        packages = additionalPackages pkgs;
+        apps = additionalApps pkgs;
+      }
+    );
 
-  chipsOutput = {
-    inherit
-      checks
-      apps
-      packages
-      nixosConfigurations
-      ;
-    legacyPackages = dockerImages;
-    devShells = collectFromOutput [ "devShell" "output" ] devShells;
-    nixosModules.default = nixosModules ++ projectNixosModules;
-    overlays.default = overlay;
-    lib = {
-      manual = mkManual { modules = mergedNixosModules; };
-      arcanum = {
-        nixos = mapAttrs (hostname: node: {
-          inherit (node.config.arcanum) files adminRecipients;
-        }) nixosConfigurations;
-        devShells = mapAttrs (
-          system: value:
-          mapAttrs (userHost: config: { inherit (config.arcanum) files adminRecipients; }) value
-        ) devShells;
-        homeManager = mapAttrs (
-          name: home:
-          (mapAttrs (name: user: {
-            inherit (user.config.arcanum) files adminRecipients;
-          }) home.homeConfigurations)
-        ) homeConfigurations;
-        flake = {
-          files = arcanum.files or { };
-          adminRecipients = arcanum.adminRecipients or [ ];
+    chipsOutput = {
+      inherit
+        checks
+        apps
+        packages
+        nixosConfigurations
+        ;
+      legacyPackages = dockerImages;
+      devShells = collectFromOutput ["devShell" "output"] devShells;
+      nixosModules.default = nixosModules ++ projectNixosModules;
+      overlays.default = overlay;
+      lib = {
+        manual = mkManual {modules = mergedNixosModules;};
+        arcanum = {
+          nixos =
+            mapAttrs (hostname: node: {
+              inherit (node.config.arcanum) files adminRecipients;
+            })
+            nixosConfigurations;
+          devShells =
+            mapAttrs (
+              system: value:
+                mapAttrs (userHost: config: {inherit (config.arcanum) files adminRecipients;}) value
+            )
+            devShells;
+          homeManager =
+            mapAttrs (
+              name: home: (mapAttrs (name: user: {
+                  inherit (user.config.arcanum) files adminRecipients;
+                })
+                home.homeConfigurations)
+            )
+            homeConfigurations;
+          flake = {
+            files = arcanum.files or {};
+            adminRecipients = arcanum.adminRecipients or [];
+          };
         };
       };
     };
-  };
-in
-mergeOutputs [
-  { legacyPackages = homeConfigurations; }
-  additionalAttrs
-  chipsOutput
-]
+  in
+    mergeOutputs [
+      {legacyPackages = homeConfigurations;}
+      additionalAttrs
+      chipsOutput
+    ]

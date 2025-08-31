@@ -20,14 +20,13 @@
     # };
   };
 
-  outputs =
-    {
-      self,
-      nixpkgs,
-      chips,
-      # rust-overlay,
-      ...
-    }:
+  outputs = {
+    self,
+    nixpkgs,
+    chips,
+    # rust-overlay,
+    ...
+  }:
     chips.lib.use {
       devShellsDir = ./nix/devShells;
       # packagesDir = ./nix/packages;

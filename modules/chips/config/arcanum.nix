@@ -4,17 +4,15 @@
   lib,
   ...
 }:
-with lib;
-let
+with lib; let
   cfg = config.arcanum;
   secretEnvFiles = filterAttrs (n: secret: secret.dest != null && secret.isEnvFile == true) cfg.files;
-in
-{
+in {
   config = mkIf cfg.enable {
-    devShell.contents = [ pkgs.arcanum ];
+    devShell.contents = [pkgs.arcanum];
 
     devShell.shellHooks = mkOrder 751 (
-      optionalString (secretEnvFiles != { }) ''
+      optionalString (secretEnvFiles != {}) ''
         set -o allexport
         ${concatStringsSep "\n" (
           mapAttrsToList (name: secret: ''
@@ -27,7 +25,8 @@ in
             else
               echo "Skipped missing secret env file ${secret.dest}"
             fi
-          '') secretEnvFiles
+          '')
+          secretEnvFiles
         )}
         set +o allexport
       ''

@@ -5,22 +5,23 @@
   chips,
   ...
 }:
-with lib;
-let
+with lib; let
   inherit (chips.lib.traefik) hostRegexp;
 
   cfg = config.services.imgproxy;
 
-  schema = if config.programs.lego.enable then "https" else "http";
-in
-{
+  schema =
+    if config.programs.lego.enable
+    then "https"
+    else "http";
+in {
   options = with types; {
     services.imgproxy = {
       enable = mkEnableOption (mdDoc "Enable Imgproxy server.");
 
       virtualHost = mkOption {
         type = submodule (import "${pkgs.path}/nixos/modules/services/web-servers/nginx/vhost-options.nix");
-        default = { };
+        default = {};
         description = mdDoc ''
           Nginx configuration can be done by adapting {option}`services.nginx.virtualHosts`.
           See [](#opt-services.nginx.virtualHosts) for further information.
@@ -50,12 +51,11 @@ in
       };
     };
     programs = {
-
       supervisord.programs = {
         imgproxy = {
           directory = config.dir.project;
           command = "${pkgs.imgproxy}/bin/imgproxy";
-          environment = [ "IMGPROXY_BIND=127.0.0.1:${toString cfg.port}" ];
+          environment = ["IMGPROXY_BIND=127.0.0.1:${toString cfg.port}"];
           autostart = true;
           stderr_logfile = "/dev/stderr";
         };
@@ -83,12 +83,12 @@ in
       routers = {
         imgproxy = {
           service = "imgproxy";
-          rule = hostRegexp [ "imgproxy" ] [ config.project.domainSuffix ];
+          rule = hostRegexp ["imgproxy"] [config.project.domainSuffix];
         };
       };
       services = {
         imgproxy = {
-          loadBalancer.servers = [ { url = "http://127.0.0.1:${toString cfg.port}"; } ];
+          loadBalancer.servers = [{url = "http://127.0.0.1:${toString cfg.port}";}];
         };
       };
     };
