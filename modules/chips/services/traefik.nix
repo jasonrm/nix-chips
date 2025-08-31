@@ -31,7 +31,8 @@ let
           service = "api@internal";
           rule = "Host(`traefik.localhost`) || Host(`traefik.${elemAt cfg.domains 0}`)";
         };
-      } // cfg.routers;
+      }
+      // cfg.routers;
     };
   };
 

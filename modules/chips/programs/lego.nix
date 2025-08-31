@@ -23,14 +23,13 @@ let
   ];
 
   outDir = "${config.dir.data}/lego";
-  globalOpts =
-    [
-      "--email ${cfg.email}"
-      "--path ${outDir}"
-    ]
-    ++ (optionals cfg.acceptTermsOfService [ "--accept-tos" ])
-    ++ (map (d: "--domains ${d}") cfg.domains)
-    ++ cfg.additionalArgs;
+  globalOpts = [
+    "--email ${cfg.email}"
+    "--path ${outDir}"
+  ]
+  ++ (optionals cfg.acceptTermsOfService [ "--accept-tos" ])
+  ++ (map (d: "--domains ${d}") cfg.domains)
+  ++ cfg.additionalArgs;
 
   runOpts = escapeShellArgs (
     globalOpts

@@ -194,17 +194,16 @@ in
 
   config = mkIf cfg.enable {
     devShell = {
-      shellHooks =
-        ''
-          ${update-jetbrains}/bin/update-jetbrains
-        ''
-        + optionalString cfg.php-cs-fixer.addToGitIgnore ''
-          if [ -d .git ]; then
-            if ! grep -q "^${cfg.php-cs-fixer.filename}$" .git/info/exclude; then
-             echo "${cfg.php-cs-fixer.filename}" >> .git/info/exclude
-            fi
+      shellHooks = ''
+        ${update-jetbrains}/bin/update-jetbrains
+      ''
+      + optionalString cfg.php-cs-fixer.addToGitIgnore ''
+        if [ -d .git ]; then
+          if ! grep -q "^${cfg.php-cs-fixer.filename}$" .git/info/exclude; then
+           echo "${cfg.php-cs-fixer.filename}" >> .git/info/exclude
           fi
-        '';
+        fi
+      '';
       environment =
         let
           projectDir = if config.dir.project != "/dev/null" then config.dir.project else "$PWD";

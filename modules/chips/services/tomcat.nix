@@ -319,7 +319,8 @@ in
         "CATALINA_BASE=${cfg.dataDir}"
         "CATALINA_PID=${config.dir.data}/run/tomcat.pid"
         "JAVA_HOME=${cfg.jdk}"
-      ] ++ cfg.extraEnvironment;
+      ]
+      ++ cfg.extraEnvironment;
     };
   };
 }
