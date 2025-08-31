@@ -215,6 +215,7 @@ in {
           else "$PWD";
       in ["PATH=$PATH:$PWD/vendor/bin"];
       contents = [
+        mago
         flamegraph
         php-spx
         php-xdebug
