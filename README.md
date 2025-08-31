@@ -5,8 +5,7 @@ git init
 
 nix flake new -t github:jasonrm/nix-chips .
 
-cat ./nix/devShells/user-hostname.nix \
-    | python3 -c 'import os,sys;[sys.stdout.write(os.path.expandvars(l)) for l in sys.stdin]' \
+sed "s|\$PWD|$PWD|g" ./nix/devShells/user-hostname.nix \
     > ./nix/devShells/$(whoami)-$(hostname -s).nix
 
 git add .
@@ -20,7 +19,9 @@ arcanum edit secrets/project.env.age
 ```
 
 ## Manual Setup
+
 ### `flake.nix`
+
 ```nix
 {
   inputs = {
@@ -48,6 +49,7 @@ arcanum edit secrets/project.env.age
 ```
 
 ### `.envrc`
+
 ```
 nix_direnv_manual_reload
 use flake .#${USER}-$(hostname -s)
