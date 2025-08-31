@@ -173,12 +173,7 @@ in
           int
           bool
         ]);
-        default = {
-          "SENTRY_DSN" = "";
-          "SENTRY_ENVIRONMENT" = "dev";
-          "SENTRY_TRACES_SAMPLE_RATE" = 0.0;
-          "SENTRY_PROFILES_SAMPLE_RATE" = 0.0;
-        };
+        default = {};
       };
     };
   };
