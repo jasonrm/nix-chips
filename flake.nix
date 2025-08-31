@@ -3,6 +3,7 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
+    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     utils.url = "github:numtide/flake-utils";
     nixpkgs-staging.url = "github:jasonrm/nixpkgs-staging";
     nixpkgs-staging.inputs.nixpkgs.follows = "nixpkgs";
@@ -10,9 +11,12 @@
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = {...} @ inputs: let
+  outputs = {nixpkgs-unstable, ...} @ inputs: let
     lib = import ./lib inputs;
-    output = lib.use {devShellsDir = ./devShells;};
+    output = lib.use {
+      devShellsDir = ./devShells;
+      overlays = [lib.overlays.default];
+    };
   in
     output
     // {
