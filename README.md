@@ -11,15 +11,11 @@ Rather than try to force nix flakes to be impure, per-user and per-machine nix m
 ## Nix Flake Template
 
 ```
-# In an new or existing directory
+nix flake new -t github:jasonrm/nix-chips project-dir
+cd project-dir
 git init
-
-nix flake new -t github:jasonrm/nix-chips .
-
-nix run .#init-dev-shell <github-username>
-
 git add .
-
+nix run .#init-dev-shell <github-username>
 direnv allow
 ```
 
