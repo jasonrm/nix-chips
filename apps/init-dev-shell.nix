@@ -58,5 +58,5 @@
   '';
 in {
   type = "app";
-  program = init-dev-shell;
+  program = "${init-dev-shell}";
 }
