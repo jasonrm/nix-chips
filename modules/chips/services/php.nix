@@ -12,6 +12,7 @@ with lib; let
   inherit (lib.lists) head drop;
 
   cfg = config.services.php;
+  isAnyInstanceEnabled = reduce (x: y: x || y) false (mapAttrsToList (name: instance: instance.enable) cfg.instances);
 
   nginx = config.services.nginx;
 
@@ -217,7 +218,7 @@ in {
     };
   };
 
-  config = lib.mkIf cfg.enable (mkMerge [
+  config = lib.mkIf isAnyInstanceEnabled (mkMerge [
     {
       services.phpfpm.pools = mkMerge (
         mapAttrsToList (
