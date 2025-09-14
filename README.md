@@ -2,7 +2,7 @@ nix-chips is a reproducible development environment for projects using thin wrap
 
 For example, Rust projects where Rust Rover or Zed are used, each should be auto-configured to use a specific rust/cargo toolchain. Similar for PHP, Java, etc.
 
-[supervisord-go](https://github.com/ochinchina/supervisord) is used to run the services as it (usually) cleans up after running processes and many existing NixOS services that use systemd can be mapped to supervisord concepts.
+[supervisord-go](https://github.com/ochinchina/supervisord) is used to run the services as it (usually) cleans up after running processes and many existing NixOS services that use systemd can be mapped to supervisord concepts. A custom [systemd-tmpfiles](https://github.com/jasonrm/systemd-tmpfiles) implementation is used to create temporary directories that would otherwise be created by systemd.
 
 Rather than try to force nix flakes to be impure, per-user and per-machine nix modules are used. While this does "leak" information about the user's paths to git repositories, it also means that the configuration of other users of the project are inspectable. Good for reducing "works on my machine" issues, as well as making it easier to share configurations between users.
 
