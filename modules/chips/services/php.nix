@@ -217,7 +217,7 @@ in {
     };
   };
 
-  config = mkMerge [
+  config = lib.mkIf cfg.enable (mkMerge [
     {
       services.phpfpm.pools = mkMerge (
         mapAttrsToList (
@@ -577,5 +577,5 @@ in {
         );
       };
     }
-  ];
+  ]);
 }
