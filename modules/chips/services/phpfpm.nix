@@ -26,9 +26,6 @@ with lib; let
       ${concatStringsSep "\n" (mapAttrsToList (n: v: "env[${n}] = ${toStr v}") poolOpts.phpEnv)}
       ${optionalString (poolOpts.extraConfig != null) poolOpts.extraConfig}
     '';
-  #    ''
-  #    + optionalString cfg.xdebug.enable ''
-  #      php_admin_value[xdebug.output_dir] = ${cfg.logDir}/xdebug;
 in {
   imports = [];
 
@@ -39,7 +36,7 @@ in {
           opts = recursiveUpdate poolOpts {settings.listen = "${config.dir.data}/phpfpm-${pool}.sock";};
         in
           nameValuePair "phpfpm-${pool}" {
-            command = "${poolOpts.phpPackage}/bin/php-fpm --fpm-config ${fpmCfgFile pool poolOpts}";
+            command = "${poolOpts.phpPackage}/bin/php-fpm --fpm-config ${fpmCfgFile pool opts}";
           }
       )
       cfg.pools;

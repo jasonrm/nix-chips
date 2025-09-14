@@ -1,5 +1,4 @@
 {
-  system,
   lib,
   pkgs,
   config,
@@ -9,13 +8,6 @@ with lib; let
   cfg = config.programs.supervisord;
 
   inherit (builtins) concatStringsSep;
-
-  toStr = value:
-    if true == value
-    then "true"
-    else if false == value
-    then "false"
-    else toString value;
 
   programEntry = name: attrs: ''
     [program:${name}]
@@ -47,9 +39,7 @@ with lib; let
   '';
 
   programOption = with types;
-    {name, ...}: let
-      programOption = cfg.programs.${name};
-    in {
+    {name, ...}: {
       options = {
         autostart = mkOption {
           type = bool;
