@@ -1,12 +1,22 @@
-## Templated Setup
+nix-chips is a reproducible development environment for projects using thin wrappers around NixOS modules and custom NixOS-like modules providing configurable services and programs.
+
+For example, Rust projects where Rust Rover or Zed are used, each should be auto-configured to use a specific rust/cargo toolchain. Similar for PHP, Java, etc.
+
+[supervisord-go](https://github.com/ochinchina/supervisord) is used to run the services as it (usually) cleans up after running processes and many existing NixOS services that use systemd can be mapped to supervisord concepts.
+
+Rather than try to force nix flakes to be impure, per-user and per-machine nix modules are used. While this does "leak" information about the user's paths to git repositories, it also means that the configuration of other users of the project are inspectable. Good for reducing "works on my machine" issues, as well as making it easier to share configurations between users.
+
+[arcanum](https://github.com/bitnixdev/arcanum) is a nix-chips specific utility used to encrypt and decrypt sensitive information using the [age](https://github.com/FiloSottile/age) library and per-machine SSH host keys.
+
+## Nix Flake Template
 
 ```
+# In an new or existing directory
 git init
 
 nix flake new -t github:jasonrm/nix-chips .
 
-sed "s|\$PWD|$PWD|g" ./nix/devShells/user-hostname.nix \
-    > ./nix/devShells/$(whoami)-$(hostname -s).nix
+nix run .#init-dev-shell <github-username>
 
 git add .
 
@@ -53,10 +63,8 @@ arcanum edit secrets/project.env.age
 ```
 nix_direnv_manual_reload
 use flake .#${USER}-$(hostname -s)
-dotenv_if_exists .env.devshell
-dotenv_if_exists .env.secrets
-layout php
-layout node
+# layout php
+# layout node
 ```
 
 ## Use
