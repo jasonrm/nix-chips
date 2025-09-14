@@ -20,7 +20,7 @@
     }
   '';
 
-  init-dev-shell = pkgs.writeScriptBin "init-dev-shell" ''
+  init-dev-shell = pkgs.writeShellScript "init-dev-shell" ''
     set -o errexit -o nounset -o pipefail
 
     if [ $# -ne 1 ]; then
