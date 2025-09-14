@@ -11,11 +11,11 @@
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = {nixpkgs-unstable, ...} @ inputs: let
+  outputs = {...} @ inputs: let
     lib = import ./lib inputs;
     output = lib.use {
       devShellsDir = ./devShells;
-      overlays = [lib.overlays.default];
+      overlays = [lib.overlays.unstable];
     };
   in
     output
