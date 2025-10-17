@@ -1,5 +1,4 @@
 {
-  system,
   pkgs,
   lib,
   config,
@@ -54,7 +53,12 @@ in {
 
       stdenv = mkOption {
         type = package;
-        default = pkgs.stdenv;
+        default = cfg.pkgs.stdenv;
+      };
+
+      pkgs = mkOption {
+        type = attrs;
+        default = pkgs;
       };
 
       shellHooks = mkOption {
@@ -85,7 +89,7 @@ in {
   };
 
   config = {
-    devShell.output = pkgs.mkShell.override {stdenv = cfg.stdenv;} {
+    devShell.output = pkgs.mkShell.override {inherit (cfg) stdenv;} {
       nativeBuildInputs = cfg.nativeBuildInputs;
       buildInputs = cfg.contents;
 
