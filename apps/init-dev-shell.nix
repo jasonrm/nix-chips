@@ -34,20 +34,20 @@
       cat ~/.ssh/id_rsa.pub \
         | cut -d" " -f1-2 \
         | sed 's/^/      "/;s/$/"/' \
-      > chips_ssh_keys.tmp
+      >> chips_ssh_keys.tmp
     fi
 
     if [ -f ~/.ssh/id_ed25519.pub ]; then
       cat ~/.ssh/id_ed25519.pub \
         | cut -d" " -f1-2 \
         | sed 's/^/      "/;s/$/"/' \
-      > chips_ssh_keys.tmp
+      >> chips_ssh_keys.tmp
     fi
 
     ${pkgs.curl}/bin/curl -s https://github.com/$GITHUB_USERNAME.keys \
       | grep -E "(ssh-ed25519|ssh-rsa)" \
-      | sed 's/^/      "/;s/$/"/' \
-    > chips_ssh_keys.tmp
+      | sed 's/^/      "/;s/$/"/' || echo "" \
+    >> chips_ssh_keys.tmp
 
     export PUBLIC_SSH_KEY=$(cat chips_ssh_keys.tmp | sort | uniq)
     rm chips_ssh_keys.tmp
