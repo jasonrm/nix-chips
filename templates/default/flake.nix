@@ -23,6 +23,7 @@
     ...
   }:
     chips.lib.use {
+      # Generate new devShells with `nix run .#init-dev-shell <GITHUB_USERNAME>`
       devShellsDir = ./nix/devShells;
       # packagesDir = ./nix/packages;
       # nixosModulesDir = ./nix/nixosModules;
