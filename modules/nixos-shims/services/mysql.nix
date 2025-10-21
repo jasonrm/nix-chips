@@ -12,5 +12,8 @@ with lib; {
       package = mkDefault pkgs.mysql80;
       dataDir = mkForce (config.dir.data + "/mysql");
     };
+    systemd.services.mysql = {
+      path = mkForce [];
+    };
   };
 }
