@@ -76,7 +76,7 @@ in {
   config = mkMerge [
     {
       programs.supervisord = {
-        enable = true;
+        enable = mkDefault (cfg.instances != {});
         programs = mkMerge (
           mapAttrsToList (
             name: opts:
