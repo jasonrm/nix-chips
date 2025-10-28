@@ -9,7 +9,7 @@ with lib; {
   imports = [(modulesPath + "/services/databases/mysql.nix")];
   config = {
     services.mysql = {
-      package = mkDefault pkgs.mysql80;
+      package = mkDefault pkgs.mysql84;
       dataDir = mkForce (config.dir.data + "/mysql");
     };
     systemd.services.mysql = {
