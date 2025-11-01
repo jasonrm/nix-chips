@@ -28,7 +28,6 @@ with lib; let
         --innodb-log-group-home-dir=${config.services.mysql.settings.mysqld.innodb_log_group_home_dir} \
         --initialize \
         --initialize-insecure \
-        --authentication-policy="mysql_native_password" \
         ${
       if cfg.initialScript != null
       then "--init-file=${cfg.initialScript}"
