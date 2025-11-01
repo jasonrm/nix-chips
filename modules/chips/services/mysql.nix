@@ -86,7 +86,6 @@ in {
           tls_version = "";
           mysqlx = 0;
           socket = "${runDir}/mysqld.sock";
-          authentication-policy = "mysql_native_password";
           log_bin = "${logDir}/binlog";
           relay_log = "${logDir}/relaylog";
           innodb_log_group_home_dir = "${logDir}";
