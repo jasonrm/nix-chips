@@ -26,9 +26,6 @@ in {
             path = "${pkgs.biome}/bin/biome";
             arguments = ["lsp-proxy"];
           };
-          settings = {
-            require_config_file = true;
-          };
         };
       };
       languages = {
