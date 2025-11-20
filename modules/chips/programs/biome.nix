@@ -32,25 +32,25 @@ in {
         };
       };
       languages = {
-        CSS = mkDefault {formatter = {language_server = {name = "biome";};};};
-        GraphQL = mkDefault {formatter = {language_server = {name = "biome";};};};
-        JSON = mkDefault {formatter = {language_server = {name = "biome";};};};
-        JSONC = mkDefault {formatter = {language_server = {name = "biome";};};};
-        JavaScript = mkDefault {
+        CSS = {formatter = {language_server = {name = "biome";};};};
+        GraphQL = {formatter = {language_server = {name = "biome";};};};
+        JSON = {formatter = {language_server = {name = "biome";};};};
+        JSONC = {formatter = {language_server = {name = "biome";};};};
+        JavaScript = {
           code_actions_on_format = {
             "source.fixAll.biome" = true;
             "source.organizeImports.biome" = true;
           };
           formatter = {language_server = {name = "biome";};};
         };
-        TSX = mkDefault {
+        TSX = {
           code_actions_on_format = {
             "source.fixAll.biome" = true;
             "source.organizeImports.biome" = true;
           };
           formatter = {language_server = {name = "biome";};};
         };
-        TypeScript = mkDefault {
+        TypeScript = {
           code_actions_on_format = {
             "source.fixAll.biome" = true;
             "source.organizeImports.biome" = true;
