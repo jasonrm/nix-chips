@@ -1,13 +1,10 @@
 {
-  system,
   pkgs,
   lib,
   config,
   ...
 }:
 with lib; let
-  inherit (pkgs.writers) writeBashBin;
-
   cfg = config.programs.nodejs;
 in {
   options = with lib.types; {
@@ -49,7 +46,7 @@ in {
         if cfg.packageManager == "pnpm"
         then {
           dir = cfg.workingDirectory;
-          cmds = ["${pkgs.nodePackages.pnpm}/bin/pnpm install"];
+          cmds = ["${cfg.nodePackages.pnpm}/bin/pnpm install"];
           generates = ["node_modules/.modules.yaml"];
           desc = "Install Node.JS Dependencies (pnpm)";
           sources = [
@@ -59,7 +56,7 @@ in {
         }
         else {
           dir = cfg.workingDirectory;
-          cmds = ["${pkgs.nodePackages.npm}/bin/npm install"];
+          cmds = ["${cfg.nodePackages.npm}/bin/npm install"];
           generates = ["node_modules/.package-lock.json"];
           desc = "Install Node.JS Dependencies (npm)";
           sources = [
@@ -71,25 +68,25 @@ in {
         if cfg.packageManager == "pnpm"
         then {
           dir = cfg.workingDirectory;
-          cmds = ["${pkgs.nodePackages.pnpm}/bin/pnpm update"];
+          cmds = ["${cfg.nodePackages.pnpm}/bin/pnpm update"];
           desc = "Update Node.JS Dependencies (pnpm)";
         }
         else {
           dir = cfg.workingDirectory;
-          cmds = ["${pkgs.nodePackages.npm}/bin/npm update"];
+          cmds = ["${cfg.nodePackages.npm}/bin/npm update"];
           desc = "Update Node.JS Dependencies (npm)";
         };
       build-npm =
         if cfg.packageManager == "pnpm"
         then {
           dir = cfg.workingDirectory;
-          cmds = ["${pkgs.nodePackages.pnpm}/bin/pnpm run build"];
+          cmds = ["${cfg.nodePackages.pnpm}/bin/pnpm run build"];
           desc = "Build Node.JS Project (pnpm)";
           deps = ["install-npm"];
         }
         else {
           dir = cfg.workingDirectory;
-          cmds = ["${pkgs.nodePackages.npm}/bin/npm run build"];
+          cmds = ["${cfg.nodePackages.npm}/bin/npm run build"];
           desc = "Build Node.JS Project (npm)";
           deps = ["install-npm"];
         };
@@ -97,7 +94,7 @@ in {
         if cfg.packageManager == "pnpm"
         then {
           dir = cfg.workingDirectory;
-          cmds = ["${pkgs.nodePackages.pnpm}/bin/pnpm install --frozen-lockfile"];
+          cmds = ["${cfg.nodePackages.pnpm}/bin/pnpm install --frozen-lockfile"];
           desc = "Check Node.JS Project";
           sources = [
             "package.json"
@@ -106,7 +103,7 @@ in {
         }
         else {
           dir = cfg.workingDirectory;
-          cmds = ["${pkgs.nodePackages.npm}/bin/npm ci"];
+          cmds = ["${cfg.nodePackages.npm}/bin/npm ci"];
           desc = "Check Node.JS Project";
           sources = [
             "package.json"
@@ -190,7 +187,6 @@ in {
       in ["PATH=$PATH:${workingDirectory}/node_modules/.bin"];
       contents = with cfg.nodePackages; [
         nodejs
-        pnpm
       ];
     };
   };
