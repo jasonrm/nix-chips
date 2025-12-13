@@ -32,11 +32,9 @@ in {
   config = mkIf (cfg.pools != {}) {
     programs.supervisord.programs =
       mapAttrs' (
-        pool: poolOpts: let
-          opts = recursiveUpdate poolOpts {settings.listen = "${config.dir.data}/phpfpm-${pool}.sock";};
-        in
+        pool: poolOpts:
           nameValuePair "phpfpm-${pool}" {
-            command = "${poolOpts.phpPackage}/bin/php-fpm --fpm-config ${fpmCfgFile pool opts}";
+            command = "${poolOpts.phpPackage}/bin/php-fpm --fpm-config ${fpmCfgFile pool poolOpts}";
           }
       )
       cfg.pools;
