@@ -9,7 +9,7 @@ with nixpkgs.lib; {
   traefik = import ./traefik.nix {inherit (nixpkgs) lib;};
   overlays = {
     unstable = self: super: {
-      unstable = nixpkgs-unstable.legacyPackages.${super.system};
+      unstable = nixpkgs-unstable.legacyPackages.${super.stdenv.hostPlatform.system};
     };
   };
 }
