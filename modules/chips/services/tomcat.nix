@@ -82,7 +82,7 @@
         # Create a modified server.xml which also includes all virtual hosts
         sed -e "/<Engine name=\"Catalina\" defaultHost=\"localhost\">/a\\"${escapeShellArg hostElementsSedString} \
               ${tomcat}/conf/server.xml > ${cfg.dataDir}/conf/server.xml
-        sed -i "s/8080/${toString cfg.port}/g" ${cfg.dataDir}/conf/server.xml
+        sed -i "s/port=\"8080\"/port=\"${toString cfg.port}\" address=\"${cfg.bindAddress}\"/g" ${cfg.dataDir}/conf/server.xml
       ''
     }
 
@@ -298,10 +298,10 @@ in {
         description = "List consisting of a virtual host name and a list of web applications to deploy on each virtual host";
       };
 
-      # host = mkOption {
-      #   type = str;
-      #   default = "0.0.0.0";
-      # };
+      bindAddress = mkOption {
+        type = str;
+        default = config.project.address;
+      };
       port = mkOption {
         type = int;
         default = config.ports.tomcat;
