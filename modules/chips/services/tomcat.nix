@@ -18,10 +18,16 @@
 
   cfg = config.services.tomcat;
   tomcat = cfg.package;
+  toList = value:
+    if builtins.isList value
+    then value
+    else if value == ""
+    then []
+    else [value];
 
   tomcatExec = pkgs.writeShellScriptBin "tomcat-exec" ''
-    export JAVA_OPTS="${concatStringsSep " " cfg.javaOpts}"
-    export CATALINA_OPTS="${concatStringsSep " " cfg.catalinaOpts}"
+    export JAVA_OPTS="${concatStringsSep " " (toList cfg.javaOpts ++ optional cfg.preferIPv4Stack "-Djava.net.preferIPv4Stack=true")}"
+    export CATALINA_OPTS="${concatStringsSep " " (toList cfg.catalinaOpts)}"
 
     ${concatStringsSep "\n" (
       map (file: ''
@@ -248,6 +254,12 @@ in {
         type = types.either (types.listOf types.str) types.str;
         default = "";
         description = "Parameters to pass to the Java Virtual Machine which spawns the Catalina servlet container";
+      };
+
+      preferIPv4Stack = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Whether to pass -Djava.net.preferIPv4Stack=true to the JVM.";
       };
 
       extraEnvironment = mkOption {

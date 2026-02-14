@@ -5,6 +5,10 @@
   ...
 }: let
   cfg = config.services.elasticmq;
+  javaToolOptionsList =
+    (if cfg.configFile != null then ["-Dconfig.file=${cfg.configFile}"] else [])
+    ++ (lib.optional cfg.preferIPv4Stack "-Djava.net.preferIPv4Stack=true");
+  javaToolOptions = lib.concatStringsSep " " javaToolOptionsList;
 in {
   options = {
     services.elasticmq = with lib.types; {
@@ -12,6 +16,11 @@ in {
       configFile = lib.mkOption {
         type = nullOr path;
         default = null;
+      };
+      preferIPv4Stack = lib.mkOption {
+        type = bool;
+        default = true;
+        description = "Whether to pass -Djava.net.preferIPv4Stack=true to the JVM.";
       };
     };
   };
@@ -24,9 +33,7 @@ in {
         elasticmq = {
           command = "${pkgs.elasticmq-server-bin}/bin/elasticmq-server";
           environment =
-            if cfg.configFile != null
-            then ["JAVA_TOOL_OPTIONS=-Dconfig.file=${cfg.configFile}"]
-            else [];
+            lib.optional (javaToolOptions != "") "JAVA_TOOL_OPTIONS=${javaToolOptions}";
         };
       };
     })
