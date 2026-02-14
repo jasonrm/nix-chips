@@ -6,6 +6,7 @@
 }:
 with lib; let
   cfg = config.services.sql-tap;
+  projectAddress = config.project.address;
 
   isAnyInstanceEnabled = foldl (x: y: x || y) false (mapAttrsToList (_: instance: instance.enable) cfg.instances);
 
@@ -15,8 +16,7 @@ with lib; let
     value = i;
   }) sortedNames);
 
-  moduleOptions = {name, ...}: let
-    opts = cfg.instances.${name};
+  moduleOptions = {name, config, ...}: let
     idx = nameToIndex.${name};
   in {
     options = with types; {
@@ -40,7 +40,7 @@ with lib; let
 
       listen = mkOption {
         type = str;
-        default = "${config.project.address}:${toString opts.listenPort}";
+        default = "${projectAddress}:${toString config.listenPort}";
         readOnly = true;
         description = "Computed listen address for the sql-tap proxy.";
       };
@@ -53,7 +53,7 @@ with lib; let
 
       grpc = mkOption {
         type = str;
-        default = "${config.project.address}:${toString opts.grpcPort}";
+        default = "${projectAddress}:${toString config.grpcPort}";
         readOnly = true;
         description = "Computed gRPC address for the TUI client.";
       };
