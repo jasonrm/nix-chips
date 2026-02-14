@@ -8,7 +8,7 @@
   needsSetup = cfg.address != "127.0.0.1";
   isDarwin = pkgs.stdenv.isDarwin;
 
-  setup-loopback = pkgs.writeShellScriptBin "setup-loopback" (
+  loopback-setup = pkgs.writeShellScriptBin "loopback-setup" (
     if isDarwin
     then ''
       set -euo pipefail
@@ -30,7 +30,7 @@
     ''
   );
 
-  check-loopback = pkgs.writeShellScriptBin "check-loopback" (
+  loopback-check = pkgs.writeShellScriptBin "loopback-check" (
     if isDarwin
     then ''
       set -euo pipefail
@@ -38,7 +38,7 @@
       if ! ifconfig lo0 2>/dev/null | grep -q "inet ${cfg.address} "; then
         echo ""
         echo "WARNING: Loopback address ${cfg.address} is not configured on lo0."
-        echo "Services will fail to bind. Run: setup-loopback"
+        echo "Services will fail to bind. Run: loopback-setup"
         echo ""
       fi
     ''
@@ -91,8 +91,8 @@ in {
     }
     (lib.mkIf needsSetup {
       devShell = {
-        contents = [setup-loopback check-loopback];
-        shellHooks = lib.mkBefore "${check-loopback}/bin/check-loopback";
+        contents = [loopback-setup loopback-check];
+        shellHooks = lib.mkBefore "${loopback-check}/bin/loopback-check";
       };
     })
   ];
