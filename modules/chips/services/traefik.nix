@@ -143,10 +143,15 @@ in {
 
   config = mkMerge [
     (mkIf cfg.enable {
-      programs.supervisord.programs.traefik = {
-        command = "${traefikExec}/bin/traefik-exec";
-        environment = cfg.environment;
-      };
+      programs.supervisord.programs.traefik =
+        {
+          command = "${traefikExec}/bin/traefik-exec";
+          environment = cfg.environment;
+        }
+        // (lib.optionalAttrs pkgs.stdenv.isDarwin {
+          user = "root";
+          group = "wheel";
+        });
     })
     (mkIf cfg.debug {
       devShell.shellHooks = [
