@@ -10,6 +10,7 @@
     supervisord = 9001;
 
     nginx = 8080;
+    traefik = 8081;
     mysql = 3306;
 
     redis = 6379;

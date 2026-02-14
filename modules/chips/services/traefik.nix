@@ -28,9 +28,9 @@
       routers =
         {
           traefik = {
-            entryPoints = ["http"] ++ optionals httpsEnabled ["https"];
+            entryPoints = ["traefik"];
             service = "api@internal";
-            rule = "Host(`traefik.localhost`) || Host(`traefik.${elemAt cfg.domains 0}`)";
+            rule = "PathPrefix(`/`)";
           };
         }
         // cfg.routers;
@@ -125,6 +125,12 @@ in {
           port = mkOption {
             type = int;
             default = config.ports.http;
+          };
+        };
+        traefik = {
+          port = mkOption {
+            type = int;
+            default = config.ports.traefik;
           };
         };
         https = {
