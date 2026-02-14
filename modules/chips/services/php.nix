@@ -491,7 +491,7 @@ in {
         services = {
           nginx = {
             loadBalancer.servers = [
-              {url = "http://127.0.0.1:${toString config.services.nginx.defaultHTTPListenPort}";}
+              {url = "http://${config.project.address}:${toString config.services.nginx.defaultHTTPListenPort}";}
             ];
           };
         };

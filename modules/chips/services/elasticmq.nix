@@ -18,7 +18,7 @@ in {
 
   config = lib.mkMerge [
     (lib.mkIf cfg.enable {
-      devShell.environment = ["ELASTICMQ_BASE_URL=http://127.0.0.1:9324/queue/"];
+      devShell.environment = ["ELASTICMQ_BASE_URL=http://${config.project.address}:9324/queue/"];
 
       programs.supervisord.programs = {
         elasticmq = {

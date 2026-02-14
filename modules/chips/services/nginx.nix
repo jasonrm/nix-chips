@@ -28,6 +28,7 @@ in {
 
   config = lib.mkIf cfg.enable {
     services.nginx = {
+      defaultListenAddresses = lib.mkDefault [config.project.address];
       recommendedTlsSettings = true;
       recommendedOptimisation = true;
       recommendedGzipSettings = true;

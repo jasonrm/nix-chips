@@ -51,7 +51,7 @@
         k: v:
           lib.filterAttrs (n: v: v != {}) {
             http = v.http or {};
-            address = ":${toString v.port}";
+            address = "${config.project.address}:${toString v.port}";
           }
       )
       cfg.entryPoints;

@@ -11,7 +11,7 @@ in {
       enable = lib.mkEnableOption "enable memcached";
       host = lib.mkOption {
         type = lib.types.str;
-        default = "0.0.0.0";
+        default = config.project.address;
       };
       port = lib.mkOption {
         type = lib.types.int;
@@ -23,17 +23,13 @@ in {
   config = lib.mkMerge [
     (lib.mkIf cfg.enable {
       devShell.environment = [
-        "MEMCACHED_HOST=${
-          if (cfg.host == "0.0.0.0")
-          then "127.0.0.1"
-          else cfg.host
-        }"
+        "MEMCACHED_HOST=${cfg.host}"
         "MEMCACHED_PORT=${toString cfg.port}"
       ];
       programs.supervisord.programs.memcached = {
         # user = cfg.user;
         # group = cfg.group;
-        command = "${pkgs.memcached}/bin/memcached";
+        command = "${pkgs.memcached}/bin/memcached -l ${cfg.host} -p ${toString cfg.port}";
       };
     })
     {

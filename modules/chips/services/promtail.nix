@@ -60,7 +60,7 @@ in {
 
       host = lib.mkOption {
         type = lib.types.str;
-        default = "127.0.0.1";
+        default = config.project.address;
       };
       portHttp = lib.mkOption {
         type = lib.types.int;
@@ -69,7 +69,7 @@ in {
 
       lokiHost = lib.mkOption {
         type = lib.types.str;
-        default = "127.0.0.1";
+        default = config.project.address;
       };
       lokiPortHttp = lib.mkOption {
         type = lib.types.int;

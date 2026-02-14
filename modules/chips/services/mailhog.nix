@@ -5,17 +5,13 @@
   ...
 }: let
   cfg = config.services.mailhog;
-  serviceAddress =
-    if (cfg.bindAddress == "0.0.0.0")
-    then "127.0.0.1"
-    else cfg.bindAddress;
 in {
   options = {
     services.mailhog = {
       enable = lib.mkEnableOption "enable mailhog";
       bindAddress = lib.mkOption {
         type = lib.types.str;
-        default = "0.0.0.0";
+        default = config.project.address;
       };
       smtpPort = lib.mkOption {
         type = lib.types.int;
@@ -35,7 +31,7 @@ in {
   config = lib.mkMerge [
     (lib.mkIf cfg.enable {
       devShell.environment = [
-        "MAIL_HOST=${serviceAddress}"
+        "MAIL_HOST=${cfg.bindAddress}"
         "MAIL_PORT=${toString cfg.smtpPort}"
       ];
       services.traefik = {
@@ -45,7 +41,7 @@ in {
           rule = "HostRegexp(`mailhog.${config.services.traefik.domain}`)";
         };
         services.mailhog = {
-          loadBalancer.servers = [{url = "http://${serviceAddress}${":"}${toString cfg.httpPort}";}];
+          loadBalancer.servers = [{url = "http://${cfg.bindAddress}${":"}${toString cfg.httpPort}";}];
         };
       };
       programs.supervisord.programs.mailhog = {

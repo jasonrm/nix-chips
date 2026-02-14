@@ -39,14 +39,14 @@ in {
       dir.ensureExists = [cfg.dataDir];
 
       devShell.environment = [
-        "AWS_ENDPOINT_URL_DYNAMODB=http://127.0.0.1:${toString cfg.port}"
+        "AWS_ENDPOINT_URL_DYNAMODB=http://${config.project.address}:${toString cfg.port}"
         "DYNAMODB_PORT=${toString cfg.port}"
         "DYNAMODB_DOMAIN=dynamodb.${config.project.domainSuffix}"
       ];
 
       services.php = {
         phpEnv = {
-          "AWS_ENDPOINT_URL_DYNAMODB" = "http://127.0.0.1:${toString cfg.port}";
+          "AWS_ENDPOINT_URL_DYNAMODB" = "http://${config.project.address}:${toString cfg.port}";
         };
       };
       programs = {
@@ -70,7 +70,7 @@ in {
           serverName = "dynamodb.${config.project.domainSuffix}";
           locations = {
             "/" = {
-              proxyPass = "http://127.0.0.1:${toString cfg.port}";
+              proxyPass = "http://${config.project.address}:${toString cfg.port}";
               proxyWebsockets = true;
             };
           };
@@ -90,7 +90,7 @@ in {
         };
         services = {
           dynamodb = {
-            loadBalancer.servers = [{url = "http://127.0.0.1:${toString cfg.port}";}];
+            loadBalancer.servers = [{url = "http://${config.project.address}:${toString cfg.port}";}];
           };
         };
       };

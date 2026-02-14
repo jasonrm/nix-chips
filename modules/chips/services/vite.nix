@@ -86,7 +86,7 @@ in {
                   autostart = true;
                   directory = config.dir.project;
                   stderr_logfile = "/dev/stderr";
-                  command = "${pkgs.nodejs}/bin/node ./node_modules/vite/bin/vite.js dev --strictPort --host 127.0.0.1 --port ${toString opts.port}";
+                  command = "${pkgs.nodejs}/bin/node ./node_modules/vite/bin/vite.js dev --strictPort --host ${config.project.address} --port ${toString opts.port}";
                 };
               }
               else {}
@@ -111,7 +111,7 @@ in {
                         serverAliases = drop 1 opts.domains;
                         locations = {
                           "/" = {
-                            proxyPass = "http://127.0.0.1:${toString opts.port}";
+                            proxyPass = "http://${config.project.address}:${toString opts.port}";
                             proxyWebsockets = true;
                           };
                         };
@@ -158,7 +158,7 @@ in {
                 then [
                   {
                     "${name}" = {
-                      loadBalancer.servers = [{url = "http://127.0.0.1:${toString opts.port}";}];
+                      loadBalancer.servers = [{url = "http://${config.project.address}:${toString opts.port}";}];
                     };
                   }
                 ]

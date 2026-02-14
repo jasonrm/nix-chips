@@ -33,7 +33,7 @@ with lib; let
       # spx
       spx.http_enabled=1
       spx.http_key="dev"
-      spx.http_ip_whitelist="127.0.0.1"
+      spx.http_ip_whitelist="${config.project.address}"
       ${cfg.spx.extraConfig}
     '';
     extensions = extendExtensions cfg.extensions [cfg.pkg.extensions.spx];

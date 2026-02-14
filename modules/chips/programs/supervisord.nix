@@ -33,7 +33,7 @@ with lib; let
   programEntries = attrsets.mapAttrsToList programEntry cfg.programs;
   configuration = pkgs.writeText "supervisord.ini" ''
     [inet_http_server]
-    port=127.0.0.1:${toString cfg.port}
+    port=${config.project.address}:${toString cfg.port}
 
     ${(concatStringsSep "" programEntries)}
   '';
@@ -281,7 +281,7 @@ in {
       };
       services = {
         supervisord = {
-          loadBalancer.servers = [{url = "http://127.0.0.1:${toString cfg.port}";}];
+          loadBalancer.servers = [{url = "http://${config.project.address}:${toString cfg.port}";}];
         };
       };
     };

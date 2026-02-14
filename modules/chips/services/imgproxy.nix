@@ -55,7 +55,7 @@ in {
         imgproxy = {
           directory = config.dir.project;
           command = "${pkgs.imgproxy}/bin/imgproxy";
-          environment = ["IMGPROXY_BIND=127.0.0.1:${toString cfg.port}"];
+          environment = ["IMGPROXY_BIND=${config.project.address}:${toString cfg.port}"];
           autostart = true;
           stderr_logfile = "/dev/stderr";
         };
@@ -68,7 +68,7 @@ in {
         serverName = "imgproxy.${config.project.domainSuffix}";
         locations = {
           "/" = {
-            proxyPass = "http://127.0.0.1:${toString cfg.port}";
+            proxyPass = "http://${config.project.address}:${toString cfg.port}";
             proxyWebsockets = true;
           };
         };
@@ -88,7 +88,7 @@ in {
       };
       services = {
         imgproxy = {
-          loadBalancer.servers = [{url = "http://127.0.0.1:${toString cfg.port}";}];
+          loadBalancer.servers = [{url = "http://${config.project.address}:${toString cfg.port}";}];
         };
       };
     };

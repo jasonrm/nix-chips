@@ -17,7 +17,7 @@ in {
         };
         services = {
           rabbitmq = {
-            loadBalancer.servers = [{url = "http://127.0.0.1:${toString cfg.managementPlugin.port}";}];
+            loadBalancer.servers = [{url = "http://${config.project.address}:${toString cfg.managementPlugin.port}";}];
           };
         };
       };
