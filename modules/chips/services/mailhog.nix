@@ -45,13 +45,7 @@ in {
         };
       };
       programs.supervisord.programs.mailhog = {
-        command = ''
-          ${pkgs.mailhog}/bin/MailHog \
-            --hostname=${cfg.hostname} \
-            --smtp-bind-addr=${cfg.bindAddress}:${toString cfg.smtpPort} \
-            --api-bind-addr=${cfg.bindAddress}:${toString cfg.httpPort} \
-            --ui-bind-addr=${cfg.bindAddress}:${toString cfg.httpPort}
-        '';
+        command = "${pkgs.mailhog}/bin/MailHog -hostname=${cfg.hostname} -smtp-bind-addr=${cfg.bindAddress}:${toString cfg.smtpPort} -api-bind-addr=${cfg.bindAddress}:${toString cfg.httpPort} -ui-bind-addr=${cfg.bindAddress}:${toString cfg.httpPort}";
       };
     })
   ];
