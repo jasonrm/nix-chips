@@ -40,7 +40,6 @@
         echo "WARNING: Loopback address ${cfg.address} is not configured on lo0."
         echo "Services will fail to bind. Run: setup-loopback"
         echo ""
-        exit 1
       fi
     ''
     else ''
