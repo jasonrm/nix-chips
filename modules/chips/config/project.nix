@@ -35,7 +35,7 @@ in {
     devShell = {
       environment = [
         "DOMAIN_SUFFIX=${cfg.domainSuffix}"
-        "NIX_CHIPS_ADDRESS=${cfg.address}"
+        "LOOPBACK_ADDRESS=${cfg.address}"
       ];
     };
   };
