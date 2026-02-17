@@ -93,7 +93,11 @@ in {
     (lib.mkIf needsSetup {
       devShell = {
         contents = [loopback-setup loopback-check];
-        shellHooks = lib.mkBefore "${loopback-check}/bin/loopback-check";
+        shellHooks = lib.mkBefore (
+          if isDarwin
+          then "${loopback-setup}/bin/loopback-setup"
+          else "${loopback-check}/bin/loopback-check"
+        );
       };
     })
   ];
