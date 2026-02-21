@@ -102,7 +102,7 @@ with lib; let
           default =
             if config.dir.project != "/dev/null"
             then config.dir.data + "/${name}/run"
-            else ".";
+            else "%(ENV_SUPERVISORD_CWD)s";
         };
         environment = mkOption {
           type = listOf str;
@@ -164,7 +164,7 @@ with lib; let
       };
     };
 
-  programRunDirectories = filter (v: v != null) (
+  programRunDirectories = filter (v: v != null && v != "%(ENV_SUPERVISORD_CWD)s") (
     attrsets.mapAttrsToList (
       name: programOption: programOption.directory
     )
@@ -177,6 +177,7 @@ with lib; let
 
   supervisord = pkgs.writeShellScriptBin "supervisord" ''
     ${optionalString (programRunDirectories != []) "${pkgs.coreutils}/bin/mkdir -p ${concatStringsSep " " (map escapeShellArg programRunDirectories)}"}
+    export SUPERVISORD_CWD="$(${pkgs.git}/bin/git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")"
     ${pkgs.supervisord-go}/bin/supervisord --configuration=${configuration} $*
   '';
 in {
