@@ -13,6 +13,22 @@ with nixpkgs.lib; let
   onlyNix = baseName: (hasSuffix ".nix" baseName);
   nixFilesIn = directory: builtins.filter onlyNix (listFilesRecursive directory);
 
+  nixFileName = path: removeSuffix ".nix" (baseNameOf path);
+
+  pkgsFor = {
+    system,
+    overlay,
+    nixpkgsConfig ? {},
+  }:
+    import nixpkgs {
+      inherit system;
+      config = nixpkgsConfig;
+      overlays = [overlay];
+    };
+
+  callPackageFiles = pkgs: files:
+    listToAttrs (map (path: nameValuePair (nixFileName path) (pkgs.callPackage path {})) files);
+
   nixChipModules = nixFilesIn ../modules/chips;
   nixosChipModules = nixFilesIn ../modules/nixos;
   nixosShimModules = nixFilesIn ../modules/nixos-shims;
@@ -47,36 +63,17 @@ with nixpkgs.lib; let
         else []
       );
   in
-    with utils.lib;
-      (eachDefaultSystem (
-        system: let
-          pkgs = import nixpkgs {
-            inherit system;
-            overlays = [overlay];
-          };
-        in {
-          apps = listToAttrs (
-            map (name: {
-              name = removeSuffix ".nix" (baseNameOf name);
-              value = pkgs.callPackage name {};
-            })
-            allApps
-          );
-        }
-      )).apps;
+    (eachDefaultSystem (
+      system: {
+        apps = callPackageFiles (pkgsFor {inherit system overlay;}) allApps;
+      }
+    )).apps;
 
-  mkPackagesOverlay = packagesDir: final: prev: let
-    packages =
+  mkPackagesOverlay = packagesDir: final: prev:
+    callPackageFiles prev (
       if packagesDir != null
       then nixFilesIn packagesDir
-      else [];
-  in
-    listToAttrs (
-      map (name: {
-        name = removeSuffix ".nix" (baseNameOf name);
-        value = prev.callPackage name {};
-      })
-      packages
+      else []
     );
 
   evalChipsModules = {
@@ -101,27 +98,22 @@ with nixpkgs.lib; let
   }: let
     nixFiles = nixFilesIn devShellsDir;
   in
-    with utils.lib;
-      (eachDefaultSystem (
-        system: let
-          pkgs = import nixpkgs {
-            inherit system;
-            config = nixpkgsConfig;
-            overlays = [overlay];
-          };
-        in {
-          results = listToAttrs (
-            map (name: {
-              name = removeSuffix ".nix" (baseNameOf name);
-              value = evalChipsModules {
-                inherit pkgs system;
-                modules = modules ++ [name];
-              };
-            })
-            nixFiles
-          );
-        }
-      )).results;
+    (eachDefaultSystem (
+      system: let
+        pkgs = pkgsFor {inherit system overlay nixpkgsConfig;};
+      in {
+        results = listToAttrs (
+          map (name: {
+            name = nixFileName name;
+            value = evalChipsModules {
+              inherit pkgs system;
+              modules = modules ++ [name];
+            };
+          })
+          nixFiles
+        );
+      }
+    )).results;
 
   useDockerImages = {
     dockerImagesDir,
@@ -130,50 +122,32 @@ with nixpkgs.lib; let
   }: let
     nixFiles = nixFilesIn dockerImagesDir;
   in
-    with utils.lib;
-      (eachDefaultSystem (
-        system: let
-          pkgs = import nixpkgs {
-            inherit system;
-            overlays = [overlay];
-          };
-        in {
-          legacyPackages = foldl recursiveUpdate {} (
-            map (nixFile: {
-              dockerImages =
-                (evalChipsModules {
-                  inherit pkgs system;
-                  modules = modules ++ [nixFile];
-                }).dockerImages.output;
-            })
-            nixFiles
-          );
-        }
-      )).legacyPackages;
+    (eachDefaultSystem (
+      system: let
+        pkgs = pkgsFor {inherit system overlay;};
+      in {
+        legacyPackages = foldl recursiveUpdate {} (
+          map (nixFile: {
+            dockerImages =
+              (evalChipsModules {
+                inherit pkgs system;
+                modules = modules ++ [nixFile];
+              }).dockerImages.output;
+          })
+          nixFiles
+        );
+      }
+    )).legacyPackages;
 
   usePackages = {
     packagesDir,
     overlay,
-  }: let
-    allPackages = nixFilesIn packagesDir;
-  in
-    with utils.lib;
-      (eachDefaultSystem (
-        system: let
-          pkgs = import nixpkgs {
-            inherit system;
-            overlays = [overlay];
-          };
-        in {
-          packages = listToAttrs (
-            map (name: {
-              name = removeSuffix ".nix" (baseNameOf name);
-              value = pkgs.callPackage name {};
-            })
-            allPackages
-          );
-        }
-      )).packages;
+  }:
+    (eachDefaultSystem (
+      system: {
+        packages = callPackageFiles (pkgsFor {inherit system overlay;}) (nixFilesIn packagesDir);
+      }
+    )).packages;
 
   useChecks = {
     checksDir,
@@ -187,16 +161,13 @@ with nixpkgs.lib; let
           nixosModules.default = modules;
           overlays.default = overlay;
         };
-        pkgs = import nixpkgs {
-          inherit system;
-          overlays = [overlay];
-        };
+        pkgs = pkgsFor {inherit system overlay;};
       };
   in
     ((eachSystem [utils.lib.system.x86_64-linux]) (system: {
       checks = listToAttrs (
         map (check: {
-          name = removeSuffix ".nix" (baseNameOf check);
+          name = nixFileName check;
           value = makeCheck system check;
         })
         checks
@@ -230,31 +201,26 @@ with nixpkgs.lib; let
       path = n;
     }) (builtins.filter onlyHomeNix (nixFilesIn homeConfigurationsDir));
   in
-    with utils.lib;
-      (eachDefaultSystem (
-        system: let
-          pkgs = import nixpkgs {
-            inherit system;
-            config = nixpkgsConfig;
-            overlays = [overlay];
-          };
-        in {
-          results = {
-            homeConfigurations = listToAttrs (
-              map (
-                configuration:
-                  nameValuePair configuration.name (
-                    home-manager.lib.homeManagerConfiguration {
-                      inherit pkgs;
-                      modules = modules ++ [configuration.path];
-                    }
-                  )
-              )
-              configurations
-            );
-          };
-        }
-      )).results;
+    (eachDefaultSystem (
+      system: let
+        pkgs = pkgsFor {inherit system overlay nixpkgsConfig;};
+      in {
+        results = {
+          homeConfigurations = listToAttrs (
+            map (
+              configuration:
+                nameValuePair configuration.name (
+                  home-manager.lib.homeManagerConfiguration {
+                    inherit pkgs;
+                    modules = modules ++ [configuration.path];
+                  }
+                )
+            )
+            configurations
+          );
+        };
+      }
+    )).results;
 
   useNixosConfigurations = {
     nixosConfigurationsDir,
@@ -378,13 +344,9 @@ in
     in
       mapAttrs (n: v: mapAttrs (n: cfg: fromPath cfg) v) output;
 
-    additionalAttrs = utils.lib.eachDefaultSystem (
+    additionalAttrs = eachDefaultSystem (
       system: let
-        pkgs = import nixpkgs {
-          inherit system;
-          config = nixpkgsConfig;
-          overlays = [overlay];
-        };
+        pkgs = pkgsFor {inherit system overlay nixpkgsConfig;};
       in {
         packages = additionalPackages pkgs;
         apps = additionalApps pkgs;
