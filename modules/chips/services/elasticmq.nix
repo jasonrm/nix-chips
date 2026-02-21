@@ -6,7 +6,11 @@
 }: let
   cfg = config.services.elasticmq;
   javaToolOptionsList =
-    (if cfg.configFile != null then ["-Dconfig.file=${cfg.configFile}"] else [])
+    (
+      if cfg.configFile != null
+      then ["-Dconfig.file=${cfg.configFile}"]
+      else []
+    )
     ++ (lib.optional cfg.preferIPv4Stack "-Djava.net.preferIPv4Stack=true");
   javaToolOptions = lib.concatStringsSep " " javaToolOptionsList;
 in {

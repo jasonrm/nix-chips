@@ -10,9 +10,10 @@ with lib; let
 
   sortedNames = sort lessThan (attrNames cfg.instances);
   nameToIndex = listToAttrs (imap0 (i: name: {
-    inherit name;
-    value = i;
-  }) sortedNames);
+      inherit name;
+      value = i;
+    })
+    sortedNames);
 in {
   options = with types; {
     services.sql-tap = {
@@ -29,7 +30,11 @@ in {
       };
 
       instances = mkOption {
-        type = attrsOf (submodule ({name, config, ...}: let
+        type = attrsOf (submodule ({
+          name,
+          config,
+          ...
+        }: let
           idx = nameToIndex.${name};
         in {
           options = {
@@ -92,29 +97,35 @@ in {
 
   config = let
     enabledInstances = filterAttrs (_: opts: opts.enable) cfg.instances;
-  in lib.mkIf (enabledInstances != {}) {
-    programs.supervisord.programs = mapAttrs' (name: opts: let
-      sqltapdExec = pkgs.writeShellScriptBin "sql-tapd-${name}" ''
-        if [[ -f "${opts.envFile}" ]]; then
-          set -o allexport
-          source "${opts.envFile}"
-          set +o allexport
-        fi
-        exec ${pkgs.sql-tap}/bin/sql-tapd \
-          -driver ${opts.driver} \
-          -listen ${opts.listen} \
-          -upstream ${opts.upstream} \
-          -grpc ${opts.grpc} \
-          -dsn-env ${opts.dsnEnv}
-      '';
-    in nameValuePair "sql-tapd-${name}" {
-      command = "${sqltapdExec}/bin/sql-tapd-${name}";
-    }) enabledInstances;
+  in
+    lib.mkIf (enabledInstances != {}) {
+      programs.supervisord.programs = mapAttrs' (name: opts: let
+        sqltapdExec = pkgs.writeShellScriptBin "sql-tapd-${name}" ''
+          if [[ -f "${opts.envFile}" ]]; then
+            set -o allexport
+            source "${opts.envFile}"
+            set +o allexport
+          fi
+          exec ${pkgs.sql-tap}/bin/sql-tapd \
+            -driver ${opts.driver} \
+            -listen ${opts.listen} \
+            -upstream ${opts.upstream} \
+            -grpc ${opts.grpc} \
+            -dsn-env ${opts.dsnEnv}
+        '';
+      in
+        nameValuePair "sql-tapd-${name}" {
+          command = "${sqltapdExec}/bin/sql-tapd-${name}";
+        })
+      enabledInstances;
 
-    devShell.contents = mapAttrsToList (name: opts:
-      pkgs.writeShellScriptBin "sql-tap-${name}" ''
-        exec ${pkgs.sql-tap}/bin/sql-tap ${opts.grpc}
-      ''
-    ) enabledInstances;
-  };
+      devShell.contents =
+        mapAttrsToList (
+          name: opts:
+            pkgs.writeShellScriptBin "sql-tap-${name}" ''
+              exec ${pkgs.sql-tap}/bin/sql-tap ${opts.grpc}
+            ''
+        )
+        enabledInstances;
+    };
 }
