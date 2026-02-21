@@ -99,7 +99,10 @@ with lib; let
         };
         directory = mkOption {
           type = nullOr str;
-          default = config.dir.data + "/${name}/run";
+          default =
+            if config.dir.project != "/dev/null"
+            then config.dir.data + "/${name}/run"
+            else null;
         };
         environment = mkOption {
           type = listOf str;
@@ -161,18 +164,19 @@ with lib; let
       };
     };
 
-  programRunDirectories =
+  programRunDirectories = filter (v: v != null) (
     attrsets.mapAttrsToList (
       name: programOption: programOption.directory
     )
-    cfg.programs;
+    cfg.programs
+  );
 
   supervisord-debug = pkgs.writeShellScriptBin "supervisord-debug" ''
     cat ${configuration}
   '';
 
   supervisord = pkgs.writeShellScriptBin "supervisord" ''
-    ${pkgs.coreutils}/bin/mkdir -p ${concatStringsSep " " (map escapeShellArg programRunDirectories)}
+    ${optionalString (programRunDirectories != []) "${pkgs.coreutils}/bin/mkdir -p ${concatStringsSep " " (map escapeShellArg programRunDirectories)}"}
     ${pkgs.supervisord-go}/bin/supervisord --configuration=${configuration} $*
   '';
 in {
@@ -208,13 +212,6 @@ in {
   };
 
   config = mkIf cfg.enable {
-    assertions = [
-      {
-        assertion = cfg.enable -> config.dir.project == "/dev/null";
-        message = "cfg.enable cannot be set without also setting config.dir.project ";
-      }
-    ];
-
     programs.supervisord.programs =
       mapAttrs (
         name: service: let
