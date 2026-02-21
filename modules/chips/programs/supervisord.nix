@@ -102,7 +102,7 @@ with lib; let
           default =
             if config.dir.project != "/dev/null"
             then config.dir.data + "/${name}/run"
-            else null;
+            else ".";
         };
         environment = mkOption {
           type = listOf str;
