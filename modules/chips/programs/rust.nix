@@ -5,7 +5,62 @@
   ...
 }:
 with lib; let
+  inherit (pkgs.writers) makeScriptWriter;
+
   cfg = config.programs.rust;
+
+  writePhp = makeScriptWriter {
+    interpreter = "${pkgs.php}/bin/php";
+    check = "${pkgs.php}/bin/php -l";
+  };
+
+  writePhpBin = name: writePhp "/bin/${name}";
+
+  update-jetbrains-rust = writePhpBin "update-jetbrains-rust" ''
+    <?php
+    $workspaceFile = '.idea/workspace.xml';
+    if (!file_exists($workspaceFile)) {
+        exit;
+    }
+
+    $stdlibPath = getenv('RUST_STD_LIB');
+    $toolchainBin = getenv('RUST_TOOLCHAIN_BIN');
+
+    $doc = new DOMDocument;
+    $doc->formatOutput = true;
+    $doc->preserveWhiteSpace = true;
+    $doc->load($workspaceFile);
+
+    $xpath = new DOMXPath($doc);
+
+    // Find or create RustProjectSettings component
+    $nodes = $xpath->query('//component[@name="RustProjectSettings"]');
+    if ($nodes->length === 0) {
+        $component = $doc->createElement('component');
+        $component->setAttribute('name', 'RustProjectSettings');
+        $doc->documentElement->appendChild($component);
+    } else {
+        $component = $nodes->item(0);
+    }
+
+    // Helper: find or create <option name="..." value="...">
+    function upsertOption(DOMDocument $doc, DOMXPath $xpath, DOMElement $parent, string $name, string $value): void {
+        $nodes = $xpath->query("option[@name='$name']", $parent);
+        if ($nodes->length === 0) {
+            $option = $doc->createElement('option');
+            $option->setAttribute('name', $name);
+            $parent->appendChild($option);
+        } else {
+            $option = $nodes->item(0);
+        }
+        $option->setAttribute('value', $value);
+    }
+
+    upsertOption($doc, $xpath, $component, 'explicitPathToStdlib', $stdlibPath);
+    upsertOption($doc, $xpath, $component, 'toolchainHomeDirectory', $toolchainBin);
+
+    $doc->save($workspaceFile);
+  '';
 
   toolchain-with-path = pkgs.stdenv.mkDerivation {
     pname = "toolchain-with-path";
@@ -163,17 +218,7 @@ in {
       shellHooks = ''
         echo RUST_TOOLCHAIN_BIN $RUST_TOOLCHAIN_BIN
         echo RUST_STD_LIB       $RUST_STD_LIB
-        if [ -f .idea/workspace.xml ]; then
-            echo "Updating RustProjectSettings"
-            ${pkgs.xmlstarlet}/bin/xmlstarlet ed -L \
-                -u 'project/component[@name="RustProjectSettings"]/option[@name="explicitPathToStdlib"]/@value' \
-                -v "$RUST_STD_LIB" \
-                .idea/workspace.xml
-            ${pkgs.xmlstarlet}/bin/xmlstarlet ed -L \
-                -u 'project/component[@name="RustProjectSettings"]/option[@name="toolchainHomeDirectory"]/@value' \
-                -v "$RUST_TOOLCHAIN_BIN" \
-                .idea/workspace.xml
-        fi
+        ${update-jetbrains-rust}/bin/update-jetbrains-rust
       '';
     };
   };
