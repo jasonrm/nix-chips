@@ -27,20 +27,23 @@ with lib; let
     $toolchainBin = getenv('RUST_TOOLCHAIN_BIN');
 
     $doc = new DOMDocument;
+    $doc->preserveWhiteSpace = false;
     $doc->formatOutput = true;
-    $doc->preserveWhiteSpace = true;
     $doc->load($workspaceFile);
 
     $xpath = new DOMXPath($doc);
 
-    // Find or create RustProjectSettings component
-    $nodes = $xpath->query('//component[@name="RustProjectSettings"]');
-    if ($nodes->length === 0) {
-        $component = $doc->createElement('component');
-        $component->setAttribute('name', 'RustProjectSettings');
-        $doc->documentElement->appendChild($component);
-    } else {
-        $component = $nodes->item(0);
+    // Helper: find or create a component by name
+    function findOrCreateComponent(DOMDocument $doc, DOMXPath $xpath, string $name): DOMElement {
+        $nodes = $xpath->query("//component[@name='$name']");
+        if ($nodes->length === 0) {
+            $component = $doc->createElement('component');
+            $component->setAttribute('name', $name);
+            $doc->documentElement->appendChild($component);
+        } else {
+            $component = $nodes->item(0);
+        }
+        return $component;
     }
 
     // Helper: find or create <option name="..." value="...">
@@ -56,6 +59,17 @@ with lib; let
         $option->setAttribute('value', $value);
     }
 
+    // Find or create CargoProjects component with project entry
+    $cargo = findOrCreateComponent($doc, $xpath, 'CargoProjects');
+    $cargoProjects = $xpath->query("cargoProject[@FILE='\$PROJECT_DIR\$/Cargo.toml']", $cargo);
+    if ($cargoProjects->length === 0) {
+        $cargoProject = $doc->createElement('cargoProject');
+        $cargoProject->setAttribute('FILE', '$PROJECT_DIR$/Cargo.toml');
+        $cargo->appendChild($cargoProject);
+    }
+
+    // Find or create RustProjectSettings component
+    $component = findOrCreateComponent($doc, $xpath, 'RustProjectSettings');
     upsertOption($doc, $xpath, $component, 'explicitPathToStdlib', $stdlibPath);
     upsertOption($doc, $xpath, $component, 'toolchainHomeDirectory', $toolchainBin);
 
