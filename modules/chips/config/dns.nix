@@ -21,6 +21,7 @@
         echo "Resolver file ${resolverFile} already up to date"
       else
         echo "Creating ${resolverFile}..."
+        [ -d /etc/resolver ] || sudo mkdir -p /etc/resolver
         printf '%s\n' "$expected" | sudo tee "${resolverFile}" > /dev/null
         echo "Done."
       fi
