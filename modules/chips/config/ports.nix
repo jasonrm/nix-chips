@@ -23,6 +23,7 @@
     https = 443;
     tomcat = 9191;
 
+    dns = 5354;
     dynamodb = 2010;
     # rabbitmq_amqp = 2007;
     # rabbitmq_mgmt = 2011;
