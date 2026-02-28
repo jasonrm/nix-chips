@@ -292,9 +292,9 @@ with nixpkgs.lib; let
     configurations = map (n: {
       name = builtins.baseNameOf (builtins.dirOf n);
       system =
-        if (hasInfix "/aarch64/" (toString n))
-        then "aarch64-darwin"
-        else "x86_64-darwin";
+        if (hasInfix "/x86_64/" (toString n))
+        then "x86_64-darwin"
+        else "aarch64-darwin";
       path = n;
     }) (builtins.filter isDarwin (builtins.filter onlyDefaultNix (nixFilesIn nixosConfigurationsDir)));
 
