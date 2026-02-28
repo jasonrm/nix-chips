@@ -284,6 +284,7 @@ with nixpkgs.lib; let
     modules,
     overlay,
     specialArgs,
+    nixosConfigurations ? {},
   }: let
     onlyDefaultNix = baseName: (hasSuffix "default.nix" baseName);
     isDarwin = n: hasInfix "/darwin/" (toString n);
@@ -306,7 +307,7 @@ with nixpkgs.lib; let
               specialArgs =
                 specialArgs
                 // {
-                  inherit home-manager sharedChipModules;
+                  inherit home-manager sharedChipModules nixosConfigurations;
                   name = configuration.name;
                   nodes = darwinConfigurations;
                 };
@@ -391,7 +392,7 @@ in
     });
 
     darwinConfigurations = optionalAttrs (nixosConfigurationsDir != null && darwinLib != null) (useDarwinConfigurations {
-      inherit nixosConfigurationsDir darwinLib overlay;
+      inherit nixosConfigurationsDir darwinLib overlay nixosConfigurations;
       modules = darwinModules ++ sharedChipModules;
       specialArgs = darwinSpecialArgs;
     });
