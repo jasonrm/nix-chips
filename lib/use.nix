@@ -232,6 +232,9 @@ with nixpkgs.lib; let
   }: let
     onlyDefaultNix = baseName: (hasSuffix "default.nix" baseName);
 
+    allDefaultNix = builtins.filter onlyDefaultNix (nixFilesIn nixosConfigurationsDir);
+    notDarwin = n: !(hasInfix "/darwin/" (toString n));
+
     configurations = map (n: {
       name = builtins.baseNameOf (builtins.dirOf n);
       system =
@@ -239,7 +242,7 @@ with nixpkgs.lib; let
         then "aarch64-linux"
         else "x86_64-linux";
       path = n;
-    }) (builtins.filter onlyDefaultNix (nixFilesIn nixosConfigurationsDir));
+    }) (builtins.filter notDarwin allDefaultNix);
 
     nixosConfigurations = builtins.listToAttrs (
       map (
@@ -274,6 +277,58 @@ with nixpkgs.lib; let
     );
   in
     nixosConfigurations;
+
+  useDarwinConfigurations = {
+    nixosConfigurationsDir,
+    darwinLib,
+    modules,
+    overlay,
+    specialArgs,
+  }: let
+    onlyDefaultNix = baseName: (hasSuffix "default.nix" baseName);
+    isDarwin = n: hasInfix "/darwin/" (toString n);
+
+    configurations = map (n: {
+      name = builtins.baseNameOf (builtins.dirOf n);
+      system =
+        if (hasInfix "/aarch64/" (toString n))
+        then "aarch64-darwin"
+        else "x86_64-darwin";
+      path = n;
+    }) (builtins.filter isDarwin (builtins.filter onlyDefaultNix (nixFilesIn nixosConfigurationsDir)));
+
+    darwinConfigurations = builtins.listToAttrs (
+      map (
+        configuration:
+          nameValuePair configuration.name (
+            darwinLib.darwinSystem {
+              system = configuration.system;
+              specialArgs =
+                specialArgs
+                // {
+                  inherit home-manager sharedChipModules;
+                  name = configuration.name;
+                  nodes = darwinConfigurations;
+                };
+              modules =
+                [
+                  (
+                    {...}: {
+                      config = {
+                        nixpkgs.overlays = [overlay];
+                      };
+                    }
+                  )
+                ]
+                ++ modules
+                ++ [configuration.path];
+            }
+          )
+      )
+      configurations
+    );
+  in
+    darwinConfigurations;
 in
   {
     appsDir ? null,
@@ -285,6 +340,9 @@ in
     nixosConfigurationsDir ? null,
     homeConfigurationsDir ? null,
     nixosSpecialArgs ? {},
+    darwinLib ? null,
+    darwinModules ? [],
+    darwinSpecialArgs ? {},
     homeSpecialArgs ? {},
     nixosModules ? [],
     homeConfigurationModules ? [],
@@ -332,9 +390,15 @@ in
       specialArgs = nixosSpecialArgs;
     });
 
+    darwinConfigurations = optionalAttrs (nixosConfigurationsDir != null && darwinLib != null) (useDarwinConfigurations {
+      inherit nixosConfigurationsDir darwinLib overlay;
+      modules = darwinModules ++ sharedChipModules;
+      specialArgs = darwinSpecialArgs;
+    });
+
     homeConfigurations = optionalAttrs (homeConfigurationsDir != null) (useHomeConfigurations {
       inherit homeConfigurationsDir nixpkgsConfig overlay;
-      specialArgs = homeSpecialArgs // {inherit nixosConfigurations;};
+      specialArgs = homeSpecialArgs // {inherit nixosConfigurations darwinConfigurations;};
       modules = homeConfigurationModules ++ homeManagerChipModules ++ sharedChipModules;
     });
 
@@ -363,6 +427,7 @@ in
         apps
         packages
         nixosConfigurations
+        darwinConfigurations
         ;
       legacyPackages = dockerImages;
       devShells = collectFromOutput ["devShell" "output"] devShells;
@@ -376,6 +441,11 @@ in
               inherit (node.config.arcanum) files adminRecipients;
             })
             nixosConfigurations;
+          darwin =
+            mapAttrs (hostname: node: {
+              inherit (node.config.arcanum) files adminRecipients;
+            })
+            darwinConfigurations;
           devShells =
             mapAttrs (
               system: value:
