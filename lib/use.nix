@@ -193,6 +193,7 @@ with nixpkgs.lib; let
     nixpkgsConfig,
     modules,
     overlay,
+    specialArgs ? {},
   }: let
     onlyHomeNix = baseName: (hasSuffix "home.nix" baseName);
 
@@ -212,6 +213,7 @@ with nixpkgs.lib; let
                 nameValuePair configuration.name (
                   home-manager.lib.homeManagerConfiguration {
                     inherit pkgs;
+                    extraSpecialArgs = specialArgs;
                     modules = modules ++ [configuration.path];
                   }
                 )
@@ -283,6 +285,7 @@ in
     nixosConfigurationsDir ? null,
     homeConfigurationsDir ? null,
     nixosSpecialArgs ? {},
+    homeSpecialArgs ? {},
     nixosModules ? [],
     homeConfigurationModules ? [],
     overlays ? [],
@@ -331,6 +334,7 @@ in
 
     homeConfigurations = optionalAttrs (homeConfigurationsDir != null) (useHomeConfigurations {
       inherit homeConfigurationsDir nixpkgsConfig overlay;
+      specialArgs = homeSpecialArgs // {inherit nixosConfigurations;};
       modules = homeConfigurationModules ++ homeManagerChipModules ++ sharedChipModules;
     });
 
