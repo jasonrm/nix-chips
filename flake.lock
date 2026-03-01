@@ -61,11 +61,11 @@
         "utils": "utils"
       },
       "locked": {
-        "lastModified": 1771078969,
-        "narHash": "sha256-XxhRw3LsKzJFMhbam+iVmu60iQ1mZjuo7QL8I6bM+wM=",
+        "lastModified": 1772345459,
+        "narHash": "sha256-yUtV72issXt+WYgK5z/9OKcA6kNCSTlbCzUfQ7OSVQk=",
         "owner": "jasonrm",
         "repo": "nixpkgs-staging",
-        "rev": "c3d758c35ef709f46d19a844a2e24f68718843b7",
+        "rev": "991a55c0310127f8aee9d151b71a8f9723fc66af",
         "type": "github"
       },
       "original": {
