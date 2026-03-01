@@ -247,8 +247,6 @@ with nixpkgs.lib; let
     onlyDefaultNix = baseName: (hasSuffix "default.nix" baseName);
 
     allDefaultNix = builtins.filter onlyDefaultNix (nixFilesIn nixosConfigurationsDir);
-    notDarwin = n: !(hasInfix "/darwin/" (toString n));
-
     configurations = map (n: {
       name = builtins.baseNameOf (builtins.dirOf n);
       system =
@@ -256,7 +254,7 @@ with nixpkgs.lib; let
         then "aarch64-linux"
         else "x86_64-linux";
       path = n;
-    }) (builtins.filter notDarwin allDefaultNix);
+    }) allDefaultNix;
 
     nixosConfigurations = builtins.listToAttrs (
       map (
@@ -293,7 +291,7 @@ with nixpkgs.lib; let
     nixosConfigurations;
 
   useDarwinConfigurations = {
-    nixosConfigurationsDir,
+    darwinConfigurationsDir,
     darwinLib,
     modules,
     overlay,
@@ -301,7 +299,6 @@ with nixpkgs.lib; let
     nixosConfigurations ? {},
   }: let
     onlyDefaultNix = baseName: (hasSuffix "default.nix" baseName);
-    isDarwin = n: hasInfix "/darwin/" (toString n);
 
     configurations = map (n: {
       name = builtins.baseNameOf (builtins.dirOf n);
@@ -310,7 +307,7 @@ with nixpkgs.lib; let
         then "x86_64-darwin"
         else "aarch64-darwin";
       path = n;
-    }) (builtins.filter isDarwin (builtins.filter onlyDefaultNix (nixFilesIn nixosConfigurationsDir)));
+    }) (builtins.filter onlyDefaultNix (nixFilesIn darwinConfigurationsDir));
 
     darwinConfigurations = builtins.listToAttrs (
       map (
@@ -353,6 +350,7 @@ in
     nixosModulesDir ? null,
     dockerImagesDir ? null,
     nixosConfigurationsDir ? null,
+    darwinConfigurationsDir ? null,
     homeConfigurationsDir ? null,
     nixosSpecialArgs ? {},
     darwinLib ? null,
@@ -405,8 +403,8 @@ in
       specialArgs = nixosSpecialArgs;
     });
 
-    darwinConfigurations = optionalAttrs (nixosConfigurationsDir != null && darwinLib != null) (useDarwinConfigurations {
-      inherit nixosConfigurationsDir darwinLib overlay nixosConfigurations;
+    darwinConfigurations = optionalAttrs (darwinConfigurationsDir != null && darwinLib != null) (useDarwinConfigurations {
+      inherit darwinConfigurationsDir darwinLib overlay nixosConfigurations;
       modules = darwinModules ++ sharedChipModules;
       specialArgs = darwinSpecialArgs;
     });
