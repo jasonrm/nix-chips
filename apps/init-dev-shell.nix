@@ -7,7 +7,7 @@
       ...
     }: {
       imports = [
-        ./default.nix
+        ../default.nix
       ];
 
       config = {
@@ -52,9 +52,9 @@
     export PUBLIC_SSH_KEY=$(cat chips_ssh_keys.tmp | sort | uniq)
     rm chips_ssh_keys.tmp
 
-    mkdir -p $PWD/nix/devShells
-    ${pkgs.gettext}/bin/envsubst < ${template} > $PWD/nix/devShells/$USER-$(hostname -s).nix
-    ${pkgs.git}/bin/git add $PWD/nix/devShells/$USER-$(hostname -s).nix
+    mkdir -p $PWD/nix/devShells/$GITHUB_USERNAME
+    ${pkgs.gettext}/bin/envsubst < ${template} > $PWD/nix/devShells/$GITHUB_USERNAME/default.nix
+    ${pkgs.git}/bin/git add $PWD/nix/devShells/$GITHUB_USERNAME/default.nix
   '';
 in {
   type = "app";

@@ -15,6 +15,20 @@ with nixpkgs.lib; let
 
   nixFileName = path: removeSuffix ".nix" (baseNameOf path);
 
+  devShellName = devShellsDir: path: let
+    dirStr = toString devShellsDir;
+    pathStr = toString path;
+    relative = removePrefix (dirStr + "/") pathStr;
+    withoutNix = removeSuffix ".nix" relative;
+    dotted = replaceStrings ["/"] ["."] withoutNix;
+    # Strip trailing .default for subdirectory default.nix files (not top-level default.nix)
+    result =
+      if hasSuffix ".default" dotted && dotted != "default"
+      then removeSuffix ".default" dotted
+      else dotted;
+  in
+    result;
+
   pkgsFor = {
     system,
     overlay,
@@ -104,7 +118,7 @@ with nixpkgs.lib; let
       in {
         results = listToAttrs (
           map (name: {
-            name = nixFileName name;
+            name = devShellName devShellsDir name;
             value = evalChipsModules {
               inherit pkgs system;
               modules = modules ++ [name];
