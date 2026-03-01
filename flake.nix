@@ -14,11 +14,16 @@
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = {...} @ inputs: let
+  outputs = {self, ...} @ inputs: let
     lib = import ./lib inputs;
     output = lib.use {
       devShellsDir = ./devShells;
       overlays = [lib.overlays.unstable];
+      additionalPackages = pkgs: {
+        docs-data = pkgs.callPackage ./docs/generate-options.nix {
+          inherit self;
+        };
+      };
     };
   in
     output
