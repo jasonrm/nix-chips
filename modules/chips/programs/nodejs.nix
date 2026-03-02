@@ -13,12 +13,13 @@ in {
 
       pkg = mkOption {
         type = package;
-        default = config.programs.nodejs.nodePackages.nodejs;
+        default = pkgs.nodejs;
       };
 
       nodePackages = mkOption {
         type = attrs;
-        default = pkgs.nodePackages;
+        readOnly = true;
+        default = cfg.pkg.pkgs;
       };
 
       packageManager = mkOption {
@@ -114,7 +115,7 @@ in {
       format-eslint = {
         dir = cfg.workingDirectory;
         cmds = [
-          ''${pkgs.nodejs}/bin/node ./node_modules/eslint/bin/eslint.js --cache --fix --max-warnings 0 {{.CLI_ARGS}}''
+          ''${cfg.pkg}/bin/node ./node_modules/eslint/bin/eslint.js --cache --fix --max-warnings 0 {{.CLI_ARGS}}''
         ];
         preconditions = ["test -f ./node_modules/eslint/bin/eslint.js"];
         deps = ["install-npm"];
@@ -122,7 +123,7 @@ in {
       };
       check-eslint = {
         dir = cfg.workingDirectory;
-        cmds = [''${pkgs.nodejs}/bin/node ./node_modules/eslint/bin/eslint.js --cache --max-warnings 0''];
+        cmds = [''${cfg.pkg}/bin/node ./node_modules/eslint/bin/eslint.js --cache --max-warnings 0''];
         preconditions = ["test -f ./node_modules/eslint/bin/eslint.js"];
         deps = ["install-npm"];
         desc = "Check JavaScript and TypeScript files";

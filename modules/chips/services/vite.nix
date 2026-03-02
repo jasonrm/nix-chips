@@ -86,7 +86,7 @@ in {
                   autostart = true;
                   directory = config.dir.project;
                   stderr_logfile = "/dev/stderr";
-                  command = "${pkgs.nodejs}/bin/node ./node_modules/vite/bin/vite.js dev --strictPort --host ${config.project.address} --port ${toString opts.port}";
+                  command = "${config.programs.nodejs.pkg}/bin/node ./node_modules/vite/bin/vite.js dev --strictPort --host ${config.project.address} --port ${toString opts.port}";
                 };
               }
               else {}
