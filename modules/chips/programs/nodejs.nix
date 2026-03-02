@@ -57,7 +57,7 @@ in {
         }
         else {
           dir = cfg.workingDirectory;
-          cmds = ["${cfg.nodePackages.npm}/bin/npm install"];
+          cmds = ["${cfg.pkg}/bin/npm install"];
           generates = ["node_modules/.package-lock.json"];
           desc = "Install Node.JS Dependencies (npm)";
           sources = [
@@ -74,7 +74,7 @@ in {
         }
         else {
           dir = cfg.workingDirectory;
-          cmds = ["${cfg.nodePackages.npm}/bin/npm update"];
+          cmds = ["${cfg.pkg}/bin/npm update"];
           desc = "Update Node.JS Dependencies (npm)";
         };
       build-npm =
@@ -87,7 +87,7 @@ in {
         }
         else {
           dir = cfg.workingDirectory;
-          cmds = ["${cfg.nodePackages.npm}/bin/npm run build"];
+          cmds = ["${cfg.pkg}/bin/npm run build"];
           desc = "Build Node.JS Project (npm)";
           deps = ["install-npm"];
         };
@@ -104,7 +104,7 @@ in {
         }
         else {
           dir = cfg.workingDirectory;
-          cmds = ["${cfg.nodePackages.npm}/bin/npm ci"];
+          cmds = ["${cfg.pkg}/bin/npm ci"];
           desc = "Check Node.JS Project";
           sources = [
             "package.json"
