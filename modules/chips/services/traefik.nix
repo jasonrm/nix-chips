@@ -64,8 +64,6 @@
       level = cfg.logLevel;
     };
 
-    pilot.dashboard = false;
-
     providers.file = {
       filename = "${staticConfDir}/static.yaml";
     };
