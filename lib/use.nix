@@ -46,6 +46,7 @@ with nixpkgs.lib; let
   nixChipModules = nixFilesIn ../modules/chips;
   nixosChipModules = nixFilesIn ../modules/nixos;
   nixosShimModules = nixFilesIn ../modules/nixos-shims;
+  darwinChipModules = nixFilesIn ../modules/nix-darwin;
   sharedChipModules = nixFilesIn ../modules/shared;
   homeManagerChipModules = nixFilesIn ../modules/home-manager;
 
@@ -405,7 +406,7 @@ in
 
     darwinConfigurations = optionalAttrs (darwinConfigurationsDir != null && darwinLib != null) (useDarwinConfigurations {
       inherit darwinConfigurationsDir darwinLib overlay nixosConfigurations;
-      modules = darwinModules ++ sharedChipModules;
+      modules = darwinChipModules ++ darwinModules ++ sharedChipModules;
       specialArgs = darwinSpecialArgs;
     });
 
