@@ -26,14 +26,25 @@ with lib; let
     $stdlibPath = getenv('RUST_STD_LIB');
     $toolchainBin = getenv('RUST_TOOLCHAIN_BIN');
 
+    function atomicSave(DOMDocument $doc, string $path): void {
+        $tmpFile = $path . '.tmp.' . getmypid();
+        $doc->save($tmpFile);
+        rename($tmpFile, $path);
+    }
+
     $doc = new DOMDocument;
     $doc->preserveWhiteSpace = false;
     $doc->formatOutput = true;
-    $doc->load($workspaceFile);
+    libxml_use_internal_errors(true);
+    $result = $doc->load($workspaceFile);
+    libxml_clear_errors();
+    libxml_use_internal_errors(false);
+    if (!$result) {
+        exit;
+    }
 
     $xpath = new DOMXPath($doc);
 
-    // Helper: find or create a component by name
     function findOrCreateComponent(DOMDocument $doc, DOMXPath $xpath, string $name): DOMElement {
         $nodes = $xpath->query("//component[@name='$name']");
         if ($nodes->length === 0) {
@@ -46,7 +57,6 @@ with lib; let
         return $component;
     }
 
-    // Helper: find or create <option name="..." value="...">
     function upsertOption(DOMDocument $doc, DOMXPath $xpath, DOMElement $parent, string $name, string $value): void {
         $nodes = $xpath->query("option[@name='$name']", $parent);
         if ($nodes->length === 0) {
@@ -59,7 +69,6 @@ with lib; let
         $option->setAttribute('value', $value);
     }
 
-    // Find or create CargoProjects component with project entry
     $cargo = findOrCreateComponent($doc, $xpath, 'CargoProjects');
     $cargoProjects = $xpath->query("cargoProject[@FILE='\$PROJECT_DIR\$/Cargo.toml']", $cargo);
     if ($cargoProjects->length === 0) {
@@ -68,12 +77,11 @@ with lib; let
         $cargo->appendChild($cargoProject);
     }
 
-    // Find or create RustProjectSettings component
     $component = findOrCreateComponent($doc, $xpath, 'RustProjectSettings');
     upsertOption($doc, $xpath, $component, 'explicitPathToStdlib', $stdlibPath);
     upsertOption($doc, $xpath, $component, 'toolchainHomeDirectory', $toolchainBin);
 
-    $doc->save($workspaceFile);
+    atomicSave($doc, $workspaceFile);
   '';
 
   toolchain-with-path = pkgs.stdenv.mkDerivation {

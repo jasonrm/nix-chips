@@ -79,8 +79,28 @@ with lib; let
     $phpVersion = phpversion();
     $interpreterName = "Project PHP $phpVersion (" . substr($pathHash, 0, 8) . ")";
 
-    $doc = new DOMDocument;
-    $doc->load('.idea/workspace.xml');
+    function atomicSave(DOMDocument $doc, string $path): void {
+        $tmpFile = $path . '.tmp.' . getmypid();
+        $doc->save($tmpFile);
+        rename($tmpFile, $path);
+    }
+
+    function safeLoad(string $path): ?DOMDocument {
+        $doc = new DOMDocument;
+        libxml_use_internal_errors(true);
+        $result = $doc->load($path);
+        libxml_clear_errors();
+        libxml_use_internal_errors(false);
+        if (!$result) {
+            return null;
+        }
+        return $doc;
+    }
+
+    $doc = safeLoad('.idea/workspace.xml');
+    if ($doc === null) {
+        exit;
+    }
 
     $xpath = new DOMXPath($doc);
     $query = '//component[@name="PhpWorkspaceProjectConfiguration"]';
@@ -94,10 +114,12 @@ with lib; let
         $node->setAttribute("path", '${phpEnv.packages.composer}/bin/composer');
     }
 
-    $doc->save('.idea/workspace.xml');
+    atomicSave($doc, '.idea/workspace.xml');
 
-    $doc = new DOMDocument;
-    $doc->load('.idea/php.xml');
+    $doc = safeLoad('.idea/php.xml');
+    if ($doc === null) {
+        exit;
+    }
     $xpath = new DOMXPath($doc);
     $nodes = $xpath->query("//component[@name='PhpInterpreters']");
         $interpreter = $doc->createElement('interpreter');
@@ -125,7 +147,7 @@ with lib; let
             $node->parentNode->removeChild($node);
         }
 
-        $doc->save('.idea/php.xml');
+        atomicSave($doc, '.idea/php.xml');
   '';
 in {
   options = with lib.types; {
