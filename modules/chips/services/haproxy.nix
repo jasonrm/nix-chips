@@ -23,7 +23,10 @@ in {
 
   config = lib.mkIf cfg.enable {
     programs.supervisord.programs.haproxy = {
-      command = "${pkgs.haproxy}/sbin/haproxy -W -f ${haproxyCfg}";
+      command =
+        if pkgs.stdenv.isDarwin
+        then "sudo -E ${pkgs.haproxy}/sbin/haproxy -W -f ${haproxyCfg}"
+        else "${pkgs.haproxy}/sbin/haproxy -W -f ${haproxyCfg}";
     };
     devShell = {
       contents = [haproxy-debug];
