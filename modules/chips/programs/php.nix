@@ -13,6 +13,134 @@ with lib; let
 
   phpEnv = cfg.pkg.buildEnv {inherit (cfg) extraConfig extensions;};
 
+  phpCsFixerTasks = {
+    format-php-cs-fixer = {
+      dir = cfg.workingDirectory;
+      cmds = [
+        "${phpEnv}/bin/php ./vendor/bin/php-cs-fixer fix --config ${cfg.php-cs-fixer.filename} {{.CLI_ARGS}}"
+      ];
+      preconditions = ["test -f ${cfg.php-cs-fixer.filename}"];
+      deps = ["install-composer"];
+      desc = "Format PHP files with PHP-CS-Fixer";
+    };
+    check-php-cs-fixer = {
+      dir = cfg.workingDirectory;
+      cmds = [
+        "${phpEnv}/bin/php ./vendor/bin/php-cs-fixer fix --config ${cfg.php-cs-fixer.filename} --dry-run {{.CLI_ARGS}}"
+      ];
+      preconditions = ["test -f ${cfg.php-cs-fixer.filename}"];
+      deps = ["install-composer"];
+      desc = "Check PHP files with PHP-CS-Fixer";
+    };
+  };
+
+  phpstanTasks = {
+    check-phpstan = {
+      dir = cfg.workingDirectory;
+      cmds = ["${phpEnv}/bin/php ./vendor/phpstan/phpstan/phpstan.phar --memory-limit=4G analyse"];
+      preconditions = ["test -f phpstan.neon"];
+      deps = ["install-composer"];
+      desc = "Check PHP files with PHPStan";
+    };
+  };
+
+  psalmTasks = {
+    check-psalm = {
+      dir = cfg.workingDirectory;
+      cmds = ["${cfg.pkg}/bin/php ./vendor/bin/psalm --config=psalm.xml --memory-limit=8G"];
+      preconditions = ["test -f psalm.xml"];
+      deps = ["install-composer"];
+      desc = "Check PHP files with Psalm";
+    };
+  };
+
+  magoTasks = {
+    format-mago = {
+      dir = cfg.workingDirectory;
+      cmds = ["${cfg.mago.pkg}/bin/mago format --config ${cfg.mago.filename} {{.CLI_ARGS}}"];
+      preconditions = ["test -f ${cfg.mago.filename}"];
+      desc = "Format PHP files with Mago";
+    };
+    check-mago = {
+      dir = cfg.workingDirectory;
+      cmds = [
+        "${cfg.mago.pkg}/bin/mago format --config ${cfg.mago.filename} --check"
+        "${cfg.mago.pkg}/bin/mago lint --config ${cfg.mago.filename}"
+      ];
+      preconditions = ["test -f ${cfg.mago.filename}"];
+      desc = "Check PHP files with Mago (format + lint)";
+    };
+  };
+
+  linterTasksByName = {
+    php-cs-fixer = phpCsFixerTasks;
+    phpstan = phpstanTasks;
+    psalm = psalmTasks;
+    mago = magoTasks;
+  };
+
+  linterFormatDepsByName = {
+    php-cs-fixer = ["format-php-cs-fixer"];
+    phpstan = [];
+    psalm = [];
+    mago = ["format-mago"];
+  };
+
+  linterCheckDepsByName = {
+    php-cs-fixer = ["check-php-cs-fixer"];
+    phpstan = ["check-phpstan"];
+    psalm = ["check-psalm"];
+    mago = ["check-mago"];
+  };
+
+  linterLefthookByName = {
+    php-cs-fixer = {
+      pre-commit.commands.format-php-cs-fixer = {
+        glob = mkDefault "*.php";
+        run = mkDefault "${pkgs.go-task}/bin/task format-php-cs-fixer -- {staged_files}";
+        stage_fixed = true;
+        root = mkDefault cfg.workingDirectory;
+      };
+      pre-push.commands.check-php-cs-fixer = {
+        glob = mkDefault "*.php";
+        run = mkDefault "${pkgs.go-task}/bin/task check-php-cs-fixer";
+        root = mkDefault cfg.workingDirectory;
+      };
+    };
+    phpstan = {
+      pre-push.commands.check-phpstan = {
+        glob = mkDefault "*.php";
+        run = mkDefault "${pkgs.go-task}/bin/task check-phpstan";
+        root = mkDefault cfg.workingDirectory;
+      };
+    };
+    psalm = {
+      pre-push.commands.check-psalm = {
+        glob = mkDefault "*.php";
+        run = mkDefault "${pkgs.go-task}/bin/task check-psalm";
+        root = mkDefault cfg.workingDirectory;
+      };
+    };
+    mago = {
+      pre-commit.commands.format-mago = {
+        glob = mkDefault "*.php";
+        run = mkDefault "${pkgs.go-task}/bin/task format-mago -- {staged_files}";
+        stage_fixed = true;
+        root = mkDefault cfg.workingDirectory;
+      };
+      pre-push.commands.check-mago = {
+        glob = mkDefault "*.php";
+        run = mkDefault "${pkgs.go-task}/bin/task check-mago";
+        root = mkDefault cfg.workingDirectory;
+      };
+    };
+  };
+
+  selectedLinterTasks = foldl' (acc: name: acc // linterTasksByName.${name}) {} cfg.linters;
+  selectedFormatDeps = concatMap (name: linterFormatDepsByName.${name}) cfg.linters;
+  selectedCheckDeps = concatMap (name: linterCheckDepsByName.${name}) cfg.linters;
+  selectedLefthook = map (name: linterLefthookByName.${name}) cfg.linters;
+
   extendExtensions = baseFn: additional: {...} @ args: (baseFn args) ++ additional;
 
   phpDebugEnv = cfg.pkg.buildEnv {
@@ -188,6 +316,12 @@ in {
         default = "";
       };
 
+      linters = mkOption {
+        type = listOf (enum ["php-cs-fixer" "phpstan" "psalm" "mago"]);
+        default = ["php-cs-fixer" "phpstan" "psalm"];
+        description = "Which PHP linters/formatters to wire into format/check tasks and lefthook hooks.";
+      };
+
       php-cs-fixer = {
         filename = mkOption {
           type = str;
@@ -196,6 +330,17 @@ in {
         addToGitIgnore = mkOption {
           type = bool;
           default = false;
+        };
+      };
+
+      mago = {
+        pkg = mkOption {
+          type = package;
+          default = pkgs.mago;
+        };
+        filename = mkOption {
+          type = str;
+          default = "mago.toml";
         };
       };
 
@@ -254,106 +399,53 @@ in {
     };
 
     programs.taskfile.enable = mkDefault true;
-    programs.taskfile.config.tasks = {
-      install-composer = {
-        dir = cfg.workingDirectory;
-        cmds = ["${phpEnv.packages.composer}/bin/composer install"];
-        generates = [
-          "vendor/composer/installed.json"
-          "vendor/autoload.php"
-        ];
-        desc = "Install Composer Dependencies";
-        sources = [
-          "composer.json"
-          "composer.lock"
-        ];
-      };
-      update-composer = {
-        dir = cfg.workingDirectory;
-        cmds = ["${phpEnv.packages.composer}/bin/composer update"];
-        desc = "Update Composer Dependencies";
-      };
-      check-composer = {
-        dir = cfg.workingDirectory;
-        cmds = ["${phpEnv.packages.composer}/bin/composer validate --strict --no-check-all"];
-        preconditions = ["test -f composer.json"];
-        generates = ["composer.lock"];
-        desc = "Check Composer Lock File";
-        sources = ["composer.json"];
-      };
-
-      format-php-cs-fixer = {
-        dir = cfg.workingDirectory;
-        cmds = [
-          "${phpEnv}/bin/php ./vendor/bin/php-cs-fixer fix --config ${cfg.php-cs-fixer.filename} {{.CLI_ARGS}}"
-        ];
-        preconditions = ["test -f ${cfg.php-cs-fixer.filename}"];
-        deps = ["install-composer"];
-        desc = "Format PHP files with PHP-CS-Fixer";
-      };
-      check-php-cs-fixer = {
-        dir = cfg.workingDirectory;
-        cmds = [
-          "${phpEnv}/bin/php ./vendor/bin/php-cs-fixer fix --config ${cfg.php-cs-fixer.filename} --dry-run {{.CLI_ARGS}}"
-        ];
-        preconditions = ["test -f ${cfg.php-cs-fixer.filename}"];
-        deps = ["install-composer"];
-        desc = "Check PHP files with PHP-CS-Fixer";
-      };
-
-      check-phpstan = {
-        dir = cfg.workingDirectory;
-        cmds = ["${phpEnv}/bin/php ./vendor/phpstan/phpstan/phpstan.phar --memory-limit=4G analyse"];
-        preconditions = ["test -f phpstan.neon"];
-        deps = ["install-composer"];
-        desc = "Check PHP files with PHPStan";
-      };
-
-      check-psalm = {
-        dir = cfg.workingDirectory;
-        cmds = ["${cfg.pkg}/bin/php ./vendor/bin/psalm --config=psalm.xml --memory-limit=8G"];
-        preconditions = ["test -f psalm.xml"];
-        deps = ["install-composer"];
-        desc = "Check PHP files with Psalm";
-      };
-
-      check.deps = [
-        "check-php-cs-fixer"
-        "check-phpstan"
-        "check-psalm"
-        "check-composer"
-      ];
-      format.deps = ["format-php-cs-fixer"];
-      install.deps = ["install-composer"];
-      update.deps = ["update-composer"];
-    };
-
-    programs.lefthook.config = {
-      pre-commit.commands = {
-        format-php-cs-fixer = {
-          glob = mkDefault "*.php";
-          run = mkDefault "${pkgs.go-task}/bin/task format-php-cs-fixer -- {staged_files}";
-          stage_fixed = true;
-          root = mkDefault cfg.workingDirectory;
+    programs.taskfile.config.tasks =
+      {
+        install-composer = {
+          dir = cfg.workingDirectory;
+          cmds = ["${phpEnv.packages.composer}/bin/composer install"];
+          generates = [
+            "vendor/composer/installed.json"
+            "vendor/autoload.php"
+          ];
+          desc = "Install Composer Dependencies";
+          sources = [
+            "composer.json"
+            "composer.lock"
+          ];
         };
-      };
-      pre-push.commands = {
+        update-composer = {
+          dir = cfg.workingDirectory;
+          cmds = ["${phpEnv.packages.composer}/bin/composer update"];
+          desc = "Update Composer Dependencies";
+        };
         check-composer = {
-          glob = mkDefault "composer.{json,lock}";
-          run = mkDefault "${pkgs.go-task}/bin/task check-composer";
-          root = mkDefault cfg.workingDirectory;
+          dir = cfg.workingDirectory;
+          cmds = ["${phpEnv.packages.composer}/bin/composer validate --strict --no-check-all"];
+          preconditions = ["test -f composer.json"];
+          generates = ["composer.lock"];
+          desc = "Check Composer Lock File";
+          sources = ["composer.json"];
         };
-        check-phpstan = {
-          glob = mkDefault "*.php";
-          run = mkDefault "${pkgs.go-task}/bin/task check-phpstan";
-          root = mkDefault cfg.workingDirectory;
-        };
-        check-php-cs-fixer = {
-          glob = mkDefault "*.php";
-          run = mkDefault "${pkgs.go-task}/bin/task check-php-cs-fixer";
-          root = mkDefault cfg.workingDirectory;
-        };
-      };
-    };
+
+        check.deps = selectedCheckDeps ++ ["check-composer"];
+        format.deps = selectedFormatDeps;
+        install.deps = ["install-composer"];
+        update.deps = ["update-composer"];
+      }
+      // selectedLinterTasks;
+
+    programs.lefthook.config = mkMerge (
+      [
+        {
+          pre-push.commands.check-composer = {
+            glob = mkDefault "composer.{json,lock}";
+            run = mkDefault "${pkgs.go-task}/bin/task check-composer";
+            root = mkDefault cfg.workingDirectory;
+          };
+        }
+      ]
+      ++ selectedLefthook
+    );
   };
 }
