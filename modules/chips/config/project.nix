@@ -19,15 +19,21 @@ in {
 
   options = with types; {
     project = {
-      name = mkOption {type = str;};
+      name = mkOption {
+        type = str;
+        default = "";
+      };
       domainSuffix = mkOption {
         type = str;
         default = "bitnix.dev";
       };
       address = mkOption {
         type = str;
-        default = hashedAddress cfg.name;
-        defaultText = "deterministic hash of project.name within 127.0.0.0/8";
+        default =
+          if cfg.name == ""
+          then "127.0.0.1"
+          else hashedAddress cfg.name;
+        defaultText = "deterministic hash of project.name within 127.0.0.0/8, or 127.0.0.1 when project.name is unset";
         description = "Loopback address for this project. Must be in 127.0.0.0/8. Defaults to a deterministic hash of project.name so each project gets a unique loopback alias.";
       };
     };
