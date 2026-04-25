@@ -61,6 +61,13 @@ with lib; let
       set +o allexport
     ''}
 
+    mkdir -p ${outDir}
+
+    # Serialize concurrent invocations (e.g. parallel direnv reloads) so we
+    # don't race ACME challenges and trip "authorization must be pending".
+    exec 9>${outDir}/.lego.lock
+    ${pkgs.flock}/bin/flock -x 9
+
     LEGO_ARGS=(${runOpts})
     if [ -e ${outDir}/certificates/${keyName}.crt ]; then
       REQUESTED_DOMAINS="${requestedDomains}"
