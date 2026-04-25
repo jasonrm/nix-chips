@@ -82,7 +82,7 @@ in {
         cmds = [
           ''
             if ${pkgs.jujutsu}/bin/jj root >/dev/null 2>&1; then
-              if ${pkgs.jujutsu}/bin/jj resolve --list; then
+              if ${pkgs.jujutsu}/bin/jj resolve --list 2>/dev/null; then
                 exit 1
               fi
             else
