@@ -57,15 +57,15 @@ with lib; let
   magoTasks = {
     format-mago = {
       dir = cfg.workingDirectory;
-      cmds = ["${cfg.mago.pkg}/bin/mago format --config ${cfg.mago.filename} {{.CLI_ARGS}}"];
+      cmds = ["${cfg.mago.pkg}/bin/mago --config ${cfg.mago.filename} format {{.CLI_ARGS}}"];
       preconditions = ["test -f ${cfg.mago.filename}"];
       desc = "Format PHP files with Mago";
     };
     check-mago = {
       dir = cfg.workingDirectory;
       cmds = [
-        "${cfg.mago.pkg}/bin/mago format --config ${cfg.mago.filename} --check"
-        "${cfg.mago.pkg}/bin/mago lint --config ${cfg.mago.filename}"
+        "${cfg.mago.pkg}/bin/mago --config ${cfg.mago.filename} format --check"
+        "${cfg.mago.pkg}/bin/mago --config ${cfg.mago.filename} lint"
       ];
       preconditions = ["test -f ${cfg.mago.filename}"];
       desc = "Check PHP files with Mago (format + lint)";
