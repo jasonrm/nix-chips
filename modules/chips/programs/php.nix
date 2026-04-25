@@ -159,6 +159,14 @@ in {
         default = pkgs.php;
       };
 
+      workingDirectory = mkOption {
+        type = nullOr str;
+        default =
+          if config.dir.project != "/dev/null"
+          then config.dir.project
+          else null;
+      };
+
       env = mkOption {
         type = package;
         readOnly = true;
@@ -248,6 +256,7 @@ in {
     programs.taskfile.enable = mkDefault true;
     programs.taskfile.config.tasks = {
       install-composer = {
+        dir = cfg.workingDirectory;
         cmds = ["${phpEnv.packages.composer}/bin/composer install"];
         generates = [
           "vendor/composer/installed.json"
@@ -260,10 +269,12 @@ in {
         ];
       };
       update-composer = {
+        dir = cfg.workingDirectory;
         cmds = ["${phpEnv.packages.composer}/bin/composer update"];
         desc = "Update Composer Dependencies";
       };
       check-composer = {
+        dir = cfg.workingDirectory;
         cmds = ["${phpEnv.packages.composer}/bin/composer validate --strict --no-check-all"];
         preconditions = ["test -f composer.json"];
         generates = ["composer.lock"];
@@ -272,6 +283,7 @@ in {
       };
 
       format-php-cs-fixer = {
+        dir = cfg.workingDirectory;
         cmds = [
           "${phpEnv}/bin/php ./vendor/bin/php-cs-fixer fix --config ${cfg.php-cs-fixer.filename} {{.CLI_ARGS}}"
         ];
@@ -280,6 +292,7 @@ in {
         desc = "Format PHP files with PHP-CS-Fixer";
       };
       check-php-cs-fixer = {
+        dir = cfg.workingDirectory;
         cmds = [
           "${phpEnv}/bin/php ./vendor/bin/php-cs-fixer fix --config ${cfg.php-cs-fixer.filename} --dry-run {{.CLI_ARGS}}"
         ];
@@ -289,6 +302,7 @@ in {
       };
 
       check-phpstan = {
+        dir = cfg.workingDirectory;
         cmds = ["${phpEnv}/bin/php ./vendor/phpstan/phpstan/phpstan.phar --memory-limit=4G analyse"];
         preconditions = ["test -f phpstan.neon"];
         deps = ["install-composer"];
@@ -296,6 +310,7 @@ in {
       };
 
       check-psalm = {
+        dir = cfg.workingDirectory;
         cmds = ["${cfg.pkg}/bin/php ./vendor/bin/psalm --config=psalm.xml --memory-limit=8G"];
         preconditions = ["test -f psalm.xml"];
         deps = ["install-composer"];
@@ -319,20 +334,24 @@ in {
           glob = mkDefault "*.php";
           run = mkDefault "${pkgs.go-task}/bin/task format-php-cs-fixer -- {staged_files}";
           stage_fixed = true;
+          root = mkDefault cfg.workingDirectory;
         };
       };
       pre-push.commands = {
         check-composer = {
           glob = mkDefault "composer.{json,lock}";
           run = mkDefault "${pkgs.go-task}/bin/task check-composer";
+          root = mkDefault cfg.workingDirectory;
         };
         check-phpstan = {
           glob = mkDefault "*.php";
           run = mkDefault "${pkgs.go-task}/bin/task check-phpstan";
+          root = mkDefault cfg.workingDirectory;
         };
         check-php-cs-fixer = {
           glob = mkDefault "*.php";
           run = mkDefault "${pkgs.go-task}/bin/task check-php-cs-fixer";
+          root = mkDefault cfg.workingDirectory;
         };
       };
     };
