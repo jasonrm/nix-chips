@@ -52,8 +52,8 @@ with lib; let
 
     ${optionalString (cfg.envFile != null) ''
       if [ ! -f "${cfg.envFile}" ]; then
-        echo "Environment file not found: ${cfg.envFile}"
-        exit 1
+        echo "Environment file not found: ${cfg.envFile}" >&2
+        exit 0
       fi
 
       set -o allexport
