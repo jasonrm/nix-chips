@@ -57,7 +57,6 @@ in {
     };
 
     devShell = {
-      contents = [pkgs.jujutsu];
       shellHooks = ''
         if [ -d .jj/repo ]; then
           mkdir -p .jj/repo/conf.d
