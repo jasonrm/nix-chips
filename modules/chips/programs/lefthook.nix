@@ -80,7 +80,15 @@ in {
       check-unresovled-conflicts = {
         desc = "Check For Unresolved Git Conflicts";
         cmds = [
-          ''! ${pkgs.ripgrep}/bin/rg "(^[<>=]{5,})$" --with-filename --count {{.CLI_ARGS | default "."}}''
+          ''
+            if [ -d .jj ]; then
+              if ${pkgs.jujutsu}/bin/jj resolve --list; then
+                exit 1
+              fi
+            else
+              ! ${pkgs.ripgrep}/bin/rg "(^[<>=]{5,})$" --with-filename --count {{.CLI_ARGS | default "."}}
+            fi
+          ''
         ];
       };
       check-gitleaks-detect = {
