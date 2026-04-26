@@ -13,7 +13,7 @@ in {
 
       pkg = mkOption {
         type = package;
-        default = pkgs.nodejs;
+        default = pkgs.nodejs_24;
       };
 
       nodePackages = mkOption {
@@ -186,8 +186,8 @@ in {
           then cfg.workingDirectory
           else "$PWD";
       in ["PATH=$PATH:${workingDirectory}/node_modules/.bin"];
-      contents = with cfg.nodePackages; [
-        nodejs
+      contents = [
+        cfg.pkg
       ];
     };
   };
