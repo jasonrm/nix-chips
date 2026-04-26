@@ -186,9 +186,11 @@ in {
           then cfg.workingDirectory
           else "$PWD";
       in ["PATH=$PATH:${workingDirectory}/node_modules/.bin"];
-      contents = [
-        cfg.pkg
-      ];
+      contents =
+        [
+          cfg.pkg
+        ]
+        ++ optional (cfg.packageManager == "pnpm") cfg.nodePackages.pnpm;
     };
   };
 }
