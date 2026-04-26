@@ -6,6 +6,18 @@
 }:
 with lib; let
   cfg = config.programs.nodejs;
+  oxfmtPkg =
+    if pkgs ? oxfmt
+    then pkgs.oxfmt
+    else if pkgs ? unstable && pkgs.unstable ? oxfmt
+    then pkgs.unstable.oxfmt
+    else throw "programs.nodejs.formatter=oxfmt requires pkgs.oxfmt or pkgs.unstable.oxfmt";
+  oxlintPkg =
+    if pkgs ? oxlint
+    then pkgs.oxlint
+    else if pkgs ? unstable && pkgs.unstable ? oxlint
+    then pkgs.unstable.oxlint
+    else throw "programs.nodejs.linter=oxlint requires pkgs.oxlint or pkgs.unstable.oxlint";
 
   eslintTasks = {
     format-eslint = {
@@ -29,22 +41,22 @@ with lib; let
   oxcTasks = {
     format-oxfmt = {
       dir = cfg.workingDirectory;
-      cmds = [''${pkgs.oxfmt}/bin/oxfmt --no-error-on-unmatched-pattern {{.CLI_ARGS}}''];
+      cmds = [''${oxfmtPkg}/bin/oxfmt --no-error-on-unmatched-pattern {{.CLI_ARGS}}''];
       desc = "Format JavaScript and TypeScript files";
     };
     check-oxfmt = {
       dir = cfg.workingDirectory;
-      cmds = [''${pkgs.oxfmt}/bin/oxfmt --check .''];
+      cmds = [''${oxfmtPkg}/bin/oxfmt --check .''];
       desc = "Check JavaScript and TypeScript formatting";
     };
     format-oxlint = {
       dir = cfg.workingDirectory;
-      cmds = [''${pkgs.oxlint}/bin/oxlint --fix {{.CLI_ARGS}}''];
+      cmds = [''${oxlintPkg}/bin/oxlint --fix {{.CLI_ARGS}}''];
       desc = "Apply safe Oxlint fixes";
     };
     check-oxlint = {
       dir = cfg.workingDirectory;
-      cmds = [''${pkgs.oxlint}/bin/oxlint --deny-warnings''];
+      cmds = [''${oxlintPkg}/bin/oxlint --deny-warnings''];
       desc = "Check JavaScript and TypeScript files";
     };
   };
@@ -298,8 +310,8 @@ in {
           cfg.pkg
         ]
         ++ optional (cfg.packageManager == "pnpm") cfg.nodePackages.pnpm
-        ++ optional (cfg.formatter == "oxfmt") pkgs.oxfmt
-        ++ optional (cfg.linter == "oxlint") pkgs.oxlint;
+        ++ optional (cfg.formatter == "oxfmt") oxfmtPkg
+        ++ optional (cfg.linter == "oxlint") oxlintPkg;
     };
   };
 }
