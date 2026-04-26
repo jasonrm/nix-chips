@@ -6,6 +6,119 @@
 }:
 with lib; let
   cfg = config.programs.nodejs;
+
+  eslintTasks = {
+    format-eslint = {
+      dir = cfg.workingDirectory;
+      cmds = [
+        ''${cfg.pkg}/bin/node ./node_modules/eslint/bin/eslint.js --cache --fix --max-warnings 0 {{.CLI_ARGS}}''
+      ];
+      preconditions = ["test -f ./node_modules/eslint/bin/eslint.js"];
+      deps = ["install-npm"];
+      desc = "Format JavaScript and TypeScript files";
+    };
+    check-eslint = {
+      dir = cfg.workingDirectory;
+      cmds = [''${cfg.pkg}/bin/node ./node_modules/eslint/bin/eslint.js --cache --max-warnings 0''];
+      preconditions = ["test -f ./node_modules/eslint/bin/eslint.js"];
+      deps = ["install-npm"];
+      desc = "Check JavaScript and TypeScript files";
+    };
+  };
+
+  oxcTasks = {
+    format-oxfmt = {
+      dir = cfg.workingDirectory;
+      cmds = [''${pkgs.oxfmt}/bin/oxfmt --no-error-on-unmatched-pattern {{.CLI_ARGS}}''];
+      desc = "Format JavaScript and TypeScript files";
+    };
+    check-oxfmt = {
+      dir = cfg.workingDirectory;
+      cmds = [''${pkgs.oxfmt}/bin/oxfmt --check .''];
+      desc = "Check JavaScript and TypeScript formatting";
+    };
+    format-oxlint = {
+      dir = cfg.workingDirectory;
+      cmds = [''${pkgs.oxlint}/bin/oxlint --fix {{.CLI_ARGS}}''];
+      desc = "Apply safe Oxlint fixes";
+    };
+    check-oxlint = {
+      dir = cfg.workingDirectory;
+      cmds = [''${pkgs.oxlint}/bin/oxlint --deny-warnings''];
+      desc = "Check JavaScript and TypeScript files";
+    };
+  };
+
+  formatTaskDeps =
+    {
+      eslint = ["format-eslint"];
+      oxfmt = ["format-oxfmt"];
+      none = [];
+    }.${
+      cfg.formatter
+    };
+
+  checkTaskDeps =
+    {
+      eslint = ["check-eslint"];
+      oxlint = ["check-oxlint"];
+      none = [];
+    }.${
+      cfg.linter
+    }
+    ++ optional (cfg.formatter == "oxfmt") "check-oxfmt";
+
+  formatterLefthook =
+    {
+      eslint = {
+        pre-commit.commands.format-eslint = {
+          glob = mkDefault "*.{js,ts,jsx,tsx}";
+          run = mkDefault "${pkgs.go-task}/bin/task format-eslint -- {staged_files}";
+          stage_fixed = true;
+          root = mkDefault cfg.workingDirectory;
+        };
+      };
+      oxfmt = {
+        pre-commit.commands.format-oxfmt = {
+          glob = mkDefault "*.{js,ts,jsx,tsx}";
+          run = mkDefault "${pkgs.go-task}/bin/task format-oxfmt -- {staged_files}";
+          stage_fixed = true;
+          root = mkDefault cfg.workingDirectory;
+        };
+      };
+      none = {};
+    }.${
+      cfg.formatter
+    };
+
+  linterLefthook =
+    {
+      eslint = {
+        pre-push.commands.check-eslint = {
+          glob = mkDefault "*.{js,ts,jsx,tsx}";
+          run = mkDefault "${pkgs.go-task}/bin/task check-eslint";
+          root = mkDefault cfg.workingDirectory;
+        };
+      };
+      oxlint = {
+        pre-push.commands.check-oxlint = {
+          glob = mkDefault "*.{js,ts,jsx,tsx}";
+          run = mkDefault "${pkgs.go-task}/bin/task check-oxlint";
+          root = mkDefault cfg.workingDirectory;
+        };
+      };
+      none = {};
+    }.${
+      cfg.linter
+    };
+
+  formatterCheckLefthook = mkIf (cfg.formatter == "oxfmt") {
+    pre-push.commands.check-oxfmt = {
+      glob = mkDefault "*.{js,ts,jsx,tsx}";
+      run = mkDefault "${pkgs.go-task}/bin/task check-oxfmt";
+      root = mkDefault cfg.workingDirectory;
+    };
+  };
 in {
   options = with lib.types; {
     programs.nodejs = {
@@ -28,6 +141,26 @@ in {
           "pnpm"
         ];
         default = "pnpm";
+      };
+
+      formatter = mkOption {
+        type = enum [
+          "eslint"
+          "oxfmt"
+          "none"
+        ];
+        default = "oxfmt";
+        description = "Which formatter to wire into format tasks and pre-commit hooks.";
+      };
+
+      linter = mkOption {
+        type = enum [
+          "eslint"
+          "oxlint"
+          "none"
+        ];
+        default = "oxlint";
+        description = "Which linter to wire into check tasks and pre-push hooks.";
       };
 
       workingDirectory = mkOption {
@@ -112,23 +245,6 @@ in {
           ];
         };
 
-      format-eslint = {
-        dir = cfg.workingDirectory;
-        cmds = [
-          ''${cfg.pkg}/bin/node ./node_modules/eslint/bin/eslint.js --cache --fix --max-warnings 0 {{.CLI_ARGS}}''
-        ];
-        preconditions = ["test -f ./node_modules/eslint/bin/eslint.js"];
-        deps = ["install-npm"];
-        desc = "Format JavaScript and TypeScript files";
-      };
-      check-eslint = {
-        dir = cfg.workingDirectory;
-        cmds = [''${cfg.pkg}/bin/node ./node_modules/eslint/bin/eslint.js --cache --max-warnings 0''];
-        preconditions = ["test -f ./node_modules/eslint/bin/eslint.js"];
-        deps = ["install-npm"];
-        desc = "Check JavaScript and TypeScript files";
-      };
-
       check-tsc = {
         dir = cfg.workingDirectory;
         cmds = ["${pkgs.typescript}/bin/tsc --noEmit --project tsconfig.json"];
@@ -136,35 +252,23 @@ in {
         desc = "Check TypeScript files";
       };
 
-      format.deps = ["format-eslint"];
-      check.deps = [
-        "check-eslint"
-        "check-tsc"
-        "check-npm"
-      ];
+      format.deps = formatTaskDeps;
+      check.deps =
+        checkTaskDeps
+        ++ [
+          "check-tsc"
+          "check-npm"
+        ];
       install.deps = ["install-npm"];
       update.deps = ["update-npm"];
       build.deps = ["build-npm"];
-    };
+    }
+    // eslintTasks
+    // oxcTasks;
 
-    programs.lefthook.config = {
-      pre-commit = {
-        commands = {
-          format-eslint = {
-            glob = mkDefault "*.{js,ts,jsx,tsx}";
-            run = mkDefault "${pkgs.go-task}/bin/task format-eslint -- {staged_files}";
-            stage_fixed = true;
-            root = mkDefault cfg.workingDirectory;
-          };
-        };
-      };
-      pre-push = {
-        commands = {
-          check-eslint = {
-            glob = mkDefault "*.{js,ts,jsx,tsx}";
-            run = mkDefault "${pkgs.go-task}/bin/task check-eslint";
-            root = mkDefault cfg.workingDirectory;
-          };
+    programs.lefthook.config = mkMerge [
+      {
+        pre-push.commands = {
           check-tsc = {
             glob = mkDefault "*.{ts,tsx}";
             run = mkDefault "${pkgs.go-task}/bin/task check-tsc";
@@ -176,8 +280,11 @@ in {
             root = mkDefault cfg.workingDirectory;
           };
         };
-      };
-    };
+      }
+      formatterLefthook
+      formatterCheckLefthook
+      linterLefthook
+    ];
 
     devShell = {
       environment = let
@@ -190,7 +297,9 @@ in {
         [
           cfg.pkg
         ]
-        ++ optional (cfg.packageManager == "pnpm") cfg.nodePackages.pnpm;
+        ++ optional (cfg.packageManager == "pnpm") cfg.nodePackages.pnpm
+        ++ optional (cfg.formatter == "oxfmt") pkgs.oxfmt
+        ++ optional (cfg.linter == "oxlint") pkgs.oxlint;
     };
   };
 }
