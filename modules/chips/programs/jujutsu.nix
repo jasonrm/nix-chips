@@ -38,9 +38,8 @@ in {
     programs.jujutsu.settings.fix.tools = {
       "format-nix" = {
         command = [
-          "${pkgs.nixfmt-rfc-style}/bin/nixfmt"
-          "--strict"
-          "--filename=$path"
+          "${pkgs.alejandra}/bin/alejandra"
+          "$path"
         ];
         patterns = ["glob:'**/*.nix'"];
       };
