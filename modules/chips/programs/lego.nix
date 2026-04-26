@@ -9,10 +9,13 @@ with lib; let
   cfg = config.programs.lego;
 
   successHook = pkgs.writeShellScriptBin "success-hook" ''
+    set -euo pipefail
+
     echo LEGO_CERT_PATH $LEGO_CERT_PATH
     cp "$LEGO_CERT_PATH" "${cfg.certFile}"
     echo LEGO_CERT_KEY_PATH $LEGO_CERT_KEY_PATH
     cp "$LEGO_CERT_KEY_PATH" "${cfg.keyFile}"
+    ${cfg.runHooks}
   '';
 
   keyName = builtins.replaceStrings ["*"] ["_"] (head cfg.domains);
@@ -76,7 +79,7 @@ with lib; let
         LEGO_ARGS=(${renewOpts})
       fi
     fi
-    ${pkgs.lego}/bin/lego ''${LEGO_ARGS[@]}
+    ${cfg.pkg}/bin/lego ''${LEGO_ARGS[@]}
   '';
 in {
   options = with types; {
