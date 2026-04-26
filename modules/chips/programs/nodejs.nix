@@ -18,6 +18,7 @@ with lib; let
     else if pkgs ? unstable && pkgs.unstable ? oxlint
     then pkgs.unstable.oxlint
     else throw "programs.nodejs.linter=oxlint requires pkgs.oxlint or pkgs.unstable.oxlint";
+  pnpmPkg = pkgs.pnpm.override {nodejs = cfg.pkg;};
 
   eslintTasks = {
     format-eslint = {
@@ -141,12 +142,6 @@ in {
         default = pkgs.nodejs_24;
       };
 
-      nodePackages = mkOption {
-        type = attrs;
-        readOnly = true;
-        default = cfg.pkg.pkgs;
-      };
-
       packageManager = mkOption {
         type = enum [
           "npm"
@@ -192,7 +187,7 @@ in {
         if cfg.packageManager == "pnpm"
         then {
           dir = cfg.workingDirectory;
-          cmds = ["${cfg.nodePackages.pnpm}/bin/pnpm install"];
+          cmds = ["${pnpmPkg}/bin/pnpm install"];
           generates = ["node_modules/.modules.yaml"];
           desc = "Install Node.JS Dependencies (pnpm)";
           sources = [
@@ -214,7 +209,7 @@ in {
         if cfg.packageManager == "pnpm"
         then {
           dir = cfg.workingDirectory;
-          cmds = ["${cfg.nodePackages.pnpm}/bin/pnpm update"];
+          cmds = ["${pnpmPkg}/bin/pnpm update"];
           desc = "Update Node.JS Dependencies (pnpm)";
         }
         else {
@@ -226,7 +221,7 @@ in {
         if cfg.packageManager == "pnpm"
         then {
           dir = cfg.workingDirectory;
-          cmds = ["${cfg.nodePackages.pnpm}/bin/pnpm run build"];
+          cmds = ["${pnpmPkg}/bin/pnpm run build"];
           desc = "Build Node.JS Project (pnpm)";
           deps = ["install-npm"];
         }
@@ -240,7 +235,7 @@ in {
         if cfg.packageManager == "pnpm"
         then {
           dir = cfg.workingDirectory;
-          cmds = ["${cfg.nodePackages.pnpm}/bin/pnpm install --frozen-lockfile"];
+          cmds = ["${pnpmPkg}/bin/pnpm install --frozen-lockfile"];
           desc = "Check Node.JS Project";
           sources = [
             "package.json"
@@ -309,7 +304,7 @@ in {
         [
           cfg.pkg
         ]
-        ++ optional (cfg.packageManager == "pnpm") cfg.nodePackages.pnpm
+        ++ optional (cfg.packageManager == "pnpm") pnpmPkg
         ++ optional (cfg.formatter == "oxfmt") oxfmtPkg
         ++ optional (cfg.linter == "oxlint") oxlintPkg;
     };
