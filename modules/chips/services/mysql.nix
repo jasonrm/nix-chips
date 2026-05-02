@@ -93,9 +93,11 @@ in {
       settings = {
         mysql = {
           socket = runDir + "/mysqld.sock";
+          get_server_public_key = 1;
         };
         mysqldump = {
           socket = runDir + "/mysqld.sock";
+          get_server_public_key = 1;
         };
         mysqld = {
           tls_version = "";
