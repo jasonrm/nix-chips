@@ -100,6 +100,7 @@ in {
         mysqld = {
           tls_version = "";
           mysqlx = 0;
+          skip_name_resolve = 1;
           socket = "${runDir}/mysqld.sock";
           log_bin = "${logDir}/binlog";
           relay_log = "${logDir}/relaylog";
