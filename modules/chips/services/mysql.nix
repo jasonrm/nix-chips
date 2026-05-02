@@ -62,14 +62,29 @@ with lib; let
   mysql = pkgs.writeShellScriptBin "mysql" ''
     exec ${cfg.package}/bin/mysql \
       --defaults-file=${configFile} \
-      $@
+      "$@"
   '';
 
   mysqldump = pkgs.writeShellScriptBin "mysqldump" ''
     exec ${cfg.package}/bin/mysqldump \
       --defaults-file=${configFile} \
-      $@
+      "$@"
   '';
+
+  socket = "${runDir}/mysqld.sock";
+
+  defaultUser =
+    if cfg.ensureUsers != []
+    then (head cfg.ensureUsers).name
+    else null;
+  defaultDb =
+    if cfg.ensureDatabases != []
+    then head cfg.ensureDatabases
+    else null;
+  databaseUrl =
+    if defaultUser != null && defaultDb != null
+    then "mysql://${defaultUser}@localhost/${defaultDb}?socket=${socket}"
+    else null;
 in {
   imports = [];
 
@@ -98,10 +113,12 @@ in {
       command = "${mysqld}/bin/mysqld";
     };
     devShell = {
-      environment = [
-        "MYSQL_HOST=localhost"
-        "MYSQL_UNIX_PORT=${runDir}/mysqld.sock"
-      ];
+      environment =
+        [
+          "MYSQL_HOST=localhost"
+          "MYSQL_UNIX_PORT=${socket}"
+        ]
+        ++ optional (databaseUrl != null) "DATABASE_URL=${databaseUrl}";
       contents = [
         mysql
         mysqld
