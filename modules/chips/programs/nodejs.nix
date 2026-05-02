@@ -69,7 +69,8 @@ with lib; let
       none = [];
     }.${
       cfg.formatter
-    };
+    }
+    ++ optional (cfg.linter == "oxlint") "format-oxlint";
 
   checkTaskDeps =
     {
@@ -114,6 +115,12 @@ with lib; let
         };
       };
       oxlint = {
+        pre-commit.commands.format-oxlint = {
+          glob = mkDefault "*.{js,ts,jsx,tsx}";
+          run = mkDefault "${pkgs.go-task}/bin/task format-oxlint -- {staged_files}";
+          stage_fixed = true;
+          root = mkDefault cfg.workingDirectory;
+        };
         pre-push.commands.check-oxlint = {
           glob = mkDefault "*.{js,ts,jsx,tsx}";
           run = mkDefault "${pkgs.go-task}/bin/task check-oxlint";
