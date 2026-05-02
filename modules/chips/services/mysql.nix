@@ -83,7 +83,7 @@ with lib; let
     else null;
   databaseUrl =
     if defaultUser != null && defaultDb != null
-    then "mysql://${defaultUser}@localhost/${defaultDb}?socket=${socket}"
+    then "mysql://${defaultUser}@${config.project.address}/${defaultDb}?socket=${socket}"
     else null;
 in {
   imports = [];
