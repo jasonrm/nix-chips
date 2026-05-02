@@ -28,11 +28,13 @@ with lib; let
     format-oxlint = {
       dir = cfg.workingDirectory;
       cmds = [''${pkgs.oxlint}/bin/oxlint --fix {{.CLI_ARGS}}''];
+      deps = ["install-bun"];
       desc = "Format JavaScript and TypeScript files";
     };
     check-oxlint = {
       dir = cfg.workingDirectory;
       cmds = [''${pkgs.oxlint}/bin/oxlint --deny-warnings''];
+      deps = ["install-bun"];
       desc = "Check JavaScript and TypeScript files";
     };
   };

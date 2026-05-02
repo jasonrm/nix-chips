@@ -43,21 +43,25 @@ with lib; let
     format-oxfmt = {
       dir = cfg.workingDirectory;
       cmds = [''${oxfmtPkg}/bin/oxfmt --no-error-on-unmatched-pattern {{.CLI_ARGS}}''];
+      deps = ["install-npm"];
       desc = "Format JavaScript and TypeScript files";
     };
     check-oxfmt = {
       dir = cfg.workingDirectory;
       cmds = [''${oxfmtPkg}/bin/oxfmt --check .''];
+      deps = ["install-npm"];
       desc = "Check JavaScript and TypeScript formatting";
     };
     format-oxlint = {
       dir = cfg.workingDirectory;
       cmds = [''${oxlintPkg}/bin/oxlint --fix {{.CLI_ARGS}}''];
+      deps = ["install-npm"];
       desc = "Apply safe Oxlint fixes";
     };
     check-oxlint = {
       dir = cfg.workingDirectory;
       cmds = [''${oxlintPkg}/bin/oxlint --deny-warnings''];
+      deps = ["install-npm"];
       desc = "Check JavaScript and TypeScript files";
     };
   };
