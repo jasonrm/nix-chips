@@ -34,6 +34,21 @@ with lib; let
 in {
   imports = [];
 
+  options.services.phpfpm.pools = mkOption {
+    type = types.attrsOf (types.submodule {
+      options = {
+        user = mkOption {
+          type = types.str;
+          default = "";
+        };
+        group = mkOption {
+          type = types.str;
+          default = "";
+        };
+      };
+    });
+  };
+
   config = mkIf (cfg.pools != {}) {
     dir.ensureExists = socketDirs;
 
