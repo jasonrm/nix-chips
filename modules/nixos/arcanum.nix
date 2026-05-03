@@ -2,10 +2,13 @@
   lib,
   pkgs,
   config,
+  options,
   ...
 }: let
   inherit
     (lib)
+    mkIf
+    mkMerge
     mkOption
     escapeShellArg
     optionalString
@@ -62,15 +65,20 @@ in {
     #    };
   };
 
-  config = {
-    systemd.services = let
-      units =
-        mapAttrs' (name: info: {
-          name = "${name}-key";
-          value = mkService name info;
-        })
-        cfg.files;
-    in
-      units;
-  };
+  config = mkMerge [
+    {
+      systemd.services = let
+        units =
+          mapAttrs' (name: info: {
+            name = "${name}-key";
+            value = mkService name info;
+          })
+          cfg.files;
+      in
+        units;
+    }
+    (mkIf (options ? home-manager) {
+      home-manager.sharedModules = [../home-manager/arcanum.nix];
+    })
+  ];
 }

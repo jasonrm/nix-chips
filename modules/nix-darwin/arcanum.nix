@@ -2,11 +2,14 @@
   lib,
   pkgs,
   config,
+  options,
   ...
 }: let
   inherit
     (lib)
     escapeShellArg
+    mkIf
+    mkMerge
     optionalString
     mapAttrs'
     ;
@@ -53,12 +56,17 @@
     };
   };
 in {
-  config = {
-    launchd.daemons =
-      mapAttrs' (name: info: {
-        name = "${name}-key";
-        value = mkDaemon name info;
-      })
-      cfg.files;
-  };
+  config = mkMerge [
+    {
+      launchd.daemons =
+        mapAttrs' (name: info: {
+          name = "${name}-key";
+          value = mkDaemon name info;
+        })
+        cfg.files;
+    }
+    (mkIf (options ? home-manager) {
+      home-manager.sharedModules = [../home-manager/arcanum.nix];
+    })
+  ];
 }
