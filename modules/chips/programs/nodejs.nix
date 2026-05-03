@@ -201,6 +201,7 @@ in {
           cmds = ["${pnpmPkg}/bin/pnpm install"];
           generates = ["node_modules/.modules.yaml"];
           desc = "Install Node.JS Dependencies (pnpm)";
+          run = "once";
           sources = [
             "package.json"
             "pnpm-lock.yaml"
@@ -211,6 +212,7 @@ in {
           cmds = ["${cfg.pkg}/bin/npm install"];
           generates = ["node_modules/.package-lock.json"];
           desc = "Install Node.JS Dependencies (npm)";
+          run = "once";
           sources = [
             "package.json"
             "package-lock.json"

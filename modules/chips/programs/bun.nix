@@ -137,6 +137,7 @@ in {
           cmds = ["${cfg.pkg}/bin/bun install"];
           generates = ["node_modules/.bin"];
           desc = "Install Dependencies (bun)";
+          run = "once";
           sources = [
             "package.json"
             "bun.lock"
