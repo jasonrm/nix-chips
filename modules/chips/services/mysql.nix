@@ -81,10 +81,6 @@ with lib; let
     if cfg.ensureDatabases != []
     then head cfg.ensureDatabases
     else null;
-  databaseUrl =
-    if defaultUser != null && defaultDb != null
-    then "mysql://${defaultUser}@${config.project.address}/${defaultDb}?socket=${socket}"
-    else null;
 in {
   imports = [];
 
@@ -118,10 +114,11 @@ in {
     devShell = {
       environment =
         [
-          "MYSQL_HOST=localhost"
+          "MYSQL_HOST=${config.project.address}"
           "MYSQL_UNIX_PORT=${socket}"
         ]
-        ++ optional (databaseUrl != null) "DATABASE_URL=${databaseUrl}";
+        ++ optional (defaultUser != null) "MYSQL_USER=${defaultUser}"
+        ++ optional (defaultDb != null) "MYSQL_DATABASE=${defaultDb}";
       contents = [
         mysql
         mysqld
