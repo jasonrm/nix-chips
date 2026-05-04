@@ -193,98 +193,99 @@ in {
 
   config = mkIf cfg.enable {
     programs.taskfile.enable = mkDefault true;
-    programs.taskfile.config.tasks = {
-      install-npm =
-        if cfg.packageManager == "pnpm"
-        then {
+    programs.taskfile.config.tasks =
+      {
+        install-npm =
+          if cfg.packageManager == "pnpm"
+          then {
+            dir = cfg.workingDirectory;
+            cmds = ["${pnpmPkg}/bin/pnpm install"];
+            generates = ["node_modules/.modules.yaml"];
+            desc = "Install Node.JS Dependencies (pnpm)";
+            run = "once";
+            sources = [
+              "package.json"
+              "pnpm-lock.yaml"
+            ];
+          }
+          else {
+            dir = cfg.workingDirectory;
+            cmds = ["${cfg.pkg}/bin/npm install"];
+            generates = ["node_modules/.package-lock.json"];
+            desc = "Install Node.JS Dependencies (npm)";
+            run = "once";
+            sources = [
+              "package.json"
+              "package-lock.json"
+            ];
+          };
+        update-npm =
+          if cfg.packageManager == "pnpm"
+          then {
+            dir = cfg.workingDirectory;
+            cmds = ["${pnpmPkg}/bin/pnpm update"];
+            desc = "Update Node.JS Dependencies (pnpm)";
+          }
+          else {
+            dir = cfg.workingDirectory;
+            cmds = ["${cfg.pkg}/bin/npm update"];
+            desc = "Update Node.JS Dependencies (npm)";
+          };
+        build-npm =
+          if cfg.packageManager == "pnpm"
+          then {
+            dir = cfg.workingDirectory;
+            cmds = ["${pnpmPkg}/bin/pnpm run build"];
+            desc = "Build Node.JS Project (pnpm)";
+            deps = ["install-npm"];
+          }
+          else {
+            dir = cfg.workingDirectory;
+            cmds = ["${cfg.pkg}/bin/npm run build"];
+            desc = "Build Node.JS Project (npm)";
+            deps = ["install-npm"];
+          };
+        check-npm =
+          if cfg.packageManager == "pnpm"
+          then {
+            dir = cfg.workingDirectory;
+            cmds = ["${pnpmPkg}/bin/pnpm install --frozen-lockfile"];
+            desc = "Check Node.JS Project";
+            sources = [
+              "package.json"
+              "pnpm-lock.yaml"
+            ];
+          }
+          else {
+            dir = cfg.workingDirectory;
+            cmds = ["${cfg.pkg}/bin/npm ci"];
+            desc = "Check Node.JS Project";
+            sources = [
+              "package.json"
+              "package-lock.json"
+            ];
+          };
+
+        check-tsc = {
           dir = cfg.workingDirectory;
-          cmds = ["${pnpmPkg}/bin/pnpm install"];
-          generates = ["node_modules/.modules.yaml"];
-          desc = "Install Node.JS Dependencies (pnpm)";
-          run = "once";
-          sources = [
-            "package.json"
-            "pnpm-lock.yaml"
-          ];
-        }
-        else {
-          dir = cfg.workingDirectory;
-          cmds = ["${cfg.pkg}/bin/npm install"];
-          generates = ["node_modules/.package-lock.json"];
-          desc = "Install Node.JS Dependencies (npm)";
-          run = "once";
-          sources = [
-            "package.json"
-            "package-lock.json"
-          ];
-        };
-      update-npm =
-        if cfg.packageManager == "pnpm"
-        then {
-          dir = cfg.workingDirectory;
-          cmds = ["${pnpmPkg}/bin/pnpm update"];
-          desc = "Update Node.JS Dependencies (pnpm)";
-        }
-        else {
-          dir = cfg.workingDirectory;
-          cmds = ["${cfg.pkg}/bin/npm update"];
-          desc = "Update Node.JS Dependencies (npm)";
-        };
-      build-npm =
-        if cfg.packageManager == "pnpm"
-        then {
-          dir = cfg.workingDirectory;
-          cmds = ["${pnpmPkg}/bin/pnpm run build"];
-          desc = "Build Node.JS Project (pnpm)";
-          deps = ["install-npm"];
-        }
-        else {
-          dir = cfg.workingDirectory;
-          cmds = ["${cfg.pkg}/bin/npm run build"];
-          desc = "Build Node.JS Project (npm)";
-          deps = ["install-npm"];
-        };
-      check-npm =
-        if cfg.packageManager == "pnpm"
-        then {
-          dir = cfg.workingDirectory;
-          cmds = ["${pnpmPkg}/bin/pnpm install --frozen-lockfile"];
-          desc = "Check Node.JS Project";
-          sources = [
-            "package.json"
-            "pnpm-lock.yaml"
-          ];
-        }
-        else {
-          dir = cfg.workingDirectory;
-          cmds = ["${cfg.pkg}/bin/npm ci"];
-          desc = "Check Node.JS Project";
-          sources = [
-            "package.json"
-            "package-lock.json"
-          ];
+          cmds = ["${pkgs.typescript}/bin/tsc --noEmit --project tsconfig.json"];
+          preconditions = ["test -f tsconfig.json"];
+          desc = "Check TypeScript files";
         };
 
-      check-tsc = {
-        dir = cfg.workingDirectory;
-        cmds = ["${pkgs.typescript}/bin/tsc --noEmit --project tsconfig.json"];
-        preconditions = ["test -f tsconfig.json"];
-        desc = "Check TypeScript files";
-      };
-
-      format.deps = formatTaskDeps;
-      check.deps =
-        checkTaskDeps
-        ++ [
-          "check-tsc"
-          "check-npm"
-        ];
-      install.deps = ["install-npm"];
-      update.deps = ["update-npm"];
-      build.deps = ["build-npm"];
-    }
-    // eslintTasks
-    // oxcTasks;
+        format.deps = formatTaskDeps;
+        check.deps =
+          checkTaskDeps
+          ++ [
+            "check-tsc"
+            "check-npm"
+          ];
+        install.deps = ["install-npm"];
+        update.deps = ["update-npm"];
+        build.deps = ["build-npm"];
+      }
+      // eslintTasks
+      // oxcTasks;
 
     programs.lefthook.config = mkMerge [
       {

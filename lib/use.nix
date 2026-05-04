@@ -248,14 +248,16 @@ with nixpkgs.lib; let
     onlyDefaultNix = baseName: (hasSuffix "default.nix" baseName);
 
     allDefaultNix = builtins.filter onlyDefaultNix (nixFilesIn nixosConfigurationsDir);
-    configurations = map (n: {
-      name = builtins.baseNameOf (builtins.dirOf n);
-      system =
-        if (hasInfix "/aarch64/" (toString n))
-        then "aarch64-linux"
-        else "x86_64-linux";
-      path = n;
-    }) allDefaultNix;
+    configurations =
+      map (n: {
+        name = builtins.baseNameOf (builtins.dirOf n);
+        system =
+          if (hasInfix "/aarch64/" (toString n))
+          then "aarch64-linux"
+          else "x86_64-linux";
+        path = n;
+      })
+      allDefaultNix;
 
     nixosConfigurations = builtins.listToAttrs (
       map (

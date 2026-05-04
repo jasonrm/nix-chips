@@ -47,16 +47,18 @@ with lib; let
 
     ${concatMapStrings (
         user: (concatStringsSep "\n" (
-          concatMap (host:
-            let
+          concatMap (
+            host: let
               userAtHost = "'${user.name}'@'${host}'";
             in
-            [
-              "CREATE USER IF NOT EXISTS ${userAtHost};"
-            ] ++ (mapAttrsToList (
-                database: permission: "GRANT ${permission} ON ${database} TO ${userAtHost};"
-              ) user.ensurePermissions)
-          ) [ "localhost" config.project.address ]
+              [
+                "CREATE USER IF NOT EXISTS ${userAtHost};"
+              ]
+              ++ (mapAttrsToList (
+                  database: permission: "GRANT ${permission} ON ${database} TO ${userAtHost};"
+                )
+                user.ensurePermissions)
+          ) ["localhost" config.project.address]
         ))
       )
       cfg.ensureUsers}
