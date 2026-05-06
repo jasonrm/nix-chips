@@ -8,7 +8,23 @@
 with lib; let
   cfg = config.programs.lefthook;
 
-  leftHookConfigFile = pkgs.writeText "lefthook.yml" (builtins.toJSON cfg.config);
+  # Drop commands with no `run` (e.g. consumer-declared `skip = true` stubs for
+  # commands chips never defined). Without this, builtins.toJSON below would
+  # serialize a command missing its required `run` field, and lefthook itself
+  # rejects such entries — better to omit than emit invalid YAML.
+  pruneHook = hook:
+    hook
+    // {
+      commands = lib.filterAttrs (_: c: c.run != null) (hook.commands or {});
+    };
+  prunedConfig =
+    cfg.config
+    // {
+      pre-commit = pruneHook cfg.config.pre-commit;
+      pre-push = pruneHook cfg.config.pre-push;
+    };
+
+  leftHookConfigFile = pkgs.writeText "lefthook.yml" (builtins.toJSON prunedConfig);
 
   lefthookCommand = with types; {
     options = {
@@ -16,7 +32,10 @@ with lib; let
         type = nullOr str;
         default = null;
       };
-      run = mkOption {type = str;};
+      run = mkOption {
+        type = nullOr str;
+        default = null;
+      };
       skip = mkOption {
         type = bool;
         default = false;
