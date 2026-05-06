@@ -9,18 +9,31 @@ with lib; let
 
   decryptSecret = pkgs.writeShellScript "decrypt" ''
     set -o errexit -o nounset -o pipefail
-    if [ ! -f "$1" ]; then
-      echo "Encrypted Secret Not Found: $1" >&2
+
+    src="$1"
+    dest="$2"
+
+    if [ ! -f "$src" ]; then
+      echo "Encrypted Secret Not Found: $src" >&2
       exit 0
     fi
 
-    DECRYPTED_DIR=$(dirname "$2")
-    if [[ ! -d "$DECRYPTED_DIR" ]]; then
-      mkdir -p "$DECRYPTED_DIR"
+    decrypted_dir=$(dirname "$dest")
+    if [ ! -d "$decrypted_dir" ]; then
+      mkdir -p "$decrypted_dir"
     fi
 
-    ${pkgs.rage}/bin/rage -d -i ${cfg.identity} -o "$2" "$1" \
-      && chmod 600 "$2"
+    tmp="$dest.tmp.$$"
+    trap 'rm -f "$tmp"' EXIT
+    ${pkgs.rage}/bin/rage -d -i ${cfg.identity} -o "$tmp" "$src"
+    chmod 600 "$tmp"
+
+    if [ -f "$dest" ] && cmp -s "$tmp" "$dest"; then
+      rm -f "$tmp"
+    else
+      mv -f "$tmp" "$dest"
+    fi
+    trap - EXIT
   '';
 in {
   imports = [];
