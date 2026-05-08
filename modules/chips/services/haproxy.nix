@@ -4,7 +4,7 @@
   config,
   ...
 }: let
-  inherit (lib) mkIf mkMerge mkOption optionalString types;
+  inherit (lib) concatMapStringsSep concatStringsSep mapAttrsToList mkIf mkMerge mkOption optionalString types;
 
   cfg = config.services.haproxy;
   legoCfg = config.programs.lego;
@@ -15,11 +15,71 @@
     then builtins.head legoCfg.domains
     else config.project.domainSuffix;
 
+  hasStructured =
+    cfg.virtualHosts
+    != {}
+    || cfg.backends != {}
+    || cfg.defaultBackend != null;
+
+  acls = mapAttrsToList (
+    name: vh: "  acl host_${name} hdr(host) -i ${vh.host}"
+  ) (lib.filterAttrs (n: vh: vh.frontend == "https") cfg.virtualHosts);
+
+  useBackends = mapAttrsToList (
+    name: vh: "  use_backend ${vh.backend} if host_${name}"
+  ) (lib.filterAttrs (n: vh: vh.frontend == "https") cfg.virtualHosts);
+
+  renderBackend = name: be: ''
+    backend ${name}
+      mode ${be.mode}
+    ${concatMapStringsSep "\n" (s: "  server ${s.name} ${s.address}") be.servers}
+    ${optionalString (be.extraConfig != "") "  ${lib.replaceStrings ["\n"] ["\n  "] be.extraConfig}"}
+  '';
+
+  renderedBackends = concatStringsSep "\n" (mapAttrsToList renderBackend cfg.backends);
+
+  generatedConfig = ''
+    ${optionalString cfg.frontends.http.enable ''
+      frontend http-in
+        bind ${config.project.address}:${toString config.ports.http}
+        http-request redirect scheme https code 301
+    ''}
+
+    ${optionalString cfg.frontends.https.enable ''
+      frontend https-in
+        bind ${config.project.address}:${toString config.ports.https} ssl crt ${cfg.pemFile} alpn h2,http/1.1
+        http-request set-header X-Forwarded-Proto https
+        http-request set-header X-Forwarded-Host %[req.hdr(host)]
+      ${concatStringsSep "\n" acls}
+      ${concatStringsSep "\n" useBackends}
+      ${optionalString (cfg.defaultBackend != null) "  default_backend ${cfg.defaultBackend}"}
+    ''}
+
+    ${renderedBackends}
+  '';
+
   haproxyCfg = pkgs.writeText "haproxy.conf" ''
     global
       log stdout format raw local0 info
 
-    ${cfg.config}
+    defaults
+      mode http
+      log global
+      option httplog
+      option dontlognull
+      option forwardfor
+      option http-server-close
+      timeout connect 5s
+      timeout client  1h
+      timeout server  1h
+
+    ${optionalString hasStructured generatedConfig}
+
+    ${
+      if cfg.config == null
+      then ""
+      else cfg.config
+    }
   '';
 
   buildHaproxyPem = pkgs.writeShellScriptBin "build-haproxy-pem" ''
@@ -65,6 +125,79 @@ in {
       default = pemFile;
       readOnly = true;
       description = "Combined certificate and key PEM file for HAProxy TLS binds.";
+    };
+
+    services.haproxy.frontends.http.enable = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Generate http-in frontend redirecting plain HTTP to HTTPS.";
+    };
+
+    services.haproxy.frontends.https.enable = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Generate the shared https-in frontend with TLS termination and host-based routing.";
+    };
+
+    services.haproxy.defaultBackend = mkOption {
+      type = types.nullOr types.str;
+      default = null;
+      description = "Backend used by https-in when no virtual host matches.";
+    };
+
+    services.haproxy.virtualHosts = mkOption {
+      default = {};
+      description = "Host-based routing rules attached to the shared https-in frontend.";
+      type = types.attrsOf (types.submodule ({name, ...}: {
+        options = {
+          host = mkOption {
+            type = types.str;
+            default = name;
+            description = "Value to match against the Host header (case-insensitive).";
+          };
+          backend = mkOption {
+            type = types.str;
+            description = "Name of the backend to route to.";
+          };
+          frontend = mkOption {
+            type = types.enum ["https"];
+            default = "https";
+          };
+        };
+      }));
+    };
+
+    services.haproxy.backends = mkOption {
+      default = {};
+      description = "Named backends referenced by virtualHosts or defaultBackend.";
+      type = types.attrsOf (types.submodule {
+        options = {
+          mode = mkOption {
+            type = types.enum ["http" "tcp"];
+            default = "http";
+          };
+          servers = mkOption {
+            default = [];
+            type = types.listOf (types.submodule {
+              options = {
+                name = mkOption {
+                  type = types.str;
+                  default = "srv";
+                };
+                address = mkOption {
+                  type = types.str;
+                  description = "host:port the backend forwards traffic to.";
+                };
+              };
+            });
+          };
+          extraConfig = mkOption {
+            type = types.lines;
+            default = "";
+            description = "Raw lines appended to the backend block.";
+          };
+        };
+      });
     };
   };
 

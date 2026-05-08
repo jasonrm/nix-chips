@@ -10,7 +10,6 @@ with lib; {
   config = mkIf config.services.rabbitmq.enable {
     services.rabbitmq = {
       dataDir = mkForce (config.dir.data + "/rabbitmq");
-      listenAddress = mkDefault config.project.address;
       managementPlugin.enable = mkDefault true;
     };
   };
