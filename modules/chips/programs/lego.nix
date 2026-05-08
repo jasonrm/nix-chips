@@ -79,7 +79,9 @@ with lib; let
         LEGO_ARGS=(${renewOpts})
       fi
     fi
-    ${cfg.pkg}/bin/lego ''${LEGO_ARGS[@]}
+    if ! ${cfg.pkg}/bin/lego ''${LEGO_ARGS[@]}; then
+      echo "lego: certificate request failed; continuing without fresh certs" >&2
+    fi
   '';
 in {
   options = with types; {
