@@ -60,7 +60,7 @@
 
   haproxyCfg = pkgs.writeText "haproxy.conf" ''
     global
-      log stdout format raw local0 info
+      log stdout format raw local0 notice
 
     defaults
       mode http
