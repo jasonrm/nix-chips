@@ -188,6 +188,12 @@ with lib; let
     ${phpSpxEnv}/bin/php $*
   '';
 
+  zedMago = pkgs.writeShellScriptBin "zed-mago" ''
+    ${optionalString (cfg.workingDirectory != null) "cd ${escapeShellArg cfg.workingDirectory}"}
+    export PATH="${makeBinPath [phpEnv]}:$PATH"
+    exec ./vendor/bin/mago "$@"
+  '';
+
   update-jetbrains = writePhpBin "update-jetbrains" ''
     <?php
     if (!file_exists('.idea/workspace.xml') || !file_exists('.idea/php.xml')) {
@@ -370,82 +376,91 @@ in {
     };
   };
 
-  config = mkIf cfg.enable {
-    devShell = {
-      shellHooks =
-        ''
-          ${update-jetbrains}/bin/update-jetbrains
-        ''
-        + optionalString cfg.php-cs-fixer.addToGitIgnore ''
-          if [ -d .git ]; then
-            if ! grep -q "^${cfg.php-cs-fixer.filename}$" .git/info/exclude; then
-             echo "${cfg.php-cs-fixer.filename}" >> .git/info/exclude
+  config = mkIf cfg.enable (mkMerge [
+    {
+      devShell = {
+        shellHooks =
+          ''
+            ${update-jetbrains}/bin/update-jetbrains
+          ''
+          + optionalString cfg.php-cs-fixer.addToGitIgnore ''
+            if [ -d .git ]; then
+              if ! grep -q "^${cfg.php-cs-fixer.filename}$" .git/info/exclude; then
+               echo "${cfg.php-cs-fixer.filename}" >> .git/info/exclude
+              fi
             fi
-          fi
-        '';
-      environment = let
-        projectDir =
-          if config.dir.project != "/dev/null"
-          then config.dir.project
-          else "$PWD";
-      in ["PATH=$PATH:$PWD/vendor/bin"];
-      contents = [
-        flamegraph
-        php-spx
-        php-xdebug
-        phpEnv
-        phpEnv.packages.composer
-      ];
-    };
+          '';
+        environment = let
+          projectDir =
+            if config.dir.project != "/dev/null"
+            then config.dir.project
+            else "$PWD";
+        in ["PATH=$PATH:$PWD/vendor/bin"];
+        contents = [
+          flamegraph
+          php-spx
+          php-xdebug
+          phpEnv
+          phpEnv.packages.composer
+        ];
+      };
 
-    programs.taskfile.enable = mkDefault true;
-    programs.taskfile.config.tasks =
-      {
-        install-composer = {
-          dir = cfg.workingDirectory;
-          cmds = ["${phpEnv.packages.composer}/bin/composer install"];
-          generates = [
-            "vendor/composer/installed.json"
-            "vendor/autoload.php"
-          ];
-          desc = "Install Composer Dependencies";
-          sources = [
-            "composer.json"
-            "composer.lock"
-          ];
-        };
-        update-composer = {
-          dir = cfg.workingDirectory;
-          cmds = ["${phpEnv.packages.composer}/bin/composer update"];
-          desc = "Update Composer Dependencies";
-        };
-        check-composer = {
-          dir = cfg.workingDirectory;
-          cmds = ["${phpEnv.packages.composer}/bin/composer validate --strict --no-check-all"];
-          preconditions = ["test -f composer.json"];
-          generates = ["composer.lock"];
-          desc = "Check Composer Lock File";
-          sources = ["composer.json"];
-        };
-
-        check.deps = selectedCheckDeps ++ ["check-composer"];
-        format.deps = selectedFormatDeps;
-        install.deps = ["install-composer"];
-        update.deps = ["update-composer"];
-      }
-      // selectedLinterTasks;
-
-    programs.lefthook.config = mkMerge (
-      [
+      programs.taskfile.enable = mkDefault true;
+      programs.taskfile.config.tasks =
         {
-          pre-push.commands.check-composer = {
-            glob = mkDefault "composer.{json,lock}";
-            run = mkDefault "${pkgs.go-task}/bin/task check-composer";
-            root = mkDefault cfg.workingDirectory;
+          install-composer = {
+            dir = cfg.workingDirectory;
+            cmds = ["${phpEnv.packages.composer}/bin/composer install"];
+            generates = [
+              "vendor/composer/installed.json"
+              "vendor/autoload.php"
+            ];
+            desc = "Install Composer Dependencies";
+            sources = [
+              "composer.json"
+              "composer.lock"
+            ];
           };
+          update-composer = {
+            dir = cfg.workingDirectory;
+            cmds = ["${phpEnv.packages.composer}/bin/composer update"];
+            desc = "Update Composer Dependencies";
+          };
+          check-composer = {
+            dir = cfg.workingDirectory;
+            cmds = ["${phpEnv.packages.composer}/bin/composer validate --strict --no-check-all"];
+            preconditions = ["test -f composer.json"];
+            generates = ["composer.lock"];
+            desc = "Check Composer Lock File";
+            sources = ["composer.json"];
+          };
+
+          check.deps = selectedCheckDeps ++ ["check-composer"];
+          format.deps = selectedFormatDeps;
+          install.deps = ["install-composer"];
+          update.deps = ["update-composer"];
         }
-      ]
-      ++ selectedLefthook
-    );
-  };
+        // selectedLinterTasks;
+
+      programs.lefthook.config = mkMerge (
+        [
+          {
+            pre-push.commands.check-composer = {
+              glob = mkDefault "composer.{json,lock}";
+              run = mkDefault "${pkgs.go-task}/bin/task check-composer";
+              root = mkDefault cfg.workingDirectory;
+            };
+          }
+        ]
+        ++ selectedLefthook
+      );
+    }
+
+    (mkIf (config.programs.zed.enable && elem "mago" cfg.linters) {
+      programs.zed.settings.languages.PHP.formatter.external = {
+        command = "${zedMago}/bin/zed-mago";
+        arguments = ["format" "--stdin-input"];
+      };
+    })
+  ]);
 }
