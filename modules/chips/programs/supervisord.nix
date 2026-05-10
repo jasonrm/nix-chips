@@ -31,9 +31,13 @@ with lib; let
     else value;
 
   programEntries = attrsets.mapAttrsToList programEntry cfg.programs;
+  serverUrl = "http://${config.project.address}:${toString cfg.port}";
   configuration = pkgs.writeText "supervisord.ini" ''
     [inet_http_server]
     port=${config.project.address}:${toString cfg.port}
+
+    [supervisorctl]
+    serverurl=${serverUrl}
 
     ${(concatStringsSep "" programEntries)}
   '';
@@ -178,7 +182,11 @@ with lib; let
   supervisord = pkgs.writeShellScriptBin "supervisord" ''
     ${optionalString (programRunDirectories != []) "${pkgs.coreutils}/bin/mkdir -p ${concatStringsSep " " (map escapeShellArg programRunDirectories)}"}
     export SUPERVISORD_CWD="$(${pkgs.git}/bin/git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")"
-    ${pkgs.supervisord-go}/bin/supervisord --configuration=${configuration} $*
+    if [ "''${1-}" = "ctl" ]; then
+      shift
+      exec ${pkgs.supervisord-go}/bin/supervisord ctl -s ${escapeShellArg serverUrl} "$@"
+    fi
+    exec ${pkgs.supervisord-go}/bin/supervisord --configuration=${configuration} "$@"
   '';
 in {
   imports = [
@@ -274,14 +282,25 @@ in {
       routers = {
         supervisord = {
           service = "supervisord";
-          rule = "Host(`supervisord.localhost`)";
+          rule = "Host(`supervisord.${config.project.domainSuffix}`)";
         };
       };
       services = {
         supervisord = {
-          loadBalancer.servers = [{url = "http://${config.project.address}:${toString cfg.port}";}];
+          loadBalancer.servers = [{url = serverUrl;}];
         };
       };
     };
+
+    services.haproxy.virtualHosts.supervisord = {
+      host = "supervisord.${config.project.domainSuffix}";
+      backend = "supervisord";
+    };
+    services.haproxy.backends.supervisord.servers = [
+      {
+        name = "supervisord";
+        address = "${config.project.address}:${toString cfg.port}";
+      }
+    ];
   };
 }
