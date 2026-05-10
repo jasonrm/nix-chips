@@ -143,6 +143,60 @@ with lib; let
       root = mkDefault cfg.workingDirectory;
     };
   };
+
+  oxfmtFormatter = [{language_server = {name = "oxfmt";};}];
+  oxfmtLanguageNames = [
+    "CSS"
+    "GraphQL"
+    "Handlebars"
+    "HTML"
+    "JSON"
+    "JSON5"
+    "JSONC"
+    "Less"
+    "Markdown"
+    "MDX"
+    "SCSS"
+    "TypeScript"
+    "TSX"
+    "Vue.js"
+    "YAML"
+  ];
+  oxfmtLanguageEntry = {
+    format_on_save = "on";
+    prettier.allowed = false;
+    formatter = oxfmtFormatter;
+  };
+  oxfmtLanguages = listToAttrs (map (name: nameValuePair name oxfmtLanguageEntry) oxfmtLanguageNames);
+
+  zedOxSettings = mkMerge [
+    (mkIf (cfg.formatter == "oxfmt") {
+      lsp.oxfmt.initialization_options.settings = {
+        "fmt.configPath" = null;
+        run = "onSave";
+      };
+      languages =
+        oxfmtLanguages
+        // {
+          JavaScript = {
+            format_on_save = "on";
+            prettier.allowed = false;
+            formatter =
+              oxfmtFormatter
+              ++ optional (cfg.linter == "oxlint") {code_action = "source.fixAll.oxc";};
+          };
+        };
+    })
+    (mkIf (cfg.linter == "oxlint") {
+      lsp.oxlint.initialization_options.settings = {
+        configPath = null;
+        run = "onType";
+        disableNestedConfig = false;
+        fixKind = "safe_fix";
+        unusedDisableDirectives = "deny";
+      };
+    })
+  ];
 in {
   options = with lib.types; {
     programs.nodejs = {
@@ -191,7 +245,8 @@ in {
     };
   };
 
-  config = mkIf cfg.enable {
+  config = mkIf cfg.enable (mkMerge [
+    {
     programs.taskfile.enable = mkDefault true;
     programs.taskfile.config.tasks =
       {
@@ -322,5 +377,10 @@ in {
         ++ optional (cfg.formatter == "oxfmt") oxfmtPkg
         ++ optional (cfg.linter == "oxlint") oxlintPkg;
     };
-  };
+    }
+
+    (mkIf (config.programs.zed.enable && (cfg.formatter == "oxfmt" || cfg.linter == "oxlint")) {
+      programs.zed.settings = zedOxSettings;
+    })
+  ]);
 }
