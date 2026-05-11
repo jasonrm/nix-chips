@@ -136,7 +136,11 @@ in {
       contents = [legoEnsureCerts];
       # Run after arcanum to ensure that the secrets are available
       shellHooks = mkOrder 790 (
-        optionalString (cfg.domains != []) "${legoEnsureCerts}/bin/lego-ensure-certs"
+        optionalString (cfg.domains != []) ''
+          if [ -t 0 ] && [ -t 1 ]; then
+            ${legoEnsureCerts}/bin/lego-ensure-certs
+          fi
+        ''
       );
     };
 
