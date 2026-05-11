@@ -7,14 +7,15 @@
 with lib; let
   cfg = config.programs.zed;
 
-  zedSettingsJson = pkgs.writeText "zed-settings.json" (builtins.toJSON cfg.settings);
+  jsonFormat = pkgs.formats.json {};
+  zedSettingsJson = jsonFormat.generate "zed-settings.json" cfg.settings;
 in {
   options = with lib.types; {
     programs.zed = {
       enable = mkEnableOption "Zed support";
 
       settings = mkOption {
-        type = attrs;
+        type = jsonFormat.type;
         default = {};
         description = "Project level settings";
       };
