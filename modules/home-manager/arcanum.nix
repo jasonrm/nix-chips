@@ -25,8 +25,11 @@ with lib; let
       mkdir -p "$DECRYPTED_DIR"
     fi
 
-    ${pkgs.rage}/bin/rage -d -i ${cfg.identity} -o "$2" "$1" \
-      && chmod 600 "$2"
+    if ${pkgs.rage}/bin/rage -d -i ${cfg.identity} -o "$2" "$1"; then
+      chmod 600 "$2"
+    else
+      echo "Failed to decrypt $1; continuing" >&2
+    fi
   '';
 
   filesWithDest = filterAttrs (n: secret: secret.dest != null) cfg.files;
