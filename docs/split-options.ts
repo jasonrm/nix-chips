@@ -3,10 +3,10 @@
 import { mkdirSync, writeFileSync, readFileSync, existsSync } from "fs";
 import { dirname, join } from "path";
 
-const [optionsJsonPath, outputDir] = Bun.argv.slice(2);
+const [optionsJsonPath, outputDir, moduleInventoryPath] = Bun.argv.slice(2);
 
 if (!optionsJsonPath || !outputDir) {
-  console.error("Usage: split-options.ts <options.json> <output-dir>");
+  console.error("Usage: split-options.ts <options.json> <output-dir> [module-inventory.json]");
   process.exit(1);
 }
 
@@ -47,14 +47,13 @@ interface IndexEntry {
 }
 
 // Parse input
-const rawOptions: Record<string, NixOption> = JSON.parse(
-  readFileSync(optionsJsonPath, "utf-8")
-);
+const rawOptions: Record<string, NixOption> = JSON.parse(readFileSync(optionsJsonPath, "utf-8"));
+const moduleInventory: string[] = moduleInventoryPath ? JSON.parse(readFileSync(moduleInventoryPath, "utf-8")) : [];
 
 // Map from declaration file path to module path
 function declarationToModulePath(decl: string): string | null {
   // Match patterns like modules/chips/services/mysql.nix → chips/services/mysql
-  const match = decl.match(/^modules\/(chips|shared|nixos|home-manager)\/(.+)\.nix$/);
+  const match = decl.match(/^modules\/(chips|shared|nixos|nix-darwin|home-manager)\/(.+)\.nix$/);
   if (match) {
     return `${match[1]}/${match[2]}`;
   }
@@ -102,6 +101,10 @@ function cleanDescription(desc?: string): string {
 // Group options by declaring module
 const moduleMap = new Map<string, ModuleOption[]>();
 
+for (const modulePath of [...new Set(moduleInventory)].sort()) {
+  moduleMap.set(modulePath, []);
+}
+
 for (const [optionName, optionData] of Object.entries(rawOptions)) {
   // Find which module declared this option by looking at declarations
   let targetModule: string | null = null;
@@ -127,9 +130,7 @@ for (const [optionName, optionData] of Object.entries(rawOptions)) {
     declarations: optionData.declarations,
   };
 
-  if (!moduleMap.has(targetModule)) {
-    moduleMap.set(targetModule, []);
-  }
+  if (!moduleMap.has(targetModule)) moduleMap.set(targetModule, []);
   moduleMap.get(targetModule)!.push(option);
 }
 
@@ -227,11 +228,15 @@ function generateMarkdown(mod: ModuleData): string {
   return lines.join("\n");
 }
 
-function generateMkFlakeMarkdown(params: Record<string, { hasDefault: boolean; description: string; type: string; default?: string }>): string {
+function generateMkFlakeMarkdown(
+  params: Record<string, { hasDefault: boolean; description: string; type: string; default?: string }>,
+): string {
   const lines: string[] = [];
   lines.push("# lib.mkFlake");
   lines.push("");
-  lines.push("The `lib.mkFlake` function is the main entry point for nix-chips. It takes constructor context and typed configuration for your project's flake outputs.");
+  lines.push(
+    "The `lib.mkFlake` function is the main entry point for nix-chips. It takes constructor context and typed configuration for your project's flake outputs.",
+  );
   lines.push("");
   lines.push("## Options");
   lines.push("");

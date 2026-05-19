@@ -11,6 +11,15 @@
   nixChipModules = nixFilesIn ../modules/chips;
   nixosShimModules = nixFilesIn ../modules/nixos-shims;
   sharedChipModules = nixFilesIn ../modules/shared;
+  nixosModules = nixFilesIn ../modules/nixos;
+  nixDarwinModules = nixFilesIn ../modules/nix-darwin;
+  homeManagerModules = nixFilesIn ../modules/home-manager;
+  publicModules =
+    nixChipModules
+    ++ sharedChipModules
+    ++ nixosModules
+    ++ nixDarwinModules
+    ++ homeManagerModules;
 
   repoRoot = toString ../.;
 
@@ -40,28 +49,29 @@
     then lib.removePrefix (repoRoot + "/") declStr
     else declStr;
 
-  # Simple option extractor that avoids deep thunks
-  # Returns { ok = true; value = ...; } or { ok = false; }
-  safeGetDefault = opt: let
-    tried = builtins.tryEval (
-      if !(opt ? default)
-      then {ok = false;}
-      else let
-        v = builtins.tryEval opt.default;
-      in
-        if !v.success
-        then {
-          ok = true;
-          value = "«error»";
-        }
-        else if builtins.isFunction v.value
-        then {
-          ok = true;
-          value = "«function»";
-        }
-        else
-          # Try to verify it's serializable
-          let
+  # Do not read service option defaults here. Some service defaults depend on
+  # config values that are intentionally absent from this documentation eval.
+  safeGetDefault = name: opt:
+    if lib.hasPrefix "services." name
+    then {ok = false;}
+    else let
+      tried = builtins.tryEval (
+        if !(opt ? default)
+        then {ok = false;}
+        else let
+          v = builtins.tryEval opt.default;
+        in
+          if !v.success
+          then {
+            ok = true;
+            value = "«error»";
+          }
+          else if builtins.isFunction v.value
+          then {
+            ok = true;
+            value = "«function»";
+          }
+          else let
             j = builtins.tryEval (builtins.toJSON v.value);
           in
             if j.success
@@ -73,11 +83,11 @@
               ok = true;
               value = "«complex»";
             }
-    );
-  in
-    if tried.success
-    then tried.value
-    else {ok = false;};
+      );
+    in
+      if tried.success
+      then tried.value
+      else {ok = false;};
 
   safeGetType = opt: let
     tried = builtins.tryEval (opt.type.description or "unknown");
@@ -104,6 +114,13 @@
     then tried.value
     else false;
 
+  safeGetLoc = name: opt: let
+    tried = builtins.tryEval (opt.loc or (lib.splitString "." name));
+  in
+    if tried.success
+    then tried.value
+    else lib.splitString "." name;
+
   safeGetDecls = opt: let
     tried = builtins.tryEval (map transformDecl (opt.declarations or []));
   in
@@ -115,6 +132,7 @@
     lib.hasPrefix "modules/chips/" d
     || lib.hasPrefix "modules/shared/" d
     || lib.hasPrefix "modules/nixos/" d
+    || lib.hasPrefix "modules/nix-darwin/" d
     || lib.hasPrefix "modules/home-manager/" d
     || d == "lib/flakeOptions.nix";
 
@@ -148,13 +166,25 @@
             then let
               decls = safeGetDecls val;
               hasChips = builtins.any isChipsDecl decls;
-            in
-              if hasChips
-              then let
-                def = safeGetDefault val;
-              in
-                acc
-                // {
+              subOptionsTried = builtins.tryEval (
+                if val ? type && val.type ? getSubOptions
+                then val.type.getSubOptions (safeGetLoc fullName val)
+                else {}
+              );
+              subOptions =
+                if subOptionsTried.success
+                then let
+                  subTried = builtins.tryEval (walkOptions (depth + 1) fullName subOptionsTried.value);
+                in
+                  if subTried.success
+                  then subTried.value
+                  else {}
+                else {};
+              currentOption =
+                if hasChips
+                then let
+                  def = safeGetDefault fullName val;
+                in {
                   ${fullName} =
                     {
                       declarations = decls;
@@ -166,7 +196,9 @@
                       default = def.value;
                     };
                 }
-              else acc
+                else {};
+            in
+              acc // currentOption // subOptions
             else let
               isAttrsTried = builtins.tryEval (builtins.isAttrs val && !(val ? _type));
             in
@@ -191,6 +223,7 @@
       "ports"
       "programs"
       "project"
+      "services"
     ])
   evaluated.options;
 
@@ -232,6 +265,19 @@
 
   optionsJsonFile = pkgs.writeText "options.json" (builtins.toJSON documentableOptions);
   mkFlakeOptionsJsonFile = pkgs.writeText "mk-flake-options.json" (builtins.toJSON mkFlakeOptions);
+  moduleInventoryJsonFile =
+    pkgs.writeText "module-inventory.json"
+    (builtins.toJSON (
+      map (
+        moduleFile:
+          lib.removeSuffix ".nix" (
+            lib.removePrefix "modules/" (
+              transformDecl moduleFile
+            )
+          )
+      )
+      publicModules
+    ));
 
   splitScript = ./split-options.ts;
 in
@@ -241,10 +287,11 @@ in
     mkdir -p $out
 
     cp ${optionsJsonFile} $out/options.json
+    cp ${moduleInventoryJsonFile} $out/module-inventory.json
 
     mkdir -p $out/lib
     cp ${mkFlakeOptionsJsonFile} $out/lib/mkFlake.json
 
     cd $out
-    ${pkgs.bun}/bin/bun run ${splitScript} $out/options.json $out
+    ${pkgs.bun}/bin/bun run ${splitScript} $out/options.json $out $out/module-inventory.json
   ''
