@@ -14,8 +14,15 @@ with lib; let
 in {
   options = systemdTmpfiles.options;
   config = {
-    devShell.shellHooks = ''
-      ${pkgs.systemd-tmpfiles}/bin/systemd-tmpfiles --prefix "${config.dir.data}" "${tmpFilesRules}"
-    '';
+    programs.taskfile.config.tasks = {
+      systemd-tmpfiles = {
+        desc = "Create project runtime directories";
+        cmds = [
+          ''${pkgs.systemd-tmpfiles}/bin/systemd-tmpfiles --prefix "${config.dir.data}" "${tmpFilesRules}"''
+        ];
+      };
+
+      dev.deps = ["systemd-tmpfiles"];
+    };
   };
 }

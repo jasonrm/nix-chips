@@ -47,9 +47,14 @@ in {
         command = "${pkgs.dnsmasq}/bin/dnsmasq --no-daemon --no-resolv --no-hosts --address=/${cfg.domainSuffix}/${cfg.address} --listen-address=${cfg.address} --port=${toString config.ports.dns}";
       };
 
-      devShell.shellHooks = lib.mkOrder 780 ''
-        ${dns-setup}/bin/dns-setup
-      '';
+      programs.taskfile.config.tasks = {
+        dns-setup = {
+          desc = "Configure the project DNS resolver";
+          cmds = ["${dns-setup}/bin/dns-setup"];
+        };
+
+        dev.deps = ["dns-setup"];
+      };
     })
   ]);
 }
