@@ -85,14 +85,13 @@
   buildHaproxyPem = pkgs.writeShellScriptBin "build-haproxy-pem" ''
     set -euo pipefail
 
-    crt=${lib.escapeShellArg legoCfg.certFile}
-    key=${lib.escapeShellArg legoCfg.keyFile}
+    pem=${lib.escapeShellArg legoCfg.pemFile}
     out=${lib.escapeShellArg cfg.pemFile}
 
-    if [ -s "$crt" ] && [ -s "$key" ]; then
+    if [ -s "$pem" ]; then
       umask 077
-      cat "$crt" "$key" > "$out"
-      echo "haproxy: combined PEM written to $out"
+      cp "$pem" "$out"
+      echo "haproxy: lego PEM written to $out"
     elif [ ! -s "$out" ]; then
       echo "haproxy: lego certs missing; generating self-signed fallback at $out" >&2
       umask 077
