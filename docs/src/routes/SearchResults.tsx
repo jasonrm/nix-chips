@@ -1,4 +1,5 @@
 import { Link, useSearchParams } from "react-router";
+import { CopyButton } from "../components/CopyButton";
 import { useSearch } from "../hooks/useSearch";
 
 export function SearchResults() {
@@ -26,27 +27,39 @@ export function SearchResults() {
       ) : (
         <div className="space-y-2">
           {results.map(({ item }) => (
-            <Link
+            <div
               key={`${item.modulePath}:${item.optionName}`}
-              to={`/${item.modulePath}#${item.optionName}`}
-              className="block border border-zinc-200 rounded-lg p-3 hover:border-blue-300 hover:bg-blue-50 transition-colors"
+              className="flex items-start gap-2 rounded-lg border border-zinc-200 transition-colors hover:border-blue-300 hover:bg-blue-50"
             >
-              <div className="font-mono text-sm font-medium text-zinc-900">
-                {item.optionName}
-              </div>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="text-xs text-zinc-500">{item.modulePath}</span>
-                <span className="text-xs text-zinc-400">|</span>
-                <span className="text-xs font-mono text-zinc-500">
-                  {item.type}
-                </span>
-              </div>
-              {item.description && (
-                <p className="text-sm text-zinc-500 mt-1 truncate">
-                  {item.description}
-                </p>
-              )}
-            </Link>
+              <Link
+                to={`/${item.modulePath}#${encodeURIComponent(item.optionName)}`}
+                className="min-w-0 flex-1 p-3 pr-0"
+              >
+                <div className="select-text break-all font-mono text-sm font-medium text-zinc-900">
+                  {item.optionName}
+                </div>
+                <div className="mt-1 flex items-center gap-2">
+                  <span className="text-xs text-zinc-500">
+                    {item.modulePath}
+                  </span>
+                  <span className="text-xs text-zinc-400">|</span>
+                  <span className="text-xs font-mono text-zinc-500">
+                    {item.type}
+                  </span>
+                </div>
+                {item.description && (
+                  <p className="mt-1 truncate text-sm text-zinc-500">
+                    {item.description}
+                  </p>
+                )}
+              </Link>
+              <CopyButton
+                text={item.optionName}
+                ariaLabel={`Copy option name ${item.optionName}`}
+                title="Copy option name"
+                className="mt-3 mr-3 shrink-0"
+              />
+            </div>
           ))}
         </div>
       )}
