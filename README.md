@@ -74,3 +74,13 @@ supervisord-debug
 # or, to renew certificates without starting services
 task lego:renew
 ```
+
+## Docs
+
+```shell
+# generate docs/public/data and start Vite
+task docs-dev
+
+# generate docs/public/data and build docs/dist
+task docs-build
+```
