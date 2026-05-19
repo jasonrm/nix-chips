@@ -115,7 +115,8 @@
     lib.hasPrefix "modules/chips/" d
     || lib.hasPrefix "modules/shared/" d
     || lib.hasPrefix "modules/nixos/" d
-    || lib.hasPrefix "modules/home-manager/" d;
+    || lib.hasPrefix "modules/home-manager/" d
+    || d == "lib/flakeOptions.nix";
 
   # Walk options tree (limited depth, limited scope)
   walkOptions = depth: prefix: tree:
@@ -203,70 +204,34 @@
     )
     allOptions;
 
-  # lib.use parameters
-  useFunction = import ../lib/use.nix {
-    inherit self;
-    inherit (self.inputs) nixpkgs nixpkgs-staging home-manager utils;
+  mkFlakeEvaluated = lib.evalModules {
+    modules = [
+      ../lib/flakeOptions.nix
+    ];
   };
 
-  useFunctionArgs = builtins.functionArgs useFunction;
-
-  useParamDescriptions = {
-    appsDir = "Directory containing app definitions (*.nix files)";
-    checksDir = "Directory containing NixOS test check definitions";
-    devShellsDir = "Directory containing development shell configurations";
-    packagesDir = "Directory containing package definitions";
-    nixosModulesDir = "Directory containing additional NixOS modules";
-    dockerImagesDir = "Directory containing Docker image configurations";
-    nixosConfigurationsDir = "Directory containing NixOS system configurations";
-    homeConfigurationsDir = "Directory containing Home Manager configurations";
-    nixosSpecialArgs = "Extra arguments passed to NixOS system evaluations";
-    darwinLib = "nix-darwin library (e.g., nix-darwin.lib) for macOS support";
-    darwinModules = "Additional nix-darwin modules to include";
-    darwinSpecialArgs = "Extra arguments passed to nix-darwin evaluations";
-    homeSpecialArgs = "Extra arguments passed to Home Manager evaluations";
-    nixosModules = "Additional NixOS modules to include in all configurations";
-    homeConfigurationModules = "Additional Home Manager modules to include";
-    overlays = "List of nixpkgs overlays to apply";
-    arcanum = "Arcanum secret management configuration";
-    nixpkgsConfig = "Nixpkgs configuration (e.g., allowUnfree)";
-    additionalPackages = "Function (pkgs -> attrset) returning extra packages";
-    additionalApps = "Function (pkgs -> attrset) returning extra apps";
-  };
-
-  useParams =
-    lib.mapAttrs (name: hasDefault: {
-      inherit hasDefault;
-      description = useParamDescriptions.${name} or "No description available";
-      type =
-        if builtins.elem name ["appsDir" "checksDir" "devShellsDir" "packagesDir" "nixosModulesDir" "dockerImagesDir" "nixosConfigurationsDir" "homeConfigurationsDir"]
-        then "path or null"
-        else if builtins.elem name ["nixosSpecialArgs" "darwinSpecialArgs" "homeSpecialArgs" "nixpkgsConfig" "arcanum"]
-        then "attribute set"
-        else if builtins.elem name ["darwinModules" "nixosModules" "homeConfigurationModules" "overlays"]
-        then "list"
-        else if builtins.elem name ["additionalPackages" "additionalApps"]
-        then "function"
-        else if name == "darwinLib"
-        then "nix-darwin lib or null"
-        else "unknown";
-      default =
-        if builtins.elem name ["appsDir" "checksDir" "devShellsDir" "packagesDir" "nixosModulesDir" "dockerImagesDir" "nixosConfigurationsDir" "homeConfigurationsDir" "darwinLib"]
-        then "null"
-        else if builtins.elem name ["nixosSpecialArgs" "darwinSpecialArgs" "homeSpecialArgs" "nixpkgsConfig"]
-        then "{}"
-        else if builtins.elem name ["darwinModules" "nixosModules" "homeConfigurationModules" "overlays"]
-        then "[]"
-        else if builtins.elem name ["arcanum"]
-        then "{}"
-        else if builtins.elem name ["additionalPackages" "additionalApps"]
-        then "(pkgs: {})"
-        else null;
-    })
-    useFunctionArgs;
+  mkFlakeOptions =
+    lib.mapAttrs (
+      name: info: let
+        default =
+          if !(info ? default)
+          then null
+          else if builtins.isString info.default
+          then info.default
+          else builtins.toJSON info.default;
+      in
+        removeAttrs info ["default"]
+        // {
+          hasDefault = info ? default;
+        }
+        // lib.optionalAttrs (info ? default) {
+          inherit default;
+        }
+    )
+    (walkOptions 0 "" (removeAttrs mkFlakeEvaluated.options ["_module"]));
 
   optionsJsonFile = pkgs.writeText "options.json" (builtins.toJSON documentableOptions);
-  useParamsJsonFile = pkgs.writeText "use-params.json" (builtins.toJSON useParams);
+  mkFlakeOptionsJsonFile = pkgs.writeText "mk-flake-options.json" (builtins.toJSON mkFlakeOptions);
 
   splitScript = ./split-options.ts;
 in
@@ -278,7 +243,7 @@ in
     cp ${optionsJsonFile} $out/options.json
 
     mkdir -p $out/lib
-    cp ${useParamsJsonFile} $out/lib/use.json
+    cp ${mkFlakeOptionsJsonFile} $out/lib/mkFlake.json
 
     cd $out
     ${pkgs.bun}/bin/bun run ${splitScript} $out/options.json $out

@@ -39,17 +39,19 @@ arcanum edit secrets/project.env.age
     chips.inputs.nixpkgs-staging.follows = "nixpkgs-staging";
   };
 
-  outputs = {
+  outputs = inputs @ {
     self,
     nixpkgs,
     chips,
     ...
   }:
-    chips.lib.use {
-      devShellsDir = ./nix/devShells;
-      packagesDir = ./nix/packages;
-      nixosModulesDir = ./nix/nixosModules;
-      dockerImagesDir = ./nix/dockerImages;
+    chips.lib.mkFlake {inherit inputs;} {
+      sources = {
+        devShells = ./nix/devShells;
+        packages = ./nix/packages;
+        nixosModules = ./nix/nixosModules;
+        dockerImages = ./nix/dockerImages;
+      };
     };
 }
 ```

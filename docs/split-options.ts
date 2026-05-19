@@ -175,12 +175,12 @@ for (const [modulePath, options] of moduleMap.entries()) {
   });
 }
 
-// Generate lib/use markdown
-const useJsonPath = join(outputDir, "lib/use.json");
-if (existsSync(useJsonPath)) {
-  const useParams = JSON.parse(readFileSync(useJsonPath, "utf-8"));
-  const useMd = generateUseMarkdown(useParams);
-  writeFileSync(join(outputDir, "lib/use.md"), useMd);
+// Generate lib/mkFlake markdown
+const mkFlakeJsonPath = join(outputDir, "lib/mkFlake.json");
+if (existsSync(mkFlakeJsonPath)) {
+  const mkFlakeOptions = JSON.parse(readFileSync(mkFlakeJsonPath, "utf-8"));
+  const mkFlakeMd = generateMkFlakeMarkdown(mkFlakeOptions);
+  writeFileSync(join(outputDir, "lib/mkFlake.md"), mkFlakeMd);
 }
 
 // Sort index
@@ -227,13 +227,13 @@ function generateMarkdown(mod: ModuleData): string {
   return lines.join("\n");
 }
 
-function generateUseMarkdown(params: Record<string, { hasDefault: boolean; description: string; type: string; default?: string }>): string {
+function generateMkFlakeMarkdown(params: Record<string, { hasDefault: boolean; description: string; type: string; default?: string }>): string {
   const lines: string[] = [];
-  lines.push("# lib.use");
+  lines.push("# lib.mkFlake");
   lines.push("");
-  lines.push("The `lib.use` function is the main entry point for nix-chips. It takes a set of parameters configuring your project's flake outputs.");
+  lines.push("The `lib.mkFlake` function is the main entry point for nix-chips. It takes constructor context and typed configuration for your project's flake outputs.");
   lines.push("");
-  lines.push("## Parameters");
+  lines.push("## Options");
   lines.push("");
 
   // Sort: required first, then optional
@@ -287,7 +287,7 @@ function generateIndexMarkdown(entries: IndexEntry[]): string {
   lines.push("");
   lines.push("## lib");
   lines.push("");
-  lines.push("- [lib.use](lib/use.md) - Main flake entry point");
+  lines.push("- [lib.mkFlake](lib/mkFlake.md) - Main flake entry point");
   lines.push("");
 
   return lines.join("\n");

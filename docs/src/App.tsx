@@ -3,7 +3,7 @@ import { Layout } from "./routes/Layout";
 import { Home } from "./routes/Home";
 import { ModuleCategory } from "./routes/ModuleCategory";
 import { ModulePage } from "./routes/ModulePage";
-import { LibUsePage } from "./routes/LibUsePage";
+import { LibMkFlakePage } from "./routes/LibMkFlakePage";
 import { SearchResults } from "./routes/SearchResults";
 
 export function App() {
@@ -13,7 +13,7 @@ export function App() {
         <Route element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="search" element={<SearchResults />} />
-          <Route path="lib/use" element={<LibUsePage />} />
+          <Route path="lib/mkFlake" element={<LibMkFlakePage />} />
 
           {/* Category pages: chips/config, chips/programs, chips/services */}
           <Route path=":group/:subcategory" element={<ModuleCategory />} />

@@ -5,29 +5,13 @@
   home-manager,
   utils,
   ...
-}:
+}: context: cfg:
 with nixpkgs.lib; let
-  inherit (filesystem) listFilesRecursive;
   inherit (utils.lib) eachSystem eachDefaultSystem;
+  inherit (import ./discovery.nix {lib = nixpkgs.lib;}) devShellName nixFileName nixFilesIn;
 
-  onlyNix = baseName: (hasSuffix ".nix" baseName);
-  nixFilesIn = directory: builtins.filter onlyNix (listFilesRecursive directory);
-
-  nixFileName = path: removeSuffix ".nix" (baseNameOf path);
-
-  devShellName = devShellsDir: path: let
-    dirStr = toString devShellsDir;
-    pathStr = toString path;
-    relative = removePrefix (dirStr + "/") pathStr;
-    withoutNix = removeSuffix ".nix" relative;
-    dotted = replaceStrings ["/"] ["."] withoutNix;
-    # Strip trailing .default for subdirectory default.nix files (not top-level default.nix)
-    result =
-      if hasSuffix ".default" dotted && dotted != "default"
-      then removeSuffix ".default" dotted
-      else dotted;
-  in
-    result;
+  contextInputs = context.inputs or {};
+  projectSelf = contextInputs.self or self;
 
   pkgsFor = {
     system,
@@ -43,6 +27,11 @@ with nixpkgs.lib; let
   callPackageFiles = pkgs: files:
     listToAttrs (map (path: nameValuePair (nixFileName path) (pkgs.callPackage path {})) files);
 
+  filesOrEmpty = directory:
+    if directory != null
+    then nixFilesIn directory
+    else [];
+
   nixChipModules = nixFilesIn ../modules/chips;
   nixosChipModules = nixFilesIn ../modules/nixos;
   nixosShimModules = nixFilesIn ../modules/nixos-shims;
@@ -52,9 +41,10 @@ with nixpkgs.lib; let
 
   chipsAppsDir = nixFilesIn ../apps;
 
+  mergeOverlays = overlays: final: prev:
+    foldl' (p: next: p // (next final p)) prev overlays;
+
   # via: https://github.com/numtide/flake-utils/issues/16#issuecomment-1647192629
-  # Another aux function, to merge two whole output sets. The key insight
-  # is that we only merge recursively down to two levels.
   mergeOutputs = let
     inherit (builtins) length;
     inherit (nixpkgs.lib.attrsets) recursiveUpdateUntil;
@@ -70,13 +60,7 @@ with nixpkgs.lib; let
     appsDir,
     overlay,
   }: let
-    allApps =
-      chipsAppsDir
-      ++ (
-        if appsDir != null
-        then nixFilesIn appsDir
-        else []
-      );
+    allApps = chipsAppsDir ++ filesOrEmpty appsDir;
   in
     (eachDefaultSystem (
       system: {
@@ -85,11 +69,7 @@ with nixpkgs.lib; let
     )).apps;
 
   mkPackagesOverlay = packagesDir: final: prev:
-    callPackageFiles prev (
-      if packagesDir != null
-      then nixFilesIn packagesDir
-      else []
-    );
+    callPackageFiles prev (filesOrEmpty packagesDir);
 
   evalChipsModules = {
     pkgs,
@@ -100,7 +80,7 @@ with nixpkgs.lib; let
       inherit modules;
       specialArgs = {
         inherit pkgs system;
-        chips = self;
+        chips = projectSelf;
         modulesPath = pkgs.path + "/nixos/modules";
       };
     }).config;
@@ -210,7 +190,7 @@ with nixpkgs.lib; let
     overlay,
     specialArgs ? {},
   }: let
-    onlyHomeNix = baseName: (hasSuffix "home.nix" baseName);
+    onlyHomeNix = path: hasSuffix "home.nix" (baseNameOf path);
 
     configurations = map (n: {
       name = builtins.baseNameOf (builtins.dirOf n);
@@ -245,14 +225,14 @@ with nixpkgs.lib; let
     overlay,
     specialArgs,
   }: let
-    onlyDefaultNix = baseName: (hasSuffix "default.nix" baseName);
+    onlyDefaultNix = path: hasSuffix "default.nix" (baseNameOf path);
 
     allDefaultNix = builtins.filter onlyDefaultNix (nixFilesIn nixosConfigurationsDir);
     configurations =
       map (n: {
         name = builtins.baseNameOf (builtins.dirOf n);
         system =
-          if (hasInfix "/aarch64/" (toString n))
+          if hasInfix "/aarch64/" (toString n)
           then "aarch64-linux"
           else "x86_64-linux";
         path = n;
@@ -269,7 +249,6 @@ with nixpkgs.lib; let
                 specialArgs
                 // {
                   inherit home-manager sharedChipModules nixosShimModules;
-                  # expose `name` as an input to NixOS configurations
                   name = configuration.name;
                   nodes = nixosConfigurations;
                 };
@@ -301,12 +280,12 @@ with nixpkgs.lib; let
     specialArgs,
     nixosConfigurations ? {},
   }: let
-    onlyDefaultNix = baseName: (hasSuffix "default.nix" baseName);
+    onlyDefaultNix = path: hasSuffix "default.nix" (baseNameOf path);
 
     configurations = map (n: {
       name = builtins.baseNameOf (builtins.dirOf n);
       system =
-        if (hasInfix "/x86_64/" (toString n))
+        if hasInfix "/x86_64/" (toString n)
         then "x86_64-darwin"
         else "aarch64-darwin";
       path = n;
@@ -344,148 +323,139 @@ with nixpkgs.lib; let
     );
   in
     darwinConfigurations;
-in
-  {
-    appsDir ? null,
-    checksDir ? null,
-    devShellsDir ? null,
-    packagesDir ? null,
-    nixosModulesDir ? null,
-    dockerImagesDir ? null,
-    nixosConfigurationsDir ? null,
-    darwinConfigurationsDir ? null,
-    homeConfigurationsDir ? null,
-    nixosSpecialArgs ? {},
-    darwinLib ? null,
-    darwinModules ? [],
-    darwinSpecialArgs ? {},
-    homeSpecialArgs ? {},
-    nixosModules ? [],
-    homeConfigurationModules ? [],
-    overlays ? [],
-    arcanum ? {},
-    nixpkgsConfig ? {},
-    additionalPackages ? (pkgs: {}),
-    additionalApps ? (pkgs: {}),
-    ...
-  }: let
-    projectNixosModules =
-      if nixosModulesDir != null
-      then nixFilesIn nixosModulesDir
-      else [];
 
-    mergedNixosModules = nixosChipModules ++ nixosModules ++ sharedChipModules ++ projectNixosModules;
+  projectNixosModules = filesOrEmpty cfg.sources.nixosModules;
 
-    overlay = self.lib.mergeOverlays (
-      overlays
-      ++ [
-        (mkPackagesOverlay packagesDir)
-        nixpkgs-staging.overlays.default
-      ]
-    );
+  mergedNixosModules = nixosChipModules ++ cfg.modules.nixos ++ sharedChipModules ++ projectNixosModules;
 
-    packages = optionalAttrs (packagesDir != null) (usePackages {
-      inherit overlay packagesDir;
-    });
+  overlay = mergeOverlays (
+    cfg.nixpkgs.overlays
+    ++ [
+      (mkPackagesOverlay cfg.sources.packages)
+      nixpkgs-staging.overlays.default
+    ]
+  );
 
-    dockerImages = optionalAttrs (dockerImagesDir != null) (useDockerImages {
-      inherit dockerImagesDir overlay;
-      modules = nixChipModules ++ nixosShimModules ++ sharedChipModules;
-    });
+  packages = optionalAttrs (cfg.sources.packages != null) (usePackages {
+    inherit overlay;
+    packagesDir = cfg.sources.packages;
+  });
 
-    checks = optionalAttrs (checksDir != null) (useChecks {
-      inherit self checksDir overlay;
-      modules = mergedNixosModules;
-    });
+  dockerImages = optionalAttrs (cfg.sources.dockerImages != null) (useDockerImages {
+    inherit overlay;
+    dockerImagesDir = cfg.sources.dockerImages;
+    modules = nixChipModules ++ nixosShimModules ++ sharedChipModules;
+  });
 
-    apps = useApps {inherit appsDir overlay;};
+  checks = optionalAttrs (cfg.sources.checks != null) (useChecks {
+    inherit overlay;
+    checksDir = cfg.sources.checks;
+    modules = mergedNixosModules;
+  });
 
-    nixosConfigurations = optionalAttrs (nixosConfigurationsDir != null) (useNixosConfigurations {
-      inherit nixosConfigurationsDir overlay;
-      modules = mergedNixosModules;
-      specialArgs = nixosSpecialArgs;
-    });
+  apps = useApps {
+    inherit overlay;
+    appsDir = cfg.sources.apps;
+  };
 
-    darwinConfigurations = optionalAttrs (darwinConfigurationsDir != null && darwinLib != null) (useDarwinConfigurations {
-      inherit darwinConfigurationsDir darwinLib overlay nixosConfigurations;
-      modules = darwinChipModules ++ darwinModules ++ sharedChipModules;
-      specialArgs = darwinSpecialArgs;
-    });
+  nixosConfigurations = optionalAttrs (cfg.sources.nixosConfigurations != null) (useNixosConfigurations {
+    inherit overlay;
+    nixosConfigurationsDir = cfg.sources.nixosConfigurations;
+    modules = mergedNixosModules;
+    specialArgs = cfg.specialArgs.nixos;
+  });
 
-    homeConfigurations = optionalAttrs (homeConfigurationsDir != null) (useHomeConfigurations {
-      inherit homeConfigurationsDir nixpkgsConfig overlay;
-      specialArgs = homeSpecialArgs // {inherit nixosConfigurations darwinConfigurations;};
-      modules = homeConfigurationModules ++ homeManagerChipModules ++ sharedChipModules;
-    });
+  darwinConfigurations = optionalAttrs (cfg.sources.darwinConfigurations != null && cfg.darwin.lib != null) (useDarwinConfigurations {
+    inherit overlay nixosConfigurations;
+    darwinConfigurationsDir = cfg.sources.darwinConfigurations;
+    darwinLib = cfg.darwin.lib;
+    modules = darwinChipModules ++ cfg.modules.darwin ++ sharedChipModules;
+    specialArgs = cfg.specialArgs.darwin;
+  });
 
-    devShells = optionalAttrs (devShellsDir != null) (useDevShells {
-      inherit devShellsDir nixpkgsConfig overlay;
-      modules = nixChipModules ++ nixosShimModules ++ sharedChipModules;
-    });
+  homeConfigurations = optionalAttrs (cfg.sources.homeConfigurations != null) (useHomeConfigurations {
+    inherit overlay;
+    homeConfigurationsDir = cfg.sources.homeConfigurations;
+    nixpkgsConfig = cfg.nixpkgs.config;
+    specialArgs = cfg.specialArgs.home // {inherit nixosConfigurations darwinConfigurations;};
+    modules = cfg.modules.home ++ homeManagerChipModules ++ sharedChipModules;
+  });
 
-    collectFromOutput = attrPath: output: let
-      fromPath = getAttrFromPath attrPath;
+  devShells = optionalAttrs (cfg.sources.devShells != null) (useDevShells {
+    inherit overlay;
+    devShellsDir = cfg.sources.devShells;
+    nixpkgsConfig = cfg.nixpkgs.config;
+    modules = nixChipModules ++ nixosShimModules ++ sharedChipModules;
+  });
+
+  collectFromOutput = attrPath: output: let
+    fromPath = getAttrFromPath attrPath;
+  in
+    mapAttrs (n: v: mapAttrs (n: cfg: fromPath cfg) v) output;
+
+  perSystemAttrs = eachDefaultSystem (
+    system: let
+      pkgs = pkgsFor {
+        inherit system overlay;
+        nixpkgsConfig = cfg.nixpkgs.config;
+      };
     in
-      mapAttrs (n: v: mapAttrs (n: cfg: fromPath cfg) v) output;
-
-    additionalAttrs = eachDefaultSystem (
-      system: let
-        pkgs = pkgsFor {inherit system overlay nixpkgsConfig;};
-      in {
-        packages = additionalPackages pkgs;
-        apps = additionalApps pkgs;
+      cfg.perSystem {
+        inherit pkgs system;
+        inputs = contextInputs;
+        self = projectSelf;
       }
-    );
+  );
 
-    chipsOutput = {
-      inherit
-        checks
-        apps
-        packages
-        nixosConfigurations
-        darwinConfigurations
-        ;
-      legacyPackages = dockerImages;
-      devShells = collectFromOutput ["devShell" "output"] devShells;
-      nixosModules.default = nixosModules ++ projectNixosModules;
-      overlays.default = overlay;
-      lib = {
-        manual = mkManual {modules = mergedNixosModules;};
-        arcanum = {
-          nixos =
-            mapAttrs (hostname: node: {
-              inherit (node.config.arcanum) files adminRecipients;
-            })
-            nixosConfigurations;
-          darwin =
-            mapAttrs (hostname: node: {
-              inherit (node.config.arcanum) files adminRecipients;
-            })
-            darwinConfigurations;
-          devShells =
-            mapAttrs (
-              system: value:
-                mapAttrs (userHost: config: {inherit (config.arcanum) files adminRecipients;}) value
-            )
-            devShells;
-          homeManager =
-            mapAttrs (
-              name: home: (mapAttrs (name: user: {
-                  inherit (user.config.arcanum) files adminRecipients;
-                })
-                home.homeConfigurations)
-            )
-            homeConfigurations;
-          flake = {
-            files = arcanum.files or {};
-            adminRecipients = arcanum.adminRecipients or [];
-          };
+  chipsOutput = {
+    inherit
+      checks
+      apps
+      packages
+      nixosConfigurations
+      darwinConfigurations
+      ;
+    legacyPackages = dockerImages;
+    devShells = collectFromOutput ["devShell" "output"] devShells;
+    nixosModules.default = cfg.modules.nixos ++ projectNixosModules;
+    overlays.default = overlay;
+    lib = {
+      manual = mkManual {modules = mergedNixosModules;};
+      arcanum = {
+        nixos =
+          mapAttrs (hostname: node: {
+            inherit (node.config.arcanum) files adminRecipients;
+          })
+          nixosConfigurations;
+        darwin =
+          mapAttrs (hostname: node: {
+            inherit (node.config.arcanum) files adminRecipients;
+          })
+          darwinConfigurations;
+        devShells =
+          mapAttrs (
+            system: value:
+              mapAttrs (userHost: config: {inherit (config.arcanum) files adminRecipients;}) value
+          )
+          devShells;
+        homeManager =
+          mapAttrs (
+            name: home: (mapAttrs (name: user: {
+                inherit (user.config.arcanum) files adminRecipients;
+              })
+              home.homeConfigurations)
+          )
+          homeConfigurations;
+        flake = {
+          files = cfg.arcanum.files or {};
+          adminRecipients = cfg.arcanum.adminRecipients or [];
         };
       };
     };
-  in
-    mergeOutputs [
-      {legacyPackages = homeConfigurations;}
-      additionalAttrs
-      chipsOutput
-    ]
+  };
+in
+  mergeOutputs [
+    {legacyPackages = homeConfigurations;}
+    perSystemAttrs
+    chipsOutput
+  ]

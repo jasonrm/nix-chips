@@ -68,14 +68,14 @@ export function Sidebar() {
           <ul>
             <li>
               <Link
-                to="/lib/use"
+                to="/lib/mkFlake"
                 className={`block px-2 py-1 text-sm rounded ${
-                  location.pathname === "/lib/use"
+                  location.pathname === "/lib/mkFlake"
                     ? "bg-blue-100 text-blue-800 font-medium"
                     : "text-zinc-700 hover:bg-zinc-100"
                 }`}
               >
-                use
+                mkFlake
               </Link>
             </li>
           </ul>

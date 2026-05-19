@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
-import type { UseParams } from "../lib/types";
+import type { MkFlakeOptions } from "../lib/types";
 
-export function LibUsePage() {
-  const [params, setParams] = useState<UseParams | null>(null);
+export function LibMkFlakePage() {
+  const [params, setParams] = useState<MkFlakeOptions | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/data/lib/use.json")
+    fetch("/data/lib/mkFlake.json")
       .then((res) => {
-        if (!res.ok) throw new Error("Failed to load lib.use data");
+        if (!res.ok) throw new Error("Failed to load lib.mkFlake data");
         return res.json();
       })
       .then(setParams)
@@ -26,14 +26,14 @@ export function LibUsePage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-zinc-900">lib.use</h1>
+        <h1 className="text-2xl font-bold text-zinc-900">lib.mkFlake</h1>
         <p className="text-sm text-zinc-600 mt-1">
           The main entry point for nix-chips. Configure your project's flake
-          outputs by passing parameters to <code>lib.use</code>.
+          outputs by passing typed options to <code>lib.mkFlake</code>.
         </p>
         <p className="text-sm text-zinc-500 mt-1">
           <a
-            href="/lib/use.md"
+            href="/lib/mkFlake.md"
             className="text-blue-600 hover:underline"
           >
             View as markdown
@@ -41,7 +41,7 @@ export function LibUsePage() {
         </p>
       </div>
 
-      <h2 className="text-lg font-semibold text-zinc-800 mb-3">Parameters</h2>
+      <h2 className="text-lg font-semibold text-zinc-800 mb-3">Options</h2>
 
       <div className="space-y-3">
         {sorted.map(([name, info]) => (

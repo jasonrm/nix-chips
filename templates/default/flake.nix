@@ -17,18 +17,18 @@
     # };
   };
 
-  outputs = {
+  outputs = inputs @ {
     chips,
     # rust-overlay,
     ...
   }:
-    chips.lib.use {
+    chips.lib.mkFlake {inherit inputs;} {
       # Generate new devShells with `nix run .#init-dev-shell <GITHUB_USERNAME>`
-      devShellsDir = ./nix/devShells;
-      # packagesDir = ./nix/packages;
-      # nixosModulesDir = ./nix/nixosModules;
-      # dockerImagesDir = ./nix/dockerImages;
-      overlays = [
+      sources.devShells = ./nix/devShells;
+      # sources.packages = ./nix/packages;
+      # sources.nixosModules = ./nix/nixosModules;
+      # sources.dockerImages = ./nix/dockerImages;
+      nixpkgs.overlays = [
         # rust-overlay.overlays.default
       ];
     };

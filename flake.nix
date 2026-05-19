@@ -14,13 +14,13 @@
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = {self, ...} @ inputs: let
+  outputs = inputs @ {self, ...}: let
     lib = import ./lib inputs;
-    output = lib.use {
-      devShellsDir = ./devShells;
-      overlays = [lib.overlays.unstable];
-      additionalPackages = pkgs: {
-        docs-data = pkgs.callPackage ./docs/generate-options.nix {
+    output = lib.mkFlake {inherit inputs;} {
+      sources.devShells = ./devShells;
+      nixpkgs.overlays = [lib.overlays.unstable];
+      perSystem = {pkgs, ...}: {
+        packages.docs-data = pkgs.callPackage ./docs/generate-options.nix {
           inherit self;
         };
       };

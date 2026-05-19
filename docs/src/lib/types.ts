@@ -23,11 +23,11 @@ export interface IndexEntry {
   options: { name: string; type: string; description: string }[];
 }
 
-export interface UseParam {
+export interface MkFlakeOption {
   hasDefault: boolean;
   description: string;
   type: string;
   default?: string;
 }
 
-export type UseParams = Record<string, UseParam>;
+export type MkFlakeOptions = Record<string, MkFlakeOption>;

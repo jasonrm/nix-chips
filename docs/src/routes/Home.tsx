@@ -48,10 +48,10 @@ export function Home() {
           <section>
             <h2 className="text-lg font-semibold text-zinc-800 mb-2">lib</h2>
             <Link
-              to="/lib/use"
+              to="/lib/mkFlake"
               className="block border border-zinc-200 rounded-lg p-3 hover:border-blue-300 hover:bg-blue-50 transition-colors w-fit"
             >
-              <span className="font-medium text-zinc-900">lib.use</span>
+              <span className="font-medium text-zinc-900">lib.mkFlake</span>
               <span className="text-xs text-zinc-500 ml-2">
                 Flake entry point
               </span>
