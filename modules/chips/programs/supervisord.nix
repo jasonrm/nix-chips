@@ -276,6 +276,14 @@ in {
       ];
     };
 
+    programs.taskfile = {
+      enable = mkDefault true;
+      config.tasks.dev = {
+        desc = mkDefault "Run Development Services";
+        cmds = mkDefault ["${supervisord}/bin/supervisord"];
+      };
+    };
+
     programs.supervisord.output = supervisord;
 
     services.traefik = {

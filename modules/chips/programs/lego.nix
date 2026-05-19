@@ -66,7 +66,7 @@ with lib; let
 
     mkdir -p ${outDir}
 
-    # Serialize concurrent invocations (e.g. parallel direnv reloads) so we
+    # Serialize concurrent invocations (e.g. parallel task runs) so we
     # don't race ACME challenges and trip "authorization must be pending".
     exec 9>${outDir}/.lego.lock
     ${pkgs.flock}/bin/flock -x 9
@@ -114,7 +114,7 @@ in {
 
       runHooks = mkOption {
         type = lines;
-        default = [];
+        default = "";
       };
 
       keyFile = mkOption {
@@ -134,14 +134,17 @@ in {
   config = {
     devShell = mkIf cfg.enable {
       contents = [legoEnsureCerts];
-      # Run after arcanum to ensure that the secrets are available
-      shellHooks = mkOrder 790 (
-        optionalString (cfg.domains != []) ''
-          if [ -t 0 ] && [ -t 1 ]; then
-            ${legoEnsureCerts}/bin/lego-ensure-certs
-          fi
-        ''
-      );
+    };
+
+    programs.taskfile = mkIf (cfg.enable && cfg.domains != []) {
+      enable = mkDefault true;
+      config.tasks = {
+        "lego:renew" = {
+          desc = "Renew Lego Certificates";
+          cmds = ["${legoEnsureCerts}/bin/lego-ensure-certs"];
+        };
+        dev.deps = ["lego:renew"];
+      };
     };
 
     #    outputs.apps.go = {

@@ -73,6 +73,9 @@ in {
       build = {
         desc = "Run All Build Tasks";
       };
+      dev = {
+        desc = mkDefault "Start the development environment (override or extend per project)";
+      };
     };
     devShell = {
       contents = [pkgs.go-task];

@@ -66,7 +66,9 @@ use flake .#${USER}-$(hostname -s)
 ## Use
 
 ```shell
-supervisord
+task dev
 # or, to see what will be started
 supervisord-debug
+# or, to renew certificates without starting services
+task lego:renew
 ```
