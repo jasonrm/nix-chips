@@ -1,1 +1,48 @@
 @import "tailwindcss";
+
+/* Theme colors inspired by the provided 32-color palette (Dawnbringer-like) */
+:root {
+  --bg: #ffffff;
+  --bg-alt: #e3c896;
+  --text: #3e3546;
+  --text-muted: #625565;
+  --border: #ab947a;
+  --accent: #fb6b1d;
+  --accent-bg: #fca790;
+  --accent-text: #7a3045;
+  --error: #e83b3b;
+  --warning: #fbb954;
+}
+
+.dark {
+  --bg: #3e3546;
+  --bg-alt: #484a77;
+  --text: #e3c896;
+  --text-muted: #ab947a;
+  --border: #625565;
+  --accent: #fb6b1d;
+  --accent-bg: #6b3e75;
+  --accent-text: #eaaded;
+  --error: #e83b3b;
+  --warning: #fbb954;
+}
+
+@theme {
+  --color-app-bg: var(--bg);
+  --color-app-bg-alt: var(--bg-alt);
+  --color-app-text: var(--text);
+  --color-app-text-muted: var(--text-muted);
+  --color-app-border: var(--border);
+  --color-app-accent: var(--accent);
+  --color-app-accent-bg: var(--accent-bg);
+  --color-app-accent-text: var(--accent-text);
+  --color-app-error: var(--error);
+  --color-app-warning: var(--warning);
+}
+
+@layer base {
+  body {
+    background-color: var(--bg);
+    color: var(--text);
+  }
+}

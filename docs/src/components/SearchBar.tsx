@@ -22,9 +22,9 @@ export function SearchBar() {
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder="Search options..."
-        className="w-full pl-3 pr-8 py-1.5 text-sm border border-zinc-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        className="w-full pl-3 pr-8 py-1.5 text-sm border border-app-border rounded-md bg-app-bg text-app-text focus:outline-none focus:ring-2 focus:ring-app-accent focus:border-app-accent placeholder:text-app-text-muted"
       />
-      <kbd className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-zinc-400 pointer-events-none">
+      <kbd className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-app-text-muted pointer-events-none">
         /
       </kbd>
     </form>

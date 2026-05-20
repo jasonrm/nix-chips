@@ -13,17 +13,17 @@ export function Breadcrumbs() {
   }));
 
   return (
-    <nav className="flex items-center gap-1.5 text-sm text-zinc-500 mb-4">
-      <Link to="/" className="hover:text-zinc-700">
+    <nav className="flex items-center gap-1.5 text-sm text-app-text-muted mb-4">
+      <Link to="/" className="hover:text-app-text">
         Home
       </Link>
       {crumbs.map((crumb) => (
         <span key={crumb.path} className="flex items-center gap-1.5">
           <span>/</span>
           {crumb.isLast ? (
-            <span className="text-zinc-900 font-medium">{crumb.label}</span>
+            <span className="text-app-text font-medium">{crumb.label}</span>
           ) : (
-            <Link to={crumb.path} className="hover:text-zinc-700">
+            <Link to={crumb.path} className="hover:text-app-text">
               {crumb.label}
             </Link>
           )}

@@ -7,8 +7,8 @@ export function Sidebar() {
 
   if (loading) {
     return (
-      <nav className="w-64 shrink-0 border-r border-zinc-200 bg-zinc-50 p-4 overflow-y-auto">
-        <p className="text-sm text-zinc-400">Loading...</p>
+      <nav className="w-64 shrink-0 border-r border-app-border bg-app-bg-alt p-4 overflow-y-auto">
+        <p className="text-sm text-app-text-muted">Loading...</p>
       </nav>
     );
   }
@@ -28,9 +28,9 @@ export function Sidebar() {
   }
 
   return (
-    <nav className="w-64 shrink-0 border-r border-zinc-200 bg-zinc-50 overflow-y-auto">
+    <nav className="w-64 shrink-0 border-r border-app-border bg-app-bg-alt overflow-y-auto">
       <div className="p-4">
-        <Link to="/" className="block text-lg font-bold text-zinc-900 mb-4">
+        <Link to="/" className="block text-lg font-bold text-app-text mb-4">
           nix-chips
         </Link>
 
@@ -38,7 +38,7 @@ export function Sidebar() {
           <div key={category} className="mb-4">
             <Link
               to={`/${category}`}
-              className="block text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1 hover:text-zinc-700"
+              className="block text-xs font-semibold uppercase tracking-wider text-app-text-muted mb-1 hover:text-app-text"
             >
               {category}
             </Link>
@@ -49,8 +49,8 @@ export function Sidebar() {
                     to={mod.path}
                     className={`block px-2 py-1 text-sm rounded ${
                       location.pathname === mod.path
-                        ? "bg-blue-100 text-blue-800 font-medium"
-                        : "text-zinc-700 hover:bg-zinc-100"
+                        ? "bg-app-accent-bg text-app-accent-text font-medium"
+                        : "text-app-text hover:bg-app-bg-alt"
                     }`}
                   >
                     {mod.name}
@@ -62,7 +62,7 @@ export function Sidebar() {
         ))}
 
         <div className="mb-4">
-          <span className="block text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1">
+          <span className="block text-xs font-semibold uppercase tracking-wider text-app-text-muted mb-1">
             lib
           </span>
           <ul>
@@ -71,8 +71,8 @@ export function Sidebar() {
                 to="/lib/mkFlake"
                 className={`block px-2 py-1 text-sm rounded ${
                   location.pathname === "/lib/mkFlake"
-                    ? "bg-blue-100 text-blue-800 font-medium"
-                    : "text-zinc-700 hover:bg-zinc-100"
+                    ? "bg-app-accent-bg text-app-accent-text font-medium"
+                    : "text-app-text hover:bg-app-bg-alt"
                 }`}
               >
                 mkFlake

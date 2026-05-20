@@ -39,7 +39,7 @@ export function CopyButton({
       type="button"
       onClick={copyText}
       className={[
-        "inline-flex h-6 w-6 items-center justify-center rounded border border-zinc-200 text-xs font-medium text-zinc-500 hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-900",
+        "inline-flex h-6 w-6 items-center justify-center rounded border border-app-border text-xs font-medium text-app-text-muted hover:border-app-border hover:bg-app-bg-alt hover:text-app-text",
         className,
       ].join(" ")}
       aria-label={ariaLabel}
