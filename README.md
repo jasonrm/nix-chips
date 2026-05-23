@@ -72,7 +72,7 @@ task dev
 # or, to see what will be started
 supervisord-debug
 # or, to renew certificates without starting services
-task lego:renew
+task lego-renew
 ```
 
 ## Docs

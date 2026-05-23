@@ -255,11 +255,11 @@ in {
     programs.taskfile = mkIf (cfg.enable && cfg.domains != []) {
       enable = mkDefault true;
       config.tasks = {
-        "lego:renew" = {
+        lego-renew = {
           desc = "Renew Lego Certificates";
           cmds = ["${legoEnsureCerts}/bin/lego-ensure-certs"];
         };
-        dev.deps = ["lego:renew"];
+        dev.deps = ["lego-renew"];
       };
     };
 
