@@ -15,6 +15,7 @@ with lib; let
 
   outDir = "${config.dir.data}/lego";
   certStoreDir = "${outDir}/per-domain";
+  pemDir = "${outDir}/pem";
   keyName = domain: builtins.replaceStrings ["*"] ["_"] domain;
   domainPlan = concatStringsSep "\n" (map (domain: "${domain}\t${keyName domain}") domains);
 
@@ -111,24 +112,29 @@ with lib; let
           local cert_file=${escapeShellArg cfg.certFile}
           local key_file=${escapeShellArg cfg.keyFile}
           local pem_file=${escapeShellArg cfg.pemFile}
+          local pem_dir=${escapeShellArg cfg.pemDirectory}
           local tmp_crt
           local tmp_key
           local tmp_pem
+          local tmp_pem_dir
           local missing=0
           local changed=0
 
           ${pkgs.coreutils}/bin/mkdir -p \
             "$(${pkgs.coreutils}/bin/dirname "$cert_file")" \
             "$(${pkgs.coreutils}/bin/dirname "$key_file")" \
-            "$(${pkgs.coreutils}/bin/dirname "$pem_file")"
+            "$(${pkgs.coreutils}/bin/dirname "$pem_file")" \
+            "$pem_dir"
 
       tmp_crt="$(${pkgs.coreutils}/bin/mktemp "${outDir}/.lego.crt.XXXXXX")"
       tmp_key="$(${pkgs.coreutils}/bin/mktemp "${outDir}/.lego.key.XXXXXX")"
       tmp_pem="$(${pkgs.coreutils}/bin/mktemp "${outDir}/.lego.pem.XXXXXX")"
+      tmp_pem_dir="$(${pkgs.coreutils}/bin/mktemp -d "${outDir}/.lego.pemdir.XXXXXX")"
 
       while IFS=$'\t' read -r domain key_name; do
         local crt="${certStoreDir}/certificates/$key_name.crt"
             local key="${certStoreDir}/certificates/$key_name.key"
+            local domain_pem="$tmp_pem_dir/$key_name.pem"
 
             if [ -s "$crt" ] && [ -s "$key" ]; then
               ${pkgs.coreutils}/bin/cat "$crt" >> "$tmp_crt"
@@ -137,6 +143,8 @@ with lib; let
               ${pkgs.coreutils}/bin/printf '\n' >> "$tmp_key"
               ${pkgs.coreutils}/bin/cat "$crt" "$key" >> "$tmp_pem"
               ${pkgs.coreutils}/bin/printf '\n' >> "$tmp_pem"
+              ${pkgs.coreutils}/bin/cat "$crt" "$key" > "$domain_pem"
+              ${pkgs.coreutils}/bin/chmod 0600 "$domain_pem"
             else
               echo "lego: missing certificate or key for $domain; leaving merged certificate unchanged" >&2
               missing=1
@@ -146,7 +154,7 @@ with lib; let
     LEGO_DOMAINS
 
       if [ "$missing" -ne 0 ]; then
-        ${pkgs.coreutils}/bin/rm -f "$tmp_crt" "$tmp_key" "$tmp_pem"
+        ${pkgs.coreutils}/bin/rm -rf "$tmp_crt" "$tmp_key" "$tmp_pem" "$tmp_pem_dir"
         return 0
       fi
 
@@ -165,12 +173,19 @@ with lib; let
             changed=1
           fi
 
+          if ! ${pkgs.diffutils}/bin/diff -qr "$tmp_pem_dir" "$pem_dir" >/dev/null 2>&1; then
+            ${pkgs.coreutils}/bin/rm -rf "$pem_dir"
+            ${pkgs.coreutils}/bin/mkdir -p "$pem_dir"
+            ${pkgs.coreutils}/bin/cp -p "$tmp_pem_dir"/*.pem "$pem_dir"/
+            changed=1
+          fi
+
       if [ "$changed" -ne 0 ]; then
         true
         ${cfg.runHooks}
       fi
 
-      ${pkgs.coreutils}/bin/rm -f "$tmp_crt" "$tmp_key" "$tmp_pem"
+      ${pkgs.coreutils}/bin/rm -rf "$tmp_crt" "$tmp_key" "$tmp_pem" "$tmp_pem_dir"
     }
 
         while IFS=$'\t' read -r domain key_name; do
@@ -243,6 +258,13 @@ in {
         type = nullOr path;
         default = config.dir.data + "/lego.pem";
         readOnly = true;
+      };
+
+      pemDirectory = mkOption {
+        type = path;
+        default = pemDir;
+        readOnly = true;
+        description = "Directory containing one combined certificate and key PEM per configured domain.";
       };
     };
   };

@@ -9,6 +9,11 @@
   cfg = config.services.haproxy;
   legoCfg = config.programs.lego;
   pemFile = "${config.dir.data}/haproxy.pem";
+  pemDirectory = "${config.dir.data}/haproxy-certs";
+  tlsCertPath =
+    if legoCfg.enable
+    then cfg.pemDirectory
+    else cfg.pemFile;
 
   fallbackDomain =
     if legoCfg.domains != []
@@ -47,7 +52,7 @@
 
     ${optionalString cfg.frontends.https.enable ''
       frontend https-in
-        bind ${config.project.address}:${toString config.ports.https} ssl crt ${cfg.pemFile} alpn h2,http/1.1
+        bind ${config.project.address}:${toString config.ports.https} ssl crt ${tlsCertPath} alpn h2,http/1.1
         http-request set-header X-Forwarded-Proto https
         http-request set-header X-Forwarded-Host %[req.hdr(host)]
       ${concatStringsSep "\n" acls}
@@ -86,14 +91,34 @@
     set -euo pipefail
 
     pem=${lib.escapeShellArg legoCfg.pemFile}
+    pem_dir=${lib.escapeShellArg legoCfg.pemDirectory}
     out=${lib.escapeShellArg cfg.pemFile}
+    out_dir=${lib.escapeShellArg cfg.pemDirectory}
+    existing_pem=0
+
+    mkdir -p "$out_dir"
+    for cert in "$out_dir"/*.pem; do
+      [ -e "$cert" ] || break
+      existing_pem=1
+      break
+    done
 
     if [ -s "$pem" ]; then
       umask 077
       cp "$pem" "$out"
+      rm -f "$out_dir"/*.pem
+      copied=0
+      for cert in "$pem_dir"/*.pem; do
+        [ -e "$cert" ] || break
+        cp "$cert" "$out_dir"/
+        copied=1
+      done
+      if [ "$copied" -eq 0 ]; then
+        cp "$pem" "$out_dir/default.pem"
+      fi
       echo "haproxy: lego PEM written to $out"
-    elif [ ! -s "$out" ]; then
-      echo "haproxy: lego certs missing; generating self-signed fallback at $out" >&2
+    elif [ ! -s "$out" ] && [ "$existing_pem" -eq 0 ]; then
+      echo "haproxy: lego certs missing; generating self-signed fallback at $out and $out_dir/default.pem" >&2
       umask 077
       tmp_key="$(${pkgs.coreutils}/bin/mktemp)"
       tmp_crt="$(${pkgs.coreutils}/bin/mktemp)"
@@ -104,6 +129,7 @@
         -keyout "$tmp_key" \
         -out "$tmp_crt" 2>/dev/null
       cat "$tmp_crt" "$tmp_key" > "$out"
+      cp "$out" "$out_dir/default.pem"
     fi
   '';
 
@@ -124,6 +150,13 @@ in {
       default = pemFile;
       readOnly = true;
       description = "Combined certificate and key PEM file for HAProxy TLS binds.";
+    };
+
+    services.haproxy.pemDirectory = mkOption {
+      type = types.str;
+      default = pemDirectory;
+      readOnly = true;
+      description = "Directory containing certificate and key PEM files for HAProxy TLS binds.";
     };
 
     services.haproxy.frontends.http.enable = mkOption {
