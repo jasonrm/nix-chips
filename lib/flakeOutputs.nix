@@ -12,6 +12,7 @@ with nixpkgs.lib; let
 
   contextInputs = context.inputs or {};
   projectSelf = contextInputs.self or self;
+  chipsSelf = contextInputs.chips or self;
 
   pkgsFor = {
     system,
@@ -80,7 +81,7 @@ with nixpkgs.lib; let
       inherit modules;
       specialArgs = {
         inherit pkgs system;
-        chips = projectSelf;
+        chips = chipsSelf;
         modulesPath = pkgs.path + "/nixos/modules";
       };
     }).config;
