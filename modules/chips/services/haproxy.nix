@@ -52,12 +52,13 @@
 
     ${optionalString cfg.frontends.https.enable ''
       frontend https-in
-        bind ${config.project.address}:${toString config.ports.https} ssl crt ${tlsCertPath} alpn h2,http/1.1
+        bind ${config.project.address}:${toString config.ports.https} ssl crt ${tlsCertPath}${optionalString (cfg.frontends.https.alpn != []) " alpn ${concatStringsSep "," cfg.frontends.https.alpn}"}
         http-request set-header X-Forwarded-Proto https
         http-request set-header X-Forwarded-Host %[req.hdr(host)]
       ${concatStringsSep "\n" acls}
       ${concatStringsSep "\n" useBackends}
       ${optionalString (cfg.defaultBackend != null) "  default_backend ${cfg.defaultBackend}"}
+      ${optionalString (cfg.frontends.https.extraConfig != "") "  ${lib.replaceStrings ["\n"] ["\n  "] cfg.frontends.https.extraConfig}"}
     ''}
 
     ${renderedBackends}
@@ -169,6 +170,18 @@ in {
       type = types.bool;
       default = true;
       description = "Generate the shared https-in frontend with TLS termination and host-based routing.";
+    };
+
+    services.haproxy.frontends.https.alpn = mkOption {
+      type = types.listOf types.str;
+      default = ["h2" "http/1.1"];
+      description = "ALPN protocols advertised by the generated HTTPS frontend.";
+    };
+
+    services.haproxy.frontends.https.extraConfig = mkOption {
+      type = types.lines;
+      default = "";
+      description = "Raw lines appended to the generated HTTPS frontend.";
     };
 
     services.haproxy.defaultBackend = mkOption {

@@ -49,7 +49,7 @@ in {
         routers = {
           rabbitmq = {
             service = "rabbitmq";
-            rule = "Host(`rabbitmq.localhost`)";
+            rule = "Host(`${mgmtHost}`)";
           };
         };
         services = {
