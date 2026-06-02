@@ -74,7 +74,10 @@ in {
         desc = "Run All Build Tasks";
       };
       dev = {
-        desc = mkDefault "Start the development environment (override or extend per project)";
+        # Generic fallback for projects without a dev server. Use mkOptionDefault
+        # (weaker than mkDefault) so modules like supervisord can claim `dev` with
+        # their own mkDefault, and projects can still override either.
+        desc = mkOptionDefault "Start the development environment (override or extend per project)";
       };
     };
     devShell = {
