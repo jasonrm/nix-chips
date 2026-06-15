@@ -9,9 +9,15 @@ with lib; let
 
   inherit (builtins) concatStringsSep;
 
-  programEntry = name: attrs: ''
+  programEntry = name: attrs: let
+    programAttrs =
+      attrs
+      // {
+        environment = cfg.programEnvironment ++ attrs.environment;
+      };
+  in ''
     [program:${name}]
-    ${generators.toKeyValue {} (mapAttrs prepProgramAttrs (filterAttrs programAttrFilter attrs))}
+    ${generators.toKeyValue {} (mapAttrs prepProgramAttrs (filterAttrs programAttrFilter programAttrs))}
   '';
 
   programAttrFilter = n: v:
@@ -211,6 +217,11 @@ in {
       programs = mkOption {
         default = {};
         type = attrsOf (submodule programOption);
+      };
+      programEnvironment = mkOption {
+        type = listOf str;
+        default = [];
+        description = "Environment entries added to every supervised program.";
       };
 
       output = mkOption {

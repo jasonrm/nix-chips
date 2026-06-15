@@ -25,6 +25,8 @@
 
     dns = 5354;
     dynamodb = 2010;
+    victorialogsHttp = 9428;
+    victorialogsSyslogUdp = 5514;
     # rabbitmq_amqp = 2007;
     # rabbitmq_mgmt = 2011;
     # sphinx = 2012;
