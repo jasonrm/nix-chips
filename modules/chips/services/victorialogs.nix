@@ -135,6 +135,12 @@ in {
 
       programs.supervisord = {
         programEnvironment = environment;
+        syslog = lib.mkIf cfg.syslogUdp.enable {
+          enable = true;
+          host = cfg.syslogUdpHost;
+          port = cfg.syslogUdpPort;
+          excludePrograms = ["victorialogs"];
+        };
         programs.victorialogs = {
           command = "${lib.getExe cfg.package} ${escapeShellArgs args}";
           environment = cfg.extraEnvironment;
@@ -154,6 +160,9 @@ in {
             address = httpAddress;
           }
         ];
+        backends.victorialogs.extraConfig = ''
+          http-request redirect location /select/vmui code 302 if { path / }
+        '';
       };
     }
   ]);

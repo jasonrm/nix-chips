@@ -9,12 +9,31 @@ with lib; let
 
   inherit (builtins) concatStringsSep;
 
-  programEntry = name: attrs: let
+  syslogLogFile = "syslog @udp:${cfg.syslog.host}:${toString cfg.syslog.port}";
+  appendSyslogLogFile = logFile:
+    if isList logFile
+    then logFile ++ [syslogLogFile]
+    else [logFile syslogLogFile];
+
+  wrapProgramAttrs = name: attrs: let
+    shouldForwardToSyslog = cfg.syslog.enable && !(elem name cfg.syslog.excludePrograms);
     programAttrs =
       attrs
-      // {
-        environment = cfg.programEnvironment ++ attrs.environment;
+      // optionalAttrs shouldForwardToSyslog {
+        stdout_logfile = appendSyslogLogFile attrs.stdout_logfile;
+        stderr_logfile = appendSyslogLogFile attrs.stderr_logfile;
+        syslog_facility = cfg.syslog.facility;
+        syslog_stdout_priority = cfg.syslog.stdoutPriority;
+        syslog_stderr_priority = cfg.syslog.stderrPriority;
       };
+  in
+    programAttrs
+    // {
+      environment = cfg.programEnvironment ++ programAttrs.environment;
+    };
+
+  programEntry = name: attrs: let
+    programAttrs = wrapProgramAttrs name attrs;
   in ''
     [program:${name}]
     ${generators.toKeyValue {} (mapAttrs prepProgramAttrs (filterAttrs programAttrFilter programAttrs))}
@@ -33,7 +52,7 @@ with lib; let
 
   prepProgramAttrs = name: value:
     if isList value
-    then concatStringsSep "," value
+    then concatStringsSep "," (map toString value)
     else value;
 
   programEntries = attrsets.mapAttrsToList programEntry cfg.programs;
@@ -80,11 +99,19 @@ with lib; let
           description = "Command to supervise. It can be given as full path to executable or can be calculated via PATH variable. Command line parameters also should be supplied in this string.";
         };
         stdout_logfile = mkOption {
-          type = path;
+          type = oneOf [
+            path
+            str
+            (listOf (oneOf [path str]))
+          ];
           default = "/dev/stdout";
         };
         stderr_logfile = mkOption {
-          type = path;
+          type = oneOf [
+            path
+            str
+            (listOf (oneOf [path str]))
+          ];
           default = "/dev/stderr";
         };
         stopasgroup = mkOption {
@@ -222,6 +249,43 @@ in {
         type = listOf str;
         default = [];
         description = "Environment entries added to every supervised program.";
+      };
+      syslog = {
+        enable = mkOption {
+          type = bool;
+          default = false;
+          description = "Mirror supervised program stdout and stderr to a UDP syslog endpoint.";
+        };
+        host = mkOption {
+          type = str;
+          default = config.project.address;
+          description = "UDP syslog host used when supervisord syslog forwarding is enabled.";
+        };
+        port = mkOption {
+          type = int;
+          default = 514;
+          description = "UDP syslog port used when supervisord syslog forwarding is enabled.";
+        };
+        excludePrograms = mkOption {
+          type = listOf str;
+          default = [];
+          description = "Supervisord program names excluded from UDP syslog forwarding.";
+        };
+        facility = mkOption {
+          type = str;
+          default = "local7";
+          description = "Syslog facility for forwarded supervised program logs.";
+        };
+        stdoutPriority = mkOption {
+          type = str;
+          default = "info";
+          description = "Syslog priority for forwarded stdout logs.";
+        };
+        stderrPriority = mkOption {
+          type = str;
+          default = "err";
+          description = "Syslog priority for forwarded stderr logs.";
+        };
       };
 
       output = mkOption {
