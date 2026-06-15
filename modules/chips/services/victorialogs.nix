@@ -27,6 +27,7 @@
       "VICTORIALOGS_DOMAIN=${logsDomain}"
     ]
     ++ lib.optionals cfg.syslogUdp.enable [
+      "SYSLOG_HOST=${cfg.syslogUdpHost}"
       "SYSLOG_PORT_UDP=${toString cfg.syslogUdpPort}"
     ];
 in {
@@ -147,6 +148,12 @@ in {
           stdout_logfile = cfg.stdoutLogFile;
           stderr_logfile = cfg.stderrLogFile;
         };
+      };
+
+      services.phpfpm.extraPhpEnv = lib.mkIf cfg.syslogUdp.enable {
+        SYSLOG_HOST = cfg.syslogUdpHost;
+        SYSLOG_PORT_UDP = cfg.syslogUdpPort;
+        VICTORIALOGS_URL = "http://${httpAddress}";
       };
 
       services.haproxy = {

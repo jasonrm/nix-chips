@@ -16,6 +16,7 @@ with lib; let
 
   fpmCfgFile = pool: poolOpts: let
     poolSettings = filterAttrs (n: v: v != "") poolOpts.settings;
+    poolEnv = (poolOpts.phpEnv or {}) // cfg.extraPhpEnv;
   in
     pkgs.writeText "phpfpm-${pool}.conf" ''
       [global]
@@ -23,7 +24,7 @@ with lib; let
 
       [${pool}]
       ${concatStringsSep "\n" (mapAttrsToList (n: v: "${n} = ${toStr v}") poolSettings)}
-      ${concatStringsSep "\n" (mapAttrsToList (n: v: "env[${n}] = ${toStr v}") poolOpts.phpEnv)}
+      ${concatStringsSep "\n" (mapAttrsToList (n: v: "env[${n}] = ${toStr v}") poolEnv)}
       ${optionalString (poolOpts.extraConfig != null) poolOpts.extraConfig}
     '';
   socketDirs = lib.unique (
@@ -33,6 +34,12 @@ with lib; let
   );
 in {
   imports = [];
+
+  options.services.phpfpm.extraPhpEnv = mkOption {
+    type = types.attrsOf (types.oneOf [types.str types.int types.bool]);
+    default = {};
+    description = "Environment variables merged into every php-fpm pool configuration.";
+  };
 
   options.services.phpfpm.pools = mkOption {
     type = types.attrsOf (types.submodule {
