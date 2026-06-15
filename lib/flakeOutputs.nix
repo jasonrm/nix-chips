@@ -2,6 +2,7 @@
   self,
   nixpkgs,
   nixpkgs-staging,
+  rust-overlay,
   home-manager,
   utils,
   ...
@@ -333,6 +334,7 @@ with nixpkgs.lib; let
     cfg.nixpkgs.overlays
     ++ [
       (mkPackagesOverlay cfg.sources.packages)
+      rust-overlay.overlays.default
       nixpkgs-staging.overlays.default
     ]
   );

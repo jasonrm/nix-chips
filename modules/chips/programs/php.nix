@@ -456,11 +456,27 @@ in {
       );
     }
 
-    (mkIf (config.programs.zed.enable && elem "mago" cfg.linters) {
-      programs.zed.settings.languages.PHP.formatter.external = {
-        command = "${zedMago}/bin/zed-mago";
-        arguments = ["format" "--stdin-input"];
-      };
-    })
+    (mkIf config.programs.zed.enable (mkMerge [
+      {
+        programs.zed.settings = {
+          languages.PHP.language_servers = [
+            "phpantom_lsp"
+            "!intelephense"
+            "!phpactor"
+            "!phpsense"
+            "!phptools"
+            "..."
+          ];
+          lsp.phpantom_lsp.binary.path = "${pkgs.phpantom-lsp}/bin/phpantom_lsp";
+        };
+        devShell.contents = [pkgs.phpantom-lsp];
+      }
+      (mkIf (elem "mago" cfg.linters) {
+        programs.zed.settings.languages.PHP.formatter.external = {
+          command = "${zedMago}/bin/zed-mago";
+          arguments = ["format" "--stdin-input"];
+        };
+      })
+    ]))
   ]);
 }
