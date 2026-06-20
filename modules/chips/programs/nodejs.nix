@@ -18,7 +18,7 @@ with lib; let
     else if pkgs ? unstable && pkgs.unstable ? oxlint
     then pkgs.unstable.oxlint
     else throw "programs.nodejs.linter=oxlint requires pkgs.oxlint or pkgs.unstable.oxlint";
-  pnpmPkg = pkgs.pnpm.override {nodejs = cfg.pkg;};
+  pnpmPkg = pkgs.pnpm.override {"nodejs-slim" = cfg.pkg;};
 
   eslintTasks = {
     format-eslint = {
