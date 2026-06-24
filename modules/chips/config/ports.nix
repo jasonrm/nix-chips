@@ -27,6 +27,11 @@
     dynamodb = 2010;
     victorialogsHttp = 9428;
     victorialogsSyslogUdp = 5514;
+
+    garageS3 = 3900;
+    garageRpc = 3901;
+    garageWeb = 3902;
+    garageAdmin = 3903;
     # rabbitmq_amqp = 2007;
     # rabbitmq_mgmt = 2011;
     # sphinx = 2012;
