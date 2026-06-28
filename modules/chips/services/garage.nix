@@ -4,7 +4,7 @@
   config,
   ...
 }: let
-  inherit (lib) mkOption mkEnableOption mkIf mkDefault mkMerge types optional optionalString mapAttrsToList escapeShellArg;
+  inherit (lib) mkOption mkEnableOption mkIf mkDefault mkMerge types optional optionalString mapAttrsToList concatStringsSep concatMapStringsSep escapeShellArg head;
 
   cfg = config.services.garage;
 
@@ -43,6 +43,74 @@
     # apply at current version + 1 (a fresh cluster is at version 0)
     version="$(garage layout show | ${pkgs.gnugrep}/bin/grep -oiE 'version[: ]+[0-9]+' | ${pkgs.gnugrep}/bin/grep -oE '[0-9]+' | head -n1)"
     garage layout apply --version "$((version + 1))"
+  '';
+
+  # Declarative bucket provisioning, applied idempotently by `garage-init` after
+  # the layout. Garage exposes no CLI for CORS, so CORS rules are pushed through
+  # the S3 PutBucketCors API using the bucket's own key.
+  awsConfig = pkgs.writeText "garage-aws-config" ''
+    [default]
+    s3 =
+        addressing_style = path
+  '';
+
+  corsKeyOf = bucket:
+    if bucket.keys == []
+    then null
+    else head bucket.keys;
+
+  corsConfigFile = name: bucket:
+    pkgs.writeText "garage-cors-${name}.json" (builtins.toJSON {
+      CORSRules = [
+        {
+          AllowedOrigins = bucket.cors.allowedOrigins;
+          AllowedMethods = bucket.cors.allowedMethods;
+          AllowedHeaders = bucket.cors.allowedHeaders;
+          ExposeHeaders = bucket.cors.exposeHeaders;
+          MaxAgeSeconds = bucket.cors.maxAgeSeconds;
+        }
+      ];
+    });
+
+  grantCommands = bucket:
+    concatMapStringsSep "\n" (key: ''
+      garage key import --yes -n ${escapeShellArg key.name} ${escapeShellArg key.id} ${escapeShellArg key.secret} 2>/dev/null \
+        || echo "garage: key ${key.id} already imported"
+      garage bucket allow ${optionalString key.read "--read "}${optionalString key.write "--write "}${optionalString key.owner "--owner "}${escapeShellArg bucket.name} --key ${escapeShellArg key.id}
+    '')
+    bucket.keys;
+
+  corsCommand = name: bucket:
+    if bucket.cors == null
+    then ""
+    else if corsKeyOf bucket == null
+    then throw "services.garage.buckets.${name}.cors requires at least one key (PutBucketCors needs S3 credentials)."
+    else let
+      key = corsKeyOf bucket;
+    in ''
+      echo "garage: applying CORS rules to bucket ${bucket.name}"
+      AWS_ACCESS_KEY_ID=${escapeShellArg key.id} \
+      AWS_SECRET_ACCESS_KEY=${escapeShellArg key.secret} \
+      AWS_DEFAULT_REGION=${escapeShellArg s3Region} \
+      AWS_CONFIG_FILE=${awsConfig} \
+      AWS_EC2_METADATA_DISABLED=true \
+        ${pkgs.awscli2}/bin/aws --endpoint-url ${s3Endpoint} s3api put-bucket-cors \
+          --bucket ${escapeShellArg bucket.name} \
+          --cors-configuration file://${corsConfigFile name bucket}
+    '';
+
+  bucketCommands = name: bucket: ''
+    garage bucket create ${escapeShellArg bucket.name} 2>/dev/null \
+      || echo "garage: bucket ${bucket.name} already exists"
+    ${grantCommands bucket}
+    ${optionalString bucket.website "garage bucket website --allow ${escapeShellArg bucket.name}"}
+    ${corsCommand name bucket}
+  '';
+
+  bucketsInit = pkgs.writeShellScriptBin "garage-buckets-init" ''
+    set -euo pipefail
+    garage() { ${garageCli}/bin/garage "$@"; }
+    ${concatStringsSep "\n" (mapAttrsToList bucketCommands cfg.buckets)}
   '';
 in {
   options = {
@@ -92,6 +160,103 @@ in {
             };
           };
         };
+      };
+
+      s3PublicHost = mkOption {
+        type = str;
+        default = "s3.${config.project.domainSuffix}";
+        description = ''
+          Public hostname the S3 API is fronted at (haproxy/traefik). A single
+          label under the project domain so it is covered by the wildcard dns +
+          cert; buckets are addressed path-style (host/bucket/key).
+        '';
+      };
+
+      s3PublicEndpoint = mkOption {
+        type = str;
+        default = "https://${cfg.s3PublicHost}";
+        defaultText = "https://\${config.services.garage.s3PublicHost}";
+        description = "Public HTTPS endpoint for the S3 API, for browser/presigned-URL uploads.";
+      };
+
+      buckets = mkOption {
+        default = {};
+        description = "Buckets to provision on `garage-init`: create, grant keys, expose as a website, apply CORS.";
+        type = attrsOf (submodule ({name, ...}: {
+          options = {
+            name = mkOption {
+              type = str;
+              default = name;
+              description = "Bucket name (defaults to the attribute name).";
+            };
+            website = mkOption {
+              type = bool;
+              default = false;
+              description = "Expose the bucket for anonymous reads via the web endpoint.";
+            };
+            keys = mkOption {
+              default = [];
+              description = "S3 keys to import and grant on this bucket.";
+              type = listOf (submodule {
+                options = {
+                  id = mkOption {
+                    type = str;
+                    description = "Access key id (garage format: 'GK' + 24 hex).";
+                  };
+                  secret = mkOption {
+                    type = str;
+                    description = "Secret key (garage format: 64 hex).";
+                  };
+                  name = mkOption {
+                    type = str;
+                    default = "dev";
+                    description = "Human-readable key name in garage.";
+                  };
+                  read = mkOption {
+                    type = bool;
+                    default = true;
+                  };
+                  write = mkOption {
+                    type = bool;
+                    default = true;
+                  };
+                  owner = mkOption {
+                    type = bool;
+                    default = false;
+                  };
+                };
+              });
+            };
+            cors = mkOption {
+              default = null;
+              description = "CORS rule applied to the bucket via S3 PutBucketCors. Requires at least one key.";
+              type = nullOr (submodule {
+                options = {
+                  allowedOrigins = mkOption {
+                    type = listOf str;
+                    description = "Origins allowed to call the bucket from a browser.";
+                  };
+                  allowedMethods = mkOption {
+                    type = listOf str;
+                    default = ["GET" "PUT" "HEAD"];
+                  };
+                  allowedHeaders = mkOption {
+                    type = listOf str;
+                    default = ["*"];
+                  };
+                  exposeHeaders = mkOption {
+                    type = listOf str;
+                    default = [];
+                  };
+                  maxAgeSeconds = mkOption {
+                    type = int;
+                    default = 3600;
+                  };
+                };
+              });
+            };
+          };
+        }));
       };
     };
   };
@@ -156,15 +321,17 @@ in {
       };
 
       programs.taskfile.config.tasks.garage-init = {
-        desc = "Assign and apply a single-node Garage layout (run once after first start)";
-        cmds = ["${garageInit}/bin/garage-init"];
+        desc = "Provision dev object storage: apply the single-node layout, then create buckets/keys/website/CORS";
+        cmds =
+          ["${garageInit}/bin/garage-init"]
+          ++ optional (cfg.buckets != {}) "${bucketsInit}/bin/garage-buckets-init";
       };
 
       services.traefik = {
         routers.garage = {
           entryPoints = ["http"];
           service = "garage";
-          rule = "HostRegexp(`{subdomain:.+}.s3.garage.${config.project.domainSuffix}`) || Host(`s3.garage.${config.project.domainSuffix}`)";
+          rule = "Host(`${cfg.s3PublicHost}`)";
         };
         services.garage.loadBalancer.servers = [
           {url = "http://${config.project.address}:${toString config.ports.garageS3}";}
@@ -172,7 +339,7 @@ in {
       };
 
       services.haproxy.virtualHosts.garage = {
-        host = "s3.garage.${config.project.domainSuffix}";
+        host = cfg.s3PublicHost;
         backend = "garage";
       };
       services.haproxy.backends.garage.servers = [
