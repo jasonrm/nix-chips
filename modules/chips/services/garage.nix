@@ -4,7 +4,7 @@
   config,
   ...
 }: let
-  inherit (lib) mkOption mkEnableOption mkIf mkDefault mkMerge types optional optionalString mapAttrsToList concatStringsSep concatMapStringsSep escapeShellArg head;
+  inherit (lib) mkOption mkEnableOption mkIf mkDefault mkMerge types optional optionalString mapAttrsToList concatStringsSep concatMapStringsSep escapeShellArg filter head;
 
   cfg = config.services.garage;
 
@@ -54,10 +54,13 @@
         addressing_style = path
   '';
 
-  corsKeyOf = bucket:
-    if bucket.keys == []
+  # PutBucketCors is a bucket-admin operation, so CORS is applied with an owner key.
+  corsKeyOf = bucket: let
+    owners = filter (key: key.owner) bucket.keys;
+  in
+    if owners == []
     then null
-    else head bucket.keys;
+    else head owners;
 
   corsConfigFile = name: bucket:
     pkgs.writeText "garage-cors-${name}.json" (builtins.toJSON {
@@ -84,7 +87,7 @@
     if bucket.cors == null
     then ""
     else if corsKeyOf bucket == null
-    then throw "services.garage.buckets.${name}.cors requires at least one key (PutBucketCors needs S3 credentials)."
+    then throw "services.garage.buckets.${name}.cors requires a key with owner = true (PutBucketCors needs owner permission)."
     else let
       key = corsKeyOf bucket;
     in ''
