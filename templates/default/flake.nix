@@ -3,6 +3,7 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     # various, usually obscure, programs that are missing from nixpkgs
     nixpkgs-staging.url = "github:jasonrm/nixpkgs-staging";
+    nixpkgs-staging.inputs.nixpkgs.follows = "nixpkgs";
 
     chips = {
       url = "github:jasonrm/nix-chips";

@@ -55,6 +55,9 @@
     mkdir -p $PWD/nix/devShells/$GITHUB_USERNAME
     ${pkgs.gettext}/bin/envsubst < ${template} > $PWD/nix/devShells/$GITHUB_USERNAME/default.nix
     ${pkgs.git}/bin/git add $PWD/nix/devShells/$GITHUB_USERNAME/default.nix
+    if [ -f $PWD/.envrc ]; then
+      ${pkgs.git}/bin/git add -f $PWD/.envrc
+    fi
   '';
 in {
   type = "app";

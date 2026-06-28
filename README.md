@@ -31,8 +31,9 @@ arcanum edit secrets/project.env.age
 ```nix
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     nixpkgs-staging.url = "github:jasonrm/nixpkgs-staging";
+    nixpkgs-staging.inputs.nixpkgs.follows = "nixpkgs";
 
     chips.url = "github:jasonrm/nix-chips";
     chips.inputs.nixpkgs.follows = "nixpkgs";
@@ -59,11 +60,13 @@ arcanum edit secrets/project.env.age
 ### `.envrc`
 
 ```
-nix_direnv_manual_reload
-use flake .#${USER}-$(hostname -s)
+source_env_if_exists .envrc.private
+use flake ".#${USER}${PROFILE:+.${PROFILE}}"
 # layout php
 # layout node
 ```
+
+`.envrc` is committed to the repository. Use `.envrc.private` for local overrides.
 
 ## Use
 
