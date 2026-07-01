@@ -17,26 +17,29 @@
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = inputs @ {self, ...}: let
+  outputs = inputs: let
     lib = import ./lib inputs;
-    output = lib.mkFlake {inherit inputs;} {
+  in
+    lib.mkFlake {
+      inherit inputs;
       sources.devShells = ./devShells;
       nixpkgs.overlays = [lib.overlays.unstable];
-      perSystem = {pkgs, ...}: {
+      outputs = {
+        inherit lib;
+        templates.default = {
+          path = ./templates/default;
+          description = "nix flake new -t github:jasonrm/nix-chips .";
+        };
+      };
+      perSystem = {
+        pkgs,
+        self,
+        ...
+      }: {
+        formatter = pkgs.alejandra;
         packages.docs-data = pkgs.callPackage ./docs/generate-options.nix {
           inherit self;
         };
-      };
-    };
-  in
-    output
-    // {
-      inherit lib;
-    }
-    // {
-      templates.default = {
-        path = ./templates/default;
-        description = "nix flake new -t github:jasonrm/nix-chips .";
       };
     };
 }

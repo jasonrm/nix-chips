@@ -1,14 +1,9 @@
-chipsInputs @ {nixpkgs, ...}: context: args: let
-  lib = nixpkgs.lib;
-
-  evaluated = lib.evalModules {
+chipsInputs @ {nixpkgs, ...}: args: let
+  evaluated = nixpkgs.lib.evalModules {
     modules = [
       ./flakeOptions.nix
       {config = args;}
     ];
-    specialArgs = {
-      inherit chipsInputs context;
-    };
   };
 in
-  import ./flakeOutputs.nix chipsInputs context evaluated.config
+  import ./flakeOutputs.nix chipsInputs evaluated.config

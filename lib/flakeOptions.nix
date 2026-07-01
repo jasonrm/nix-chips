@@ -2,6 +2,17 @@
   inherit (lib) mkOption types;
 in {
   options = {
+    inputs = mkOption {
+      type = types.attrs;
+      description = "The consuming flake's inputs. Pass `inherit inputs;`.";
+    };
+
+    outputs = mkOption {
+      type = types.attrs;
+      default = {};
+      description = "Extra top-level flake outputs (e.g. templates, lib) merged over the generated outputs.";
+    };
+
     sources = {
       apps = mkOption {
         type = types.nullOr types.path;
@@ -127,12 +138,8 @@ in {
 
     perSystem = mkOption {
       type = types.functionTo types.attrs;
-      default = {
-        pkgs,
-        system,
-        ...
-      }: {};
-      description = "Function producing additional per-system flake outputs such as packages and apps.";
+      default = {...}: {};
+      description = "Function producing additional per-system flake outputs such as packages and apps. Called with `{pkgs, system, inputs, self}`.";
     };
   };
 }

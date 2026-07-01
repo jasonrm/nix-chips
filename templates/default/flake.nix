@@ -23,7 +23,8 @@
     # rust-overlay,
     ...
   }:
-    chips.lib.mkFlake {inherit inputs;} {
+    chips.lib.mkFlake {
+      inherit inputs;
       # Generate new devShells with `nix run .#init-dev-shell <GITHUB_USERNAME>`
       sources.devShells = ./nix/devShells;
       # sources.packages = ./nix/packages;

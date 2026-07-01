@@ -40,13 +40,9 @@ arcanum edit secrets/project.env.age
     chips.inputs.nixpkgs-staging.follows = "nixpkgs-staging";
   };
 
-  outputs = inputs @ {
-    self,
-    nixpkgs,
-    chips,
-    ...
-  }:
-    chips.lib.mkFlake {inherit inputs;} {
+  outputs = inputs @ {chips, ...}:
+    chips.lib.mkFlake {
+      inherit inputs;
       sources = {
         devShells = ./nix/devShells;
         packages = ./nix/packages;
