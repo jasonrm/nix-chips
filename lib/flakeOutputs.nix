@@ -331,12 +331,12 @@ with nixpkgs.lib; let
   mergedNixosModules = nixosChipModules ++ cfg.modules.nixos ++ sharedChipModules ++ projectNixosModules;
 
   overlay = mergeOverlays (
-    cfg.nixpkgs.overlays
-    ++ [
+    [
       (mkPackagesOverlay cfg.sources.packages)
       rust-overlay.overlays.default
       nixpkgs-staging.overlays.default
     ]
+    ++ cfg.nixpkgs.overlays
   );
 
   packages = optionalAttrs (cfg.sources.packages != null) (usePackages {
