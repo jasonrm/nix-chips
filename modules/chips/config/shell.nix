@@ -24,6 +24,10 @@ with lib; let
     __chips_our_gen="${toString cfg.generationId}"
     __chips_our_hash="${hooksHash}"
     __chips_gen_file="${config.dir.data}/.dev-shell.gen"
+    # Hooks write $PWD-relative outputs (Taskfile.yml, lefthook config, ...),
+    # so the completed-run marker is kept per entry directory; the shared
+    # .dev-shell.gen file only guards against stale (older-generation) loads.
+    __chips_pwd_gen_file="${config.dir.data}/.dev-shell.gen.d/$(printf '%s' "$PWD" | ${pkgs.coreutils}/bin/sha256sum | ${pkgs.coreutils}/bin/cut -c1-16)"
     if [ -f "$__chips_gen_file" ]; then
       read -r __chips_disk_gen __chips_disk_hash < "$__chips_gen_file" || true
       case "$__chips_disk_gen" in
@@ -33,10 +37,18 @@ with lib; let
             echo "nix-chips: skipping stale devShell setup (gen=$__chips_our_gen < disk=$__chips_disk_gen)" >&2
             return 0 2>/dev/null || exit 0
           fi
+          ;;
+      esac
+    fi
+    if [ -f "$__chips_pwd_gen_file" ]; then
+      read -r __chips_disk_gen __chips_disk_hash < "$__chips_pwd_gen_file" || true
+      case "$__chips_disk_gen" in
+        ""|*[!0-9]*) ;;
+        *)
           if [ "$__chips_disk_gen" -eq "$__chips_our_gen" ] \
             && [ "''${__chips_disk_hash:-}" = "$__chips_our_hash" ] \
             && [ -z "''${CHIPS_DEV_SHELL_FORCE:-}" ]; then
-            # This exact configuration already completed; nothing to redo.
+            # This exact configuration already completed in this directory.
             return 0 2>/dev/null || exit 0
           fi
           ;;
@@ -45,8 +57,9 @@ with lib; let
   '';
 
   genStamp = optionalString hasGenGate ''
-    mkdir -p "$(dirname "$__chips_gen_file")"
+    mkdir -p "$(dirname "$__chips_pwd_gen_file")"
     printf '%s %s\n' "$__chips_our_gen" "$__chips_our_hash" > "$__chips_gen_file"
+    printf '%s %s\n' "$__chips_our_gen" "$__chips_our_hash" > "$__chips_pwd_gen_file"
   '';
 
   shellHook = pkgs.writeShellScriptBin "dev-shell.init.sh" ''
@@ -94,24 +107,29 @@ in {
           (decrypted secrets, symlinks, generated configs, etc.) written
           by a newer shell.
 
-          The marker also records a hash of the hook script. A re-entry
-          whose generation AND hash match the marker skips the hooks
-          entirely (fast path): the hooks embed the store paths of
-          everything they produce, so any flake/config/secret change
-          re-runs them automatically. Tradeoff: hook *outputs* deleted
-          by hand (a decrypted secret, a symlink) are not recreated
-          until forced.
+          Completed runs are additionally stamped per entry directory
+          under <dir.data>/.dev-shell.gen.d/ (keyed by a hash of $PWD),
+          because hooks write $PWD-relative outputs (Taskfile.yml,
+          lefthook config, ...). A re-entry whose generation AND hook
+          hash match the marker for the same directory skips the hooks
+          entirely (fast path); entering the shell from a directory
+          that has not completed this exact configuration re-runs them.
+          The hooks embed the store paths of everything they produce,
+          so any flake/config/secret change re-runs them automatically.
+          Tradeoff: hook *outputs* deleted by hand (a decrypted secret,
+          a symlink) are not recreated until forced.
 
           Defaults to the nix-chips input's lastModified. Set to 0 to
           disable the gate. Override with your own flake's
           self.lastModified to also bump on local source changes.
 
           To force re-run: CHIPS_DEV_SHELL_FORCE=1 direnv reload
-          (or delete the marker: rm <dir.data>/.dev-shell.gen).
+          (or delete the markers: rm -r <dir.data>/.dev-shell.gen*).
 
           Note: two shells sharing one dir.data (e.g. per-host variants)
-          write the same marker file and will re-run hooks when switching
-          between them; harmless, just not skipped.
+          entered from the same directory write the same marker and will
+          re-run hooks when switching between them; harmless, just not
+          skipped.
         '';
       };
 
