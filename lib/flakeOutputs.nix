@@ -80,14 +80,14 @@ with nixpkgs.lib; let
   useDevShells = {
     devShellsDir,
     modules,
+    aliases ? {},
   }: let
     nixFiles = nixFilesIn devShellsDir;
   in
     (eachDefaultSystem (
       system: let
         pkgs = pkgsFor system;
-      in {
-        results = listToAttrs (
+        shells = listToAttrs (
           map (name: {
             name = devShellName devShellsDir name;
             value = evalChipsModules {
@@ -97,6 +97,14 @@ with nixpkgs.lib; let
           })
           nixFiles
         );
+      in {
+        results =
+          shells
+          // mapAttrs (
+            alias: target:
+              shells.${target} or (throw "devShells.aliases.${alias} points at unknown devShell '${target}'")
+          )
+          aliases;
       }
     )).results;
 
@@ -355,6 +363,7 @@ with nixpkgs.lib; let
   devShells = optionalAttrs (cfg.sources.devShells != null) (useDevShells {
     devShellsDir = cfg.sources.devShells;
     modules = nixChipModules ++ nixosShimModules ++ sharedChipModules;
+    aliases = cfg.devShells.aliases;
   });
 
   collectFromOutput = attrPath: output: let

@@ -69,6 +69,18 @@ in {
       };
     };
 
+    devShells = {
+      aliases = mkOption {
+        type = types.attrsOf types.str;
+        default = {};
+        description = ''
+          Extra devShell names exposed as aliases of existing shells,
+          e.g. { user-laptop = "user-desktop"; }. Useful when several
+          hostnames should resolve to the same shell without stub files.
+        '';
+      };
+    };
+
     nixpkgs = {
       config = mkOption {
         type = types.attrs;
