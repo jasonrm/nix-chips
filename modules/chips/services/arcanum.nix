@@ -12,9 +12,16 @@ with lib; let
 
     src="$1"
     dest="$2"
+    stamp="$3"
 
     if [ ! -f "$src" ]; then
       echo "Encrypted Secret Not Found: $src" >&2
+      exit 0
+    fi
+
+    # The source is a store path, so its name changes whenever the
+    # encrypted content changes; a matching stamp means dest is current.
+    if [ -z "''${ARCANUM_FORCE:-}" ] && [ -f "$dest" ] && [ "$(cat "$stamp" 2>/dev/null)" = "$src" ]; then
       exit 0
     fi
 
@@ -34,6 +41,9 @@ with lib; let
       mv -f "$tmp" "$dest"
     fi
     trap - EXIT
+
+    mkdir -p "$(dirname "$stamp")"
+    printf '%s\n' "$src" > "$stamp"
   '';
 in {
   imports = [];
@@ -47,7 +57,7 @@ in {
       shellHooks = mkOrder 750 (
         concatStringsSep "\n" (
           mapAttrsToList (
-            name: secret: "${decryptSecret} ${cfg.relativeRoot}/${secret.source} ${secret.dest}"
+            name: secret: "${decryptSecret} ${cfg.relativeRoot}/${secret.source} ${secret.dest} ${config.dir.data}/.arcanum/${name}"
           )
           filesWithDest
         )

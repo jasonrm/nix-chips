@@ -176,8 +176,10 @@ in {
       contents = [pkgs.lefthook];
       shellHooks =
         ''
-          ln -sf ${leftHookConfigFile} ${cfg.filename}
-          ${pkgs.lefthook}/bin/lefthook install
+          if [ "$(readlink ${cfg.filename} 2>/dev/null)" != "${leftHookConfigFile}" ] || [ ! -e .git/hooks/pre-commit ]; then
+            ln -sf ${leftHookConfigFile} ${cfg.filename}
+            ${pkgs.lefthook}/bin/lefthook install
+          fi
         ''
         + optionalString cfg.addToGitIgnore ''
           if [ -d .git ]; then

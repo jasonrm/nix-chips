@@ -381,7 +381,9 @@ in {
       devShell = {
         shellHooks =
           ''
-            ${update-jetbrains}/bin/update-jetbrains
+            if [ -e .idea/workspace.xml ]; then
+              ${update-jetbrains}/bin/update-jetbrains
+            fi
           ''
           + optionalString cfg.php-cs-fixer.addToGitIgnore ''
             if [ -d .git ]; then
