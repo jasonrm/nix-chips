@@ -56,6 +56,19 @@ with lib; let
     else value;
 
   programEntries = attrsets.mapAttrsToList programEntry cfg.programs;
+
+  groupEntry = name: members: let
+    unknown = filter (m: !(cfg.programs ? ${m})) members;
+  in
+    if unknown != []
+    then throw "programs.supervisord.groups.${name} references unknown programs: ${concatStringsSep ", " unknown}"
+    else ''
+      [group:${name}]
+      programs=${concatStringsSep "," members}
+
+    '';
+  groupEntries = attrsets.mapAttrsToList groupEntry cfg.groups;
+
   serverUrl = "http://${config.project.address}:${toString cfg.port}";
   configuration = pkgs.writeText "supervisord.ini" ''
     [inet_http_server]
@@ -65,6 +78,7 @@ with lib; let
     serverurl=${serverUrl}
 
     ${(concatStringsSep "" programEntries)}
+    ${(concatStringsSep "" groupEntries)}
   '';
 
   programOption = with types;
@@ -244,6 +258,17 @@ in {
       programs = mkOption {
         default = {};
         type = attrsOf (submodule programOption);
+      };
+      groups = mkOption {
+        default = {};
+        type = attrsOf (listOf str);
+        description = ''
+          Named groups of supervised programs, emitted as [group:<name>]
+          sections. Programs stay addressable by their plain names; groups
+          additionally enable group operations (XML-RPC
+          start/stopProcessGroup) and grouping in the web UI and
+          GET /program/list.
+        '';
       };
       programEnvironment = mkOption {
         type = listOf str;
