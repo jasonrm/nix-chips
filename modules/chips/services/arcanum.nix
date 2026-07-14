@@ -21,7 +21,7 @@ with lib; let
 
     # The source is a store path, so its name changes whenever the
     # encrypted content changes; a matching stamp means dest is current.
-    if [ -z "''${ARCANUM_FORCE:-}" ] && [ -f "$dest" ] && [ "$(cat "$stamp" 2>/dev/null)" = "$src" ]; then
+    if [ -n "$stamp" ] && [ -z "''${ARCANUM_FORCE:-}" ] && [ -f "$dest" ] && [ "$(cat "$stamp" 2>/dev/null)" = "$src" ]; then
       exit 0
     fi
 
@@ -42,8 +42,10 @@ with lib; let
     fi
     trap - EXIT
 
-    mkdir -p "$(dirname "$stamp")"
-    printf '%s\n' "$src" > "$stamp"
+    if [ -n "$stamp" ]; then
+      mkdir -p "$(dirname "$stamp")"
+      printf '%s\n' "$src" > "$stamp"
+    fi
   '';
 in {
   imports = [];
@@ -57,7 +59,18 @@ in {
       shellHooks = mkOrder 750 (
         concatStringsSep "\n" (
           mapAttrsToList (
-            name: secret: "${decryptSecret} ${cfg.relativeRoot}/${secret.source} ${secret.dest} ${config.dir.data}/.arcanum/${name}"
+            name: secret: let
+              stamp =
+                if config.dir.project != "/dev/null"
+                then "${config.dir.data}/.arcanum/${name}"
+                else "";
+            in
+              escapeShellArgs [
+                decryptSecret
+                "${cfg.relativeRoot}/${secret.source}"
+                secret.dest
+                stamp
+              ]
           )
           filesWithDest
         )
