@@ -8,12 +8,13 @@
   ...
 }: cfg:
 with nixpkgs.lib; let
-  inherit (utils.lib) eachSystem eachDefaultSystem;
+  inherit (utils.lib) eachSystem;
   inherit (import ./discovery.nix {lib = nixpkgs.lib;}) devShellName nixFileName nixFilesIn;
 
   contextInputs = cfg.inputs;
   projectSelf = contextInputs.self or self;
   chipsSelf = contextInputs.chips or self;
+  eachSupportedSystem = eachSystem cfg.systems;
 
   pkgsFor = system:
     import nixpkgs {
@@ -54,7 +55,7 @@ with nixpkgs.lib; let
   useApps = appsDir: let
     allApps = chipsAppsDir ++ filesOrEmpty appsDir;
   in
-    (eachDefaultSystem (
+    (eachSupportedSystem (
       system: {
         apps = callPackageFiles (pkgsFor system) allApps;
       }
@@ -84,7 +85,7 @@ with nixpkgs.lib; let
   }: let
     nixFiles = nixFilesIn devShellsDir;
   in
-    (eachDefaultSystem (
+    (eachSupportedSystem (
       system: let
         pkgs = pkgsFor system;
         shells = listToAttrs (
@@ -114,7 +115,7 @@ with nixpkgs.lib; let
   }: let
     nixFiles = nixFilesIn dockerImagesDir;
   in
-    (eachDefaultSystem (
+    (eachSupportedSystem (
       system: let
         pkgs = pkgsFor system;
       in {
@@ -132,7 +133,7 @@ with nixpkgs.lib; let
     )).legacyPackages;
 
   usePackages = packagesDir:
-    (eachDefaultSystem (
+    (eachSupportedSystem (
       system: {
         packages = callPackageFiles (pkgsFor system) (nixFilesIn packagesDir);
       }
@@ -188,7 +189,7 @@ with nixpkgs.lib; let
       path = n;
     }) (builtins.filter onlyHomeNix (nixFilesIn homeConfigurationsDir));
   in
-    (eachDefaultSystem (
+    (eachSupportedSystem (
       system: let
         pkgs = pkgsFor system;
       in {
@@ -371,7 +372,7 @@ with nixpkgs.lib; let
   in
     mapAttrs (n: v: mapAttrs (n: cfg: fromPath cfg) v) output;
 
-  perSystemAttrs = eachDefaultSystem (
+  perSystemAttrs = eachSupportedSystem (
     system: let
       pkgs = pkgsFor system;
     in

@@ -13,6 +13,16 @@ in {
       description = "Extra top-level flake outputs (e.g. templates, lib) merged over the generated outputs.";
     };
 
+    systems = mkOption {
+      type = types.listOf types.str;
+      default = [
+        "aarch64-darwin"
+        "aarch64-linux"
+        "x86_64-linux"
+      ];
+      description = "Systems for which per-system flake outputs are generated.";
+    };
+
     sources = {
       apps = mkOption {
         type = types.nullOr types.path;
