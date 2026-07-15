@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dev Dashboard</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #ffffff; --text: #1c2430; --muted: #68707c;
+    --border: #e1e5ea; --accent: #2563eb;
+    --running: #16a34a; --stopped: #9ca3af; --bad: #dc2626; --busy: #d97706;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12161c; --panel: #1a2029; --text: #e6eaf0; --muted: #8b94a1;
+      --border: #2a323d; --accent: #60a5fa;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 14px/1.45 system-ui, sans-serif; background: var(--bg); color: var(--text); }
+  header { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; padding: 18px 24px 8px; }
+  header h1 { font-size: 18px; margin: 0; }
+  header nav { display: flex; gap: 12px; flex-wrap: wrap; }
+  header a { color: var(--accent); text-decoration: none; }
+  header a:hover { text-decoration: underline; }
+  #banner { display: none; margin: 8px 24px; padding: 8px 12px; border-radius: 6px; background: var(--bad); color: #fff; }
+  main { padding: 8px 24px 40px; display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); align-items: start; }
+  section { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .head { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  .head h2 { font-size: 14px; margin: 0; text-transform: capitalize; flex: 1; }
+  .head .count { color: var(--muted); font-size: 12px; }
+  button { font: inherit; font-size: 12px; padding: 3px 10px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--text); cursor: pointer; }
+  button:hover { border-color: var(--accent); color: var(--accent); }
+  button:disabled { opacity: .4; cursor: default; }
+  .prog { display: flex; align-items: center; gap: 8px; padding: 7px 14px; border-bottom: 1px solid var(--border); }
+  .prog:last-child { border-bottom: none; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .desc { color: var(--muted); font-size: 12px; white-space: nowrap; }
+  .meta { grid-column: 1 / -1; }
+</style>
+</head>
+<body>
+<header>
+  <h1 id="title"></h1>
+  <nav id="links"></nav>
+</header>
+<div id="banner">supervisord unreachable — is <code>task dev</code> running?</div>
+<main id="main"></main>
+<script>
+const state = { config: null, programs: [] };
+
+const el = (tag, attrs = {}, ...children) => {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (v === undefined) continue;
+    if (k === "onclick") n.onclick = v; else n.setAttribute(k, v);
+  }
+  n.append(...children);
+  return n;
+};
+
+const dotColor = (s) => ({
+  Running: "var(--running)", Stopped: "var(--stopped)",
+  Starting: "var(--busy)", Backoff: "var(--busy)", Stopping: "var(--busy)",
+}[s] || "var(--bad)");
+
+async function api(path, body) {
+  const res = await fetch(path, body === undefined ? {} : {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`${path}: ${res.status}`);
+  return res;
+}
+
+const start = (name) => api(`/program/start/${name}`, null).then(refresh);
+const stop = (name) => api(`/program/stop/${name}`, null).then(refresh);
+const startAll = (names) => api("/program/startPrograms", names).then(refresh);
+const stopAll = (names) => api("/program/stopPrograms", names).then(refresh);
+
+async function restart(name) {
+  await api(`/program/stop/${name}`, null);
+  for (let i = 0; i < 20; i++) {
+    await new Promise((r) => setTimeout(r, 500));
+    const info = (await (await api("/program/list")).json()).find((p) => p.name === name);
+    if (!info || info.statename !== "Running") break;
+  }
+  await api(`/program/start/${name}`, null);
+  refresh();
+}
+
+function progRow(p) {
+  const running = p.statename === "Running";
+  return el("div", { class: "prog" },
+    el("span", { class: "dot", style: `background:${dotColor(p.statename)}` }),
+    el("span", { class: "name", title: p.name }, p.name),
+    el("span", { class: "desc" }, p.description || p.statename),
+    el("button", { onclick: () => (running ? stop(p.name) : start(p.name)) }, running ? "stop" : "start"),
+    el("button", { onclick: () => restart(p.name), disabled: running ? undefined : "" }, "restart"),
+  );
+}
+
+function section(title, progs) {
+  const names = progs.map((p) => p.name);
+  const running = progs.filter((p) => p.statename === "Running").length;
+  return el("section", {},
+    el("div", { class: "head" },
+      el("h2", {}, title),
+      el("span", { class: "count" }, `${running}/${progs.length} running`),
+      el("button", { onclick: () => startAll(names) }, "start all"),
+      el("button", { onclick: () => stopAll(names) }, "stop all"),
+    ),
+    ...progs.map(progRow),
+  );
+}
+
+function metaRow(name, members, byName) {
+  const progs = members.map((m) => byName.get(m)).filter(Boolean);
+  const names = progs.map((p) => p.name);
+  const running = progs.filter((p) => p.statename === "Running").length;
+  const dot = running === 0 ? "var(--stopped)" : running === progs.length ? "var(--running)" : "var(--busy)";
+  return el("div", { class: "prog" },
+    el("span", { class: "dot", style: `background:${dot}` }),
+    el("span", { class: "name", title: names.join(", ") }, name),
+    el("span", { class: "desc" }, `${running}/${progs.length} running`),
+    el("button", { onclick: () => startAll(names) }, "start all"),
+    el("button", { onclick: () => stopAll(names), disabled: running ? undefined : "" }, "stop all"),
+  );
+}
+
+function render() {
+  const main = document.getElementById("main");
+  main.replaceChildren();
+
+  const profiles = state.config?.profiles || {};
+  const grouped = new Set(Object.values(profiles).flat());
+  const byName = new Map(state.programs.map((p) => [p.name, p]));
+
+  const metas = Object.entries(state.config?.metaProfiles || {});
+  if (metas.length) {
+    main.append(el("section", { class: "meta" },
+      el("div", { class: "head" }, el("h2", {}, "workflows")),
+      ...metas.map(([name, members]) => metaRow(name, members, byName)),
+    ));
+  }
+
+  const core = state.programs.filter((p) => !grouped.has(p.name));
+  if (core.length) main.append(section("core", core));
+
+  for (const [profile, members] of Object.entries(profiles)) {
+    const progs = members.map((m) => byName.get(m)).filter(Boolean);
+    if (progs.length) main.append(section(profile, progs));
+  }
+}
+
+async function refresh() {
+  try {
+    state.programs = await (await api("/program/list")).json();
+    document.getElementById("banner").style.display = "none";
+  } catch {
+    state.programs = [];
+    document.getElementById("banner").style.display = "block";
+  }
+  render();
+}
+
+async function init() {
+  try {
+    state.config = await (await fetch("/config.json")).json();
+  } catch {
+    state.config = { profiles: {}, links: [] };
+  }
+  const title = state.config.title || location.host;
+  document.title = title;
+  document.getElementById("title").textContent = title;
+  document.getElementById("links").replaceChildren(
+    ...(state.config.links || []).map((l) => el("a", { href: l.url, target: "_blank" }, l.name)),
+  );
+  await refresh();
+  setInterval(refresh, 3000);
+}
+init();
+</script>
+</body>
+</html>
