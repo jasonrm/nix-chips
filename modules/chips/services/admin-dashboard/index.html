@@ -37,6 +37,8 @@
   .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
   .name { flex: 0 1 14rem; min-width: 8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .desc { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--muted); font-size: 12px; white-space: nowrap; }
+  .details { flex: 1; min-width: 0; display: grid; grid-template-columns: minmax(6.5rem, 1fr) minmax(7rem, 1fr); color: var(--muted); font-size: 12px; white-space: nowrap; }
+  .pid, .uptime { overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
   .meta { grid-column: 1 / -1; }
 </style>
 </head>
@@ -96,10 +98,17 @@ function progRow(p) {
   const description = running
     ? p.description
     : `${p.statename}${p.statename === "Exited" ? ` (exit ${p.exitstatus})` : ""}`;
+  const details = running && p.description.match(/^pid (\d+), uptime (.+)$/);
+  const status = details
+    ? el("span", { class: "details", title: p.description },
+        el("span", { class: "pid" }, `pid ${details[1]}`),
+        el("span", { class: "uptime" }, `uptime ${details[2]}`),
+      )
+    : el("span", { class: "desc", title: p.description || description }, description);
   return el("div", { class: "prog" },
     el("span", { class: "dot", style: `background:${dotColor(p.statename)}` }),
     el("span", { class: "name", title: p.name }, p.name),
-    el("span", { class: "desc", title: p.description || description }, description),
+    status,
     el("button", { onclick: () => (running ? stop(p.name) : start(p.name)) }, running ? "stop" : "start"),
     el("button", { onclick: () => restart(p.name), disabled: running ? undefined : "" }, "restart"),
   );
