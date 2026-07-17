@@ -12,14 +12,7 @@ with lib; let
     domain = cfg.host;
     profiles = config.project.profiles;
     metaProfiles = config.project.metaProfiles;
-    links =
-      [
-        {
-          name = "Supervisord";
-          url = "https://supervisord.${config.project.domainSuffix}";
-        }
-      ]
-      ++ cfg.links;
+    links = cfg.links;
   });
 
   adminSite = pkgs.runCommand "admin-dashboard-site" {} ''
@@ -62,7 +55,7 @@ in {
           };
         });
         default = [];
-        description = "Custom header links, shown after the built-in Supervisord link.";
+        description = "Custom header links shown in the dashboard.";
       };
     };
   };
