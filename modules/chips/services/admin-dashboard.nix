@@ -30,7 +30,11 @@ with lib; let
 in {
   options = with types; {
     project.admin = {
-      enable = mkEnableOption "Admin dashboard for supervised services at the bare project domain.";
+      enable = mkOption {
+        type = bool;
+        default = true;
+        description = "Admin dashboard for supervised services at the bare project domain.";
+      };
       host = mkOption {
         type = str;
         default = config.project.domainSuffix;
