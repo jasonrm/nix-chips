@@ -24,7 +24,7 @@
   header a { color: var(--accent); text-decoration: none; }
   header a:hover { text-decoration: underline; }
   #banner { display: none; margin: 8px 24px; padding: 8px 12px; border-radius: 6px; background: var(--bad); color: #fff; }
-  main { padding: 8px 24px 40px; display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); align-items: start; }
+  main { padding: 8px 24px 40px; display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(min(560px, 100%), 1fr)); align-items: start; }
   section { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
   .head { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--border); }
   .head h2 { font-size: 14px; margin: 0; text-transform: capitalize; flex: 1; }
@@ -37,9 +37,22 @@
   .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
   .name { flex: 0 1 14rem; min-width: 8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .desc { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--muted); font-size: 12px; white-space: nowrap; }
-  .details { flex: 1; min-width: 0; display: grid; grid-template-columns: minmax(6.5rem, 1fr) minmax(7rem, 1fr); color: var(--muted); font-size: 12px; white-space: nowrap; }
+  .details { flex: 1; min-width: 0; display: grid; grid-template-columns: minmax(5.5rem, 1fr) minmax(6.5rem, 1fr); color: var(--muted); font-size: 12px; white-space: nowrap; }
   .pid, .uptime { overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
   .meta { grid-column: 1 / -1; }
+  @media (max-width: 600px) {
+    header { padding-inline: 12px; }
+    #banner { margin-inline: 12px; }
+    main { padding-inline: 12px; }
+    .head { flex-wrap: wrap; }
+    .prog { display: grid; grid-template-columns: 9px minmax(0, 1fr) auto auto; column-gap: 8px; row-gap: 3px; }
+    .dot { grid-column: 1; grid-row: 1; }
+    .name { grid-column: 2; grid-row: 1; min-width: 0; }
+    .prog > button:nth-last-child(2) { grid-column: 3; grid-row: 1; }
+    .prog > button:last-child { grid-column: 4; grid-row: 1; }
+    .prog > .desc, .prog > .details { grid-column: 2 / -1; grid-row: 2; }
+    .details { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  }
 </style>
 </head>
 <body>
