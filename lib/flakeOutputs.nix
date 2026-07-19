@@ -31,6 +31,10 @@ with nixpkgs.lib; let
     then nixFilesIn directory
     else [];
 
+  combineNixosModules = modules: {
+    imports = modules;
+  };
+
   nixChipModules = nixFilesIn ../modules/chips;
   nixosChipModules = nixFilesIn ../modules/nixos;
   nixosShimModules = nixFilesIn ../modules/nixos-shims;
@@ -147,7 +151,7 @@ with nixpkgs.lib; let
     makeCheck = system: check:
       (import ./makeCheck.nix) (import check) {
         self = {
-          nixosModules.default = modules;
+          nixosModules.default = combineNixosModules modules;
           overlays.default = overlay;
         };
         pkgs = pkgsFor system;
@@ -393,7 +397,7 @@ with nixpkgs.lib; let
       ;
     legacyPackages = dockerImages;
     devShells = collectFromOutput ["devShell" "output"] devShells;
-    nixosModules.default = cfg.modules.nixos ++ projectNixosModules;
+    nixosModules.default = combineNixosModules (cfg.modules.nixos ++ projectNixosModules);
     overlays.default = overlay;
     lib = {
       manual = mkManual {modules = mergedNixosModules;};
