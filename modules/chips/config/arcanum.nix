@@ -11,7 +11,7 @@ in {
   config = mkIf cfg.enable {
     devShell.contents = [pkgs.arcanum];
 
-    devShell.shellHooks = mkOrder 751 (
+    devShell.activationHooks = mkOrder 751 (
       optionalString (secretEnvFiles != {}) ''
         set -o allexport
         ${concatStringsSep "\n" (

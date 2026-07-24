@@ -20,7 +20,7 @@ with lib; let
   # therefore this hash.
   hooksHash = builtins.hashString "sha256" cfg.shellHooks;
 
-  genGate = optionalString hasGenGate ''
+  staleGenGate = optionalString hasGenGate ''
     __chips_our_gen="${toString cfg.generationId}"
     __chips_our_hash="${hooksHash}"
     __chips_gen_file="${config.dir.data}/.dev-shell.gen"
@@ -40,6 +40,9 @@ with lib; let
           ;;
       esac
     fi
+  '';
+
+  completedGenGate = optionalString hasGenGate ''
     if [ -f "$__chips_pwd_gen_file" ]; then
       read -r __chips_disk_gen __chips_disk_hash < "$__chips_pwd_gen_file" || true
       case "$__chips_disk_gen" in
@@ -81,7 +84,9 @@ with lib; let
       esac
     fi
 
-    ${genGate}
+    ${staleGenGate}
+    ${cfg.activationHooks}
+    ${completedGenGate}
     ${cfg.shellHooks}
     ${genStamp}
   '';
@@ -156,6 +161,12 @@ in {
       shellHooks = mkOption {
         type = lines;
         default = "";
+      };
+
+      activationHooks = mkOption {
+        type = lines;
+        default = "";
+        description = "Shell hooks that run on every devShell activation, including when cached setup hooks are skipped.";
       };
 
       directories = mkOption {
