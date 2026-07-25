@@ -2,7 +2,6 @@
   self,
   nixpkgs,
   nixpkgs-staging,
-  rust-overlay,
   home-manager,
   utils,
   arcanum,
@@ -323,10 +322,11 @@ with nixpkgs.lib; let
 
   mergedNixosModules = nixosChipModules ++ cfg.modules.nixos ++ sharedChipModules ++ projectNixosModules;
 
+  # nixpkgs-staging's overlay composes rust-overlay internally, so
+  # `pkgs.rust-bin` stays available without a separate rust-overlay input.
   overlay = composeManyExtensions (
     [
       (mkPackagesOverlay cfg.sources.packages)
-      rust-overlay.overlays.default
       nixpkgs-staging.overlays.default
       # Provide pkgs.arcanum without re-applying arcanum's full chips overlay stack.
       (final: prev: {
