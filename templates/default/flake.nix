@@ -11,6 +11,13 @@
       inputs.nixpkgs-staging.follows = "nixpkgs-staging";
     };
 
+    # Optional: pin arcanum with the project (chips already provides pkgs.arcanum).
+    # arcanum.url = "github:bitnixdev/arcanum";
+    # arcanum.inputs.nixpkgs.follows = "nixpkgs";
+    # arcanum.inputs.nixpkgs-staging.follows = "nixpkgs-staging";
+    # arcanum.inputs.chips.follows = "chips";
+    # chips.inputs.arcanum.follows = "arcanum";
+
     # rust-overlay = {
     #   url = "github:oxalica/rust-overlay";
     #   inputs.nixpkgs.follows = "nixpkgs";

@@ -15,6 +15,12 @@
 
     home-manager.url = "github:nix-community/home-manager";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
+
+    # chips.follows = "/" breaks the arcanum ↔ chips cycle (arcanum depends on chips).
+    arcanum.url = "github:bitnixdev/arcanum";
+    arcanum.inputs.nixpkgs.follows = "nixpkgs";
+    arcanum.inputs.nixpkgs-staging.follows = "nixpkgs-staging";
+    arcanum.inputs.chips.follows = "/";
   };
 
   outputs = inputs: let

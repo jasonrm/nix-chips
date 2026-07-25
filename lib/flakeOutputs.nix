@@ -5,6 +5,7 @@
   rust-overlay,
   home-manager,
   utils,
+  arcanum,
   ...
 }: cfg:
 with nixpkgs.lib; let
@@ -327,6 +328,10 @@ with nixpkgs.lib; let
       (mkPackagesOverlay cfg.sources.packages)
       rust-overlay.overlays.default
       nixpkgs-staging.overlays.default
+      # Provide pkgs.arcanum without re-applying arcanum's full chips overlay stack.
+      (final: prev: {
+        inherit (arcanum.packages.${prev.stdenv.hostPlatform.system}) arcanum;
+      })
     ]
     ++ cfg.nixpkgs.overlays
   );
