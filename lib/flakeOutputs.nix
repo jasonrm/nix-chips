@@ -3,12 +3,24 @@
   nixpkgs,
   nixpkgs-staging,
   home-manager,
-  utils,
   arcanum,
   ...
 }: cfg:
 with nixpkgs.lib; let
-  inherit (utils.lib) eachSystem;
+  # Inlined from flake-utils (MIT): builds {output.system = value} attrsets
+  # from a per-system function, without the flake-utils input.
+  eachSystem = systems: f:
+    builtins.foldl' (
+      acc: system: let
+        ret = f system;
+      in
+        builtins.foldl' (
+          inner: key:
+            inner // {${key} = (inner.${key} or {}) // {${system} = ret.${key};};}
+        )
+        acc (builtins.attrNames ret)
+    ) {}
+    systems;
   inherit (import ./discovery.nix {lib = nixpkgs.lib;}) devShellName nixFileName nixFilesIn;
 
   contextInputs = cfg.inputs;
@@ -157,7 +169,7 @@ with nixpkgs.lib; let
         pkgs = pkgsFor system;
       };
   in
-    ((eachSystem [utils.lib.system.x86_64-linux]) (system: {
+    ((eachSystem ["x86_64-linux"]) (system: {
       checks = listToAttrs (
         map (check: {
           name = nixFileName check;
