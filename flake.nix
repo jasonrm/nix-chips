@@ -8,9 +8,6 @@
     nixpkgs-staging.url = "github:jasonrm/nixpkgs-staging";
     nixpkgs-staging.inputs.nixpkgs.follows = "nixpkgs";
 
-    home-manager.url = "github:nix-community/home-manager";
-    home-manager.inputs.nixpkgs.follows = "nixpkgs";
-
     # chips.follows = "/" breaks the arcanum ↔ chips cycle (arcanum depends on chips).
     arcanum.url = "github:bitnixdev/arcanum";
     arcanum.inputs.nixpkgs.follows = "nixpkgs";

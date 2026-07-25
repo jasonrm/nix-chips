@@ -4,7 +4,11 @@ in {
   options = {
     inputs = mkOption {
       type = types.attrs;
-      description = "The consuming flake's inputs. Pass `inherit inputs;`.";
+      description = ''
+        The consuming flake's inputs. Pass `inherit inputs;`.
+        When homeConfigurations, nixosConfigurations, or darwinConfigurations
+        are used, a `home-manager` input is looked up here.
+      '';
     };
 
     outputs = mkOption {

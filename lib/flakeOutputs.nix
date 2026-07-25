@@ -2,7 +2,6 @@
   self,
   nixpkgs,
   nixpkgs-staging,
-  home-manager,
   arcanum,
   ...
 }: cfg:
@@ -26,6 +25,13 @@ with nixpkgs.lib; let
   contextInputs = cfg.inputs;
   projectSelf = contextInputs.self or self;
   chipsSelf = contextInputs.chips or self;
+
+  # Only forced when homeConfigurations are used or a nixos/darwin module
+  # accesses the home-manager specialArg, so dev-shell-only consumers
+  # don't need (or fetch) the input at all.
+  home-manager =
+    contextInputs.home-manager
+    or (throw "nix-chips: add a `home-manager` input to your flake (and pass `inherit inputs;` to mkFlake) to use homeConfigurations or the home-manager specialArg");
   eachSupportedSystem = eachSystem cfg.systems;
 
   pkgsFor = system:
