@@ -6,10 +6,17 @@
 }:
 with lib; let
   cfg = config.arcanum;
+  filesWithDest = filterAttrs (n: secret: secret.dest != null) cfg.files;
   secretEnvFiles = filterAttrs (n: secret: secret.dest != null && secret.isEnvFile == true) cfg.files;
+  editFiles =
+    mapAttrsToList (name: secret: {
+      inherit (secret) source dest;
+    })
+    filesWithDest;
 in {
   config = mkIf cfg.enable {
     devShell.contents = [pkgs.arcanum];
+    devShell.environment = optional (editFiles != []) "ARCANUM_EDIT_FILES=${escapeShellArg (builtins.toJSON editFiles)}";
 
     devShell.activationHooks = mkOrder 751 (
       optionalString (secretEnvFiles != {}) ''

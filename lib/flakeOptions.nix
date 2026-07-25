@@ -103,7 +103,6 @@ in {
         default = [];
         description = "Nixpkgs overlays applied to all package sets.";
       };
-
     };
 
     modules = {
