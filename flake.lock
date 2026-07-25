@@ -12,11 +12,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1784969282,
-        "narHash": "sha256-FndGaVnqMvOlsWvMBg0amWfMGH6Vcf0X5lBF8WY1UrA=",
+        "lastModified": 1784969518,
+        "narHash": "sha256-0DLyepALVVpgqraVAyc4h+DfJ1jvswxBt3te5cy6+K0=",
         "owner": "bitnixdev",
         "repo": "arcanum",
-        "rev": "b40830436b6b6197dfbf363c47ae8dfbdb61e59a",
+        "rev": "3fd2693b5cccb2b07a193c751d40fa67ddb4bc71",
         "type": "github"
       },
       "original": {
