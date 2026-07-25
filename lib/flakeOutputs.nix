@@ -340,11 +340,20 @@ with nixpkgs.lib; let
 
   mergedNixosModules = nixosChipModules ++ cfg.modules.nixos ++ sharedChipModules ++ projectNixosModules;
 
+  # Expose the consuming flake's nixpkgs-unstable (if any) as pkgs.unstable.
+  # The attr is omitted entirely when the input is absent so that
+  # `pkgs ? unstable` guards (e.g. programs.nodejs) keep working.
+  unstableOverlay = final: prev:
+    optionalAttrs (contextInputs ? nixpkgs-unstable) {
+      unstable = contextInputs.nixpkgs-unstable.legacyPackages.${prev.stdenv.hostPlatform.system};
+    };
+
   # nixpkgs-staging's overlay composes rust-overlay internally, so
   # `pkgs.rust-bin` stays available without a separate rust-overlay input.
   overlay = composeManyExtensions (
     [
       (mkPackagesOverlay cfg.sources.packages)
+      unstableOverlay
       nixpkgs-staging.overlays.default
       # Provide pkgs.arcanum without re-applying arcanum's full chips overlay stack.
       (final: prev: {

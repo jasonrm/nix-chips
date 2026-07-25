@@ -3,7 +3,6 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
-    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
 
     nixpkgs-staging.url = "github:jasonrm/nixpkgs-staging";
     nixpkgs-staging.inputs.nixpkgs.follows = "nixpkgs";
@@ -21,7 +20,6 @@
     lib.mkFlake {
       inherit inputs;
       sources.devShells = ./devShells;
-      nixpkgs.overlays = [lib.overlays.unstable];
       outputs = {
         inherit lib;
         templates.default = {
