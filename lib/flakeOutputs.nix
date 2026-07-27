@@ -412,7 +412,8 @@ with nixpkgs.lib; let
     system: let
       pkgs = pkgsFor system;
     in
-      cfg.perSystem {
+      {formatter = pkgs.alejandra;}
+      // cfg.perSystem {
         inherit pkgs system;
         inputs = contextInputs;
         self = projectSelf;
