@@ -12,11 +12,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1784969518,
-        "narHash": "sha256-0DLyepALVVpgqraVAyc4h+DfJ1jvswxBt3te5cy6+K0=",
+        "lastModified": 1785595339,
+        "narHash": "sha256-MQd7Lji93NONtF3lLHTBLGIPgdDhoMz+dp1i+gHcnrA=",
         "owner": "bitnixdev",
         "repo": "arcanum",
-        "rev": "3fd2693b5cccb2b07a193c751d40fa67ddb4bc71",
+        "rev": "fbef5a20909f2cf80f565423d78ef906b0a5b14c",
         "type": "github"
       },
       "original": {
@@ -85,11 +85,11 @@
         "utils": "utils"
       },
       "locked": {
-        "lastModified": 1784966898,
-        "narHash": "sha256-nLtX2tpIxLcXT+SObtzqAnUzxVsTWzwu4A8dsk1mqfs=",
+        "lastModified": 1785357057,
+        "narHash": "sha256-yqE73OzE1rhwKNBA6iTd8FsGtScUjrsbk9kUD5pynf0=",
         "owner": "jasonrm",
         "repo": "nixpkgs-staging",
-        "rev": "0dd383136d49af69b604ba9a0c830b64a0948f94",
+        "rev": "f09ee8a43ed33a1e0ee095f8080d793670e36f4f",
         "type": "github"
       },
       "original": {
