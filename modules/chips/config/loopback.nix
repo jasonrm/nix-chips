@@ -93,6 +93,9 @@ in {
     (lib.mkIf needsSetup {
       devShell = {
         contents = [loopback-setup loopback-check];
+        shellHooks = lib.optionalString isDarwin ''
+          ${loopback-setup}/bin/loopback-setup
+        '';
       };
 
       programs.taskfile.config.tasks = {

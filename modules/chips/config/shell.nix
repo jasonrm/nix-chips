@@ -13,7 +13,11 @@ with lib; let
   # For example, MYSQL_UNIX_PORT wasn't able to be set to `${config.services.mysql.settings.mysqld.socket}`
   envFile = pkgs.writeText "chips.shell.env" (concatStringsSep "\n" cfg.environment);
 
-  hasGenGate = cfg.generationId > 0 && config.dir.project != "/dev/null";
+  hasGenGate = cfg.generationId > 0;
+  dataDirInit =
+    if config.dir.project == "/dev/null"
+    then ''__chips_data_dir="$PWD/.chips"''
+    else ''__chips_data_dir=${escapeShellArg config.dir.data}'';
 
   # Any config change that affects the hooks (secrets, symlink targets,
   # generated files, ...) changes the store paths embedded in them, and
@@ -23,11 +27,20 @@ with lib; let
   staleGenGate = optionalString hasGenGate ''
     __chips_our_gen="${toString cfg.generationId}"
     __chips_our_hash="${hooksHash}"
-    __chips_gen_file="${config.dir.data}/.dev-shell.gen"
+    ${dataDirInit}
+    if [ -r /proc/sys/kernel/random/boot_id ]; then
+      __chips_boot_identity="$(${pkgs.coreutils}/bin/cat /proc/sys/kernel/random/boot_id)"
+    elif command -v sysctl >/dev/null 2>&1; then
+      __chips_boot_identity="$(sysctl -n kern.boottime 2>/dev/null || printf unknown)"
+    else
+      __chips_boot_identity=unknown
+    fi
+    __chips_our_boot_id="$(printf '%s' "$__chips_boot_identity" | ${pkgs.coreutils}/bin/sha256sum | ${pkgs.coreutils}/bin/cut -c1-16)"
+    __chips_gen_file="$__chips_data_dir/.dev-shell.gen"
     # Hooks write $PWD-relative outputs (Taskfile.yml, lefthook config, ...),
     # so the completed-run marker is kept per entry directory; the shared
     # .dev-shell.gen file only guards against stale (older-generation) loads.
-    __chips_pwd_gen_file="${config.dir.data}/.dev-shell.gen.d/$(printf '%s' "$PWD" | ${pkgs.coreutils}/bin/sha256sum | ${pkgs.coreutils}/bin/cut -c1-16)"
+    __chips_pwd_gen_file="$__chips_data_dir/.dev-shell.gen.d/$(printf '%s' "$PWD" | ${pkgs.coreutils}/bin/sha256sum | ${pkgs.coreutils}/bin/cut -c1-16)"
     if [ -f "$__chips_gen_file" ]; then
       read -r __chips_disk_gen __chips_disk_hash < "$__chips_gen_file" || true
       case "$__chips_disk_gen" in
@@ -44,12 +57,13 @@ with lib; let
 
   completedGenGate = optionalString hasGenGate ''
     if [ -f "$__chips_pwd_gen_file" ]; then
-      read -r __chips_disk_gen __chips_disk_hash < "$__chips_pwd_gen_file" || true
+      read -r __chips_disk_gen __chips_disk_hash __chips_disk_boot_id < "$__chips_pwd_gen_file" || true
       case "$__chips_disk_gen" in
         ""|*[!0-9]*) ;;
         *)
           if [ "$__chips_disk_gen" -eq "$__chips_our_gen" ] \
             && [ "''${__chips_disk_hash:-}" = "$__chips_our_hash" ] \
+            && [ "''${__chips_disk_boot_id:-}" = "$__chips_our_boot_id" ] \
             && [ -z "''${CHIPS_DEV_SHELL_FORCE:-}" ]; then
             # This exact configuration already completed in this directory.
             return 0 2>/dev/null || exit 0
@@ -61,8 +75,11 @@ with lib; let
 
   genStamp = optionalString hasGenGate ''
     mkdir -p "$(dirname "$__chips_pwd_gen_file")"
-    printf '%s %s\n' "$__chips_our_gen" "$__chips_our_hash" > "$__chips_gen_file"
-    printf '%s %s\n' "$__chips_our_gen" "$__chips_our_hash" > "$__chips_pwd_gen_file"
+    ${optionalString (config.dir.project == "/dev/null") ''
+      printf '*\n' > "$__chips_data_dir/.gitignore"
+    ''}
+    printf '%s %s %s\n' "$__chips_our_gen" "$__chips_our_hash" "$__chips_our_boot_id" > "$__chips_gen_file"
+    printf '%s %s %s\n' "$__chips_our_gen" "$__chips_our_hash" "$__chips_our_boot_id" > "$__chips_pwd_gen_file"
   '';
 
   shellHook = pkgs.writeShellScriptBin "dev-shell.init.sh" ''
@@ -115,14 +132,18 @@ in {
           Completed runs are additionally stamped per entry directory
           under <dir.data>/.dev-shell.gen.d/ (keyed by a hash of $PWD),
           because hooks write $PWD-relative outputs (Taskfile.yml,
-          lefthook config, ...). A re-entry whose generation AND hook
-          hash match the marker for the same directory skips the hooks
-          entirely (fast path); entering the shell from a directory
-          that has not completed this exact configuration re-runs them.
+          lefthook config, ...). A re-entry whose generation, hook hash,
+          and boot session match the marker for the same directory skips
+          the hooks entirely (fast path); entering after a reboot or from
+          a directory that has not completed this exact configuration
+          re-runs them.
           The hooks embed the store paths of everything they produce,
           so any flake/config/secret change re-runs them automatically.
           Tradeoff: hook *outputs* deleted by hand (a decrypted secret,
           a symlink) are not recreated until forced.
+
+          Cache markers are stored under <dir.data>, or under $PWD/.chips
+          when dir.project is unset.
 
           Defaults to the nix-chips input's lastModified. Set to 0 to
           disable the gate. Override with your own flake's
