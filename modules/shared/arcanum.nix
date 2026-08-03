@@ -67,7 +67,7 @@ with types; let
       isEnvFile = mkOption {
         default = false;
         type = bool;
-        description = "Whether to source this secret as an environment file in a devShell.";
+        description = "Whether to load this secret as an environment file in a devShell. The file is evaluated in an isolated shell so failures warn without aborting shell activation.";
       };
     };
   };
