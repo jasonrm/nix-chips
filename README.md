@@ -67,6 +67,31 @@ use flake ".#${USER}${PROFILE:+.${PROFILE}}"
 
 `.envrc` is committed to the repository. Use `.envrc.private` for local overrides.
 
+## Mutable project files
+
+Use `project.mutableFiles` for repository-local configuration that an application must be able to modify. Unlike a Nix store symlink, each file is copied into the project. Existing files are diffed and backed up as `<name>.<hash>.bak` before replacement.
+
+```nix
+{pkgs, ...}: let
+  json = pkgs.formats.json {};
+in {
+  project.mutableFiles = {
+    ".zed/settings.json" = {
+      source = json.generate "zed-settings.json" {
+        format_on_save = "on";
+      };
+      merge = "json";
+    };
+
+    ".toolrc".text = ''
+      managed=true
+    '';
+  };
+}
+```
+
+The `json`, `toml`, and `yaml` merge modes recursively overlay the Nix-managed source onto the existing file, preserving keys that exist only in the local file. The default merge mode is `none`. Paths are relative to `dir.project`, or to the directory where the shell is entered when `dir.project` is unset.
+
 ## Use
 
 ```shell
