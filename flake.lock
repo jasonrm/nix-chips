@@ -1,30 +1,5 @@
 {
   "nodes": {
-    "arcanum": {
-      "inputs": {
-        "chips": [],
-        "flake-utils": "flake-utils",
-        "nixpkgs": [
-          "nixpkgs"
-        ],
-        "nixpkgs-staging": [
-          "nixpkgs-staging"
-        ]
-      },
-      "locked": {
-        "lastModified": 1785595339,
-        "narHash": "sha256-MQd7Lji93NONtF3lLHTBLGIPgdDhoMz+dp1i+gHcnrA=",
-        "owner": "bitnixdev",
-        "repo": "arcanum",
-        "rev": "fbef5a20909f2cf80f565423d78ef906b0a5b14c",
-        "type": "github"
-      },
-      "original": {
-        "owner": "bitnixdev",
-        "repo": "arcanum",
-        "type": "github"
-      }
-    },
     "flake-compat": {
       "flake": false,
       "locked": {
@@ -38,24 +13,6 @@
       "original": {
         "owner": "edolstra",
         "repo": "flake-compat",
-        "type": "github"
-      }
-    },
-    "flake-utils": {
-      "inputs": {
-        "systems": "systems"
-      },
-      "locked": {
-        "lastModified": 1731533236,
-        "narHash": "sha256-l0KFg5HjrsfsO/JpG+r7fRrqm12kzFHyUHqHCVpMMbI=",
-        "owner": "numtide",
-        "repo": "flake-utils",
-        "rev": "11707dc2f618dd54ca8739b309ec4fc024de578b",
-        "type": "github"
-      },
-      "original": {
-        "owner": "numtide",
-        "repo": "flake-utils",
         "type": "github"
       }
     },
@@ -85,11 +42,11 @@
         "utils": "utils"
       },
       "locked": {
-        "lastModified": 1785357057,
-        "narHash": "sha256-yqE73OzE1rhwKNBA6iTd8FsGtScUjrsbk9kUD5pynf0=",
+        "lastModified": 1786503645,
+        "narHash": "sha256-Rghj4Gt4FtJiFmFUFU+RbavkaxqRfNkN+0kJu7d2VuQ=",
         "owner": "jasonrm",
         "repo": "nixpkgs-staging",
-        "rev": "f09ee8a43ed33a1e0ee095f8080d793670e36f4f",
+        "rev": "ecc9d61a23dd16fe1d24f2ea45366c6a8b2aa0dd",
         "type": "github"
       },
       "original": {
@@ -100,7 +57,6 @@
     },
     "root": {
       "inputs": {
-        "arcanum": "arcanum",
         "nixpkgs": "nixpkgs",
         "nixpkgs-staging": "nixpkgs-staging"
       }
@@ -141,24 +97,9 @@
         "type": "github"
       }
     },
-    "systems_2": {
-      "locked": {
-        "lastModified": 1681028828,
-        "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",
-        "owner": "nix-systems",
-        "repo": "default",
-        "rev": "da67096a3b9bf56a91d16901293e51ba5b49a27e",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nix-systems",
-        "repo": "default",
-        "type": "github"
-      }
-    },
     "utils": {
       "inputs": {
-        "systems": "systems_2"
+        "systems": "systems"
       },
       "locked": {
         "lastModified": 1731533236,

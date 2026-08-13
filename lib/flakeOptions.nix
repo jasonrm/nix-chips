@@ -112,6 +112,12 @@ in {
     };
 
     modules = {
+      chips = mkOption {
+        type = types.listOf types.raw;
+        default = [];
+        description = "Additional nix-chips modules included in development shells and Docker images.";
+      };
+
       nixos = mkOption {
         type = types.listOf types.raw;
         default = [];

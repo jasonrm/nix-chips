@@ -2,7 +2,6 @@
   self,
   nixpkgs,
   nixpkgs-staging,
-  arcanum,
   ...
 }: cfg:
 with nixpkgs.lib; let
@@ -53,7 +52,7 @@ with nixpkgs.lib; let
     imports = modules;
   };
 
-  nixChipModules = nixFilesIn ../modules/chips;
+  nixChipModules = nixFilesIn ../modules/chips ++ cfg.modules.chips;
   nixosChipModules = nixFilesIn ../modules/nixos;
   nixosShimModules = nixFilesIn ../modules/nixos-shims;
   darwinChipModules = nixFilesIn ../modules/nix-darwin;
@@ -355,10 +354,6 @@ with nixpkgs.lib; let
       (mkPackagesOverlay cfg.sources.packages)
       unstableOverlay
       nixpkgs-staging.overlays.default
-      # Provide pkgs.arcanum without re-applying arcanum's full chips overlay stack.
-      (final: prev: {
-        inherit (arcanum.packages.${prev.stdenv.hostPlatform.system}) arcanum;
-      })
     ]
     ++ cfg.nixpkgs.overlays
   );

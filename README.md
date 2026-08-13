@@ -6,7 +6,7 @@ For example, Rust projects where Rust Rover or Zed are used, each should be auto
 
 Rather than try to force nix flakes to be impure, per-user and per-machine nix modules are used. While this does "leak" information about the user's paths to git repositories, it also means that the configuration of other users of the project are inspectable. Good for reducing "works on my machine" issues, as well as making it easier to share configurations between users.
 
-[arcanum](https://github.com/bitnixdev/arcanum) is a nix-chips specific utility used to encrypt and decrypt sensitive information using the [age](https://github.com/FiloSottile/age) library and per-machine SSH host keys.
+[arcanum](https://github.com/bitnixdev/arcanum) provides optional encrypted-secret support for nix-chips development shells using the [age](https://github.com/FiloSottile/age) library and per-machine SSH host keys.
 
 ## Nix Flake Template
 
@@ -38,9 +38,14 @@ arcanum edit secrets/project.env.age
     chips.url = "github:jasonrm/nix-chips";
     chips.inputs.nixpkgs.follows = "nixpkgs";
     chips.inputs.nixpkgs-staging.follows = "nixpkgs-staging";
+
+    arcanum.url = "github:bitnixdev/arcanum";
+    arcanum.inputs.nixpkgs.follows = "nixpkgs";
+    arcanum.inputs.nixpkgs-staging.follows = "nixpkgs-staging";
+    arcanum.inputs.chips.follows = "chips";
   };
 
-  outputs = inputs @ {chips, ...}:
+  outputs = inputs @ {chips, arcanum, ...}:
     chips.lib.mkFlake {
       inherit inputs;
       sources = {
@@ -49,6 +54,8 @@ arcanum edit secrets/project.env.age
         nixosModules = ./nix/nixosModules;
         dockerImages = ./nix/dockerImages;
       };
+      modules.chips = [arcanum.chipsModules.default];
+      nixpkgs.overlays = [arcanum.overlays.default];
     };
 }
 ```
