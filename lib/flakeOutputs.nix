@@ -43,6 +43,17 @@ with nixpkgs.lib; let
   callPackageFiles = pkgs: files:
     listToAttrs (map (path: nameValuePair (nixFileName path) (pkgs.callPackage path {})) files);
 
+  callAppFiles = pkgs: files:
+    listToAttrs (
+      map (
+        path:
+          nameValuePair (nixFileName path) (
+            removeAttrs (pkgs.callPackage path {}) ["override" "overrideDerivation"]
+          )
+      )
+      files
+    );
+
   filesOrEmpty = directory:
     if directory != null
     then nixFilesIn directory
@@ -78,7 +89,7 @@ with nixpkgs.lib; let
   in
     (eachSupportedSystem (
       system: {
-        apps = callPackageFiles (pkgsFor system) allApps;
+        apps = callAppFiles (pkgsFor system) allApps;
       }
     )).apps;
 

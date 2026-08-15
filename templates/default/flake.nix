@@ -11,11 +11,10 @@
       inputs.nixpkgs-staging.follows = "nixpkgs-staging";
     };
 
-    # Optional: add encrypted-secret support from arcanum.
-    # arcanum.url = "github:bitnixdev/arcanum";
-    # arcanum.inputs.nixpkgs.follows = "nixpkgs";
-    # arcanum.inputs.nixpkgs-staging.follows = "nixpkgs-staging";
-    # arcanum.inputs.chips.follows = "chips";
+    arcanum.url = "github:bitnixdev/arcanum";
+    arcanum.inputs.nixpkgs.follows = "nixpkgs";
+    arcanum.inputs.nixpkgs-staging.follows = "nixpkgs-staging";
+    arcanum.inputs.chips.follows = "chips";
 
     # rust-overlay = {
     #   url = "github:oxalica/rust-overlay";
@@ -25,7 +24,7 @@
 
   outputs = inputs @ {
     chips,
-    # arcanum,
+    arcanum,
     # rust-overlay,
     ...
   }:
@@ -36,9 +35,9 @@
       # sources.packages = ./nix/packages;
       # sources.nixosModules = ./nix/nixosModules;
       # sources.dockerImages = ./nix/dockerImages;
-      # modules.chips = [arcanum.chipsModules.default];
+      modules.chips = [arcanum.chipsModules.default];
       nixpkgs.overlays = [
-        # arcanum.overlays.default
+        arcanum.overlays.default
         # rust-overlay.overlays.default
       ];
     };
