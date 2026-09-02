@@ -106,6 +106,7 @@ with nixpkgs.lib; let
       specialArgs = {
         inherit pkgs system;
         chips = chipsSelf;
+        inputs = contextInputs;
         modulesPath = pkgs.path + "/nixos/modules";
       };
     }).config;

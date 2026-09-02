@@ -3,6 +3,7 @@
   lib,
   config,
   chips,
+  inputs ? {},
   ...
 }:
 with lib; let
@@ -120,7 +121,10 @@ in {
 
       generationId = mkOption {
         type = int;
-        default = chips.lastModified or 0;
+        default =
+          max
+          (inputs.self.lastModified or 0)
+          (chips.lastModified or 0);
         description = ''
           Monotonic generation marker for the devShell init script. On
           shell entry, if an older generation has stamped a newer marker
@@ -145,9 +149,9 @@ in {
           Cache markers are stored under <dir.data>, or under $PWD/.chips
           when dir.project is unset.
 
-          Defaults to the nix-chips input's lastModified. Set to 0 to
-          disable the gate. Override with your own flake's
-          self.lastModified to also bump on local source changes.
+          Defaults to the newer of the consuming flake's lastModified
+          and the nix-chips input's lastModified. Set to 0 to disable
+          the gate.
 
           To force re-run: CHIPS_DEV_SHELL_FORCE=1 direnv reload
           (or delete the markers: rm -r <dir.data>/.dev-shell.gen*).
