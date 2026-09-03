@@ -20,35 +20,18 @@ with lib; let
     then ''__chips_data_dir="$PWD/.chips"''
     else ''__chips_data_dir=${escapeShellArg config.dir.data}'';
 
-  # Any config change that affects the hooks (secrets, symlink targets,
-  # generated files, ...) changes the store paths embedded in them, and
-  # therefore this hash.
-  hooksHash = builtins.hashString "sha256" cfg.shellHooks;
-
   staleGenGate = optionalString hasGenGate ''
     __chips_our_gen="${toString cfg.generationId}"
-    __chips_our_hash="${hooksHash}"
     ${dataDirInit}
-    if [ -r /proc/sys/kernel/random/boot_id ]; then
-      __chips_boot_identity="$(${pkgs.coreutils}/bin/cat /proc/sys/kernel/random/boot_id)"
-    elif command -v sysctl >/dev/null 2>&1; then
-      __chips_boot_identity="$(sysctl -n kern.boottime 2>/dev/null || printf unknown)"
-    else
-      __chips_boot_identity=unknown
-    fi
-    __chips_our_boot_id="$(printf '%s' "$__chips_boot_identity" | ${pkgs.coreutils}/bin/sha256sum | ${pkgs.coreutils}/bin/cut -c1-16)"
     __chips_gen_file="$__chips_data_dir/.dev-shell.gen"
-    # Hooks write $PWD-relative outputs (Taskfile.yml, lefthook config, ...),
-    # so the completed-run marker is kept per entry directory; the shared
-    # .dev-shell.gen file only guards against stale (older-generation) loads.
-    __chips_pwd_gen_file="$__chips_data_dir/.dev-shell.gen.d/$(printf '%s' "$PWD" | ${pkgs.coreutils}/bin/sha256sum | ${pkgs.coreutils}/bin/cut -c1-16)"
     if [ -f "$__chips_gen_file" ]; then
-      read -r __chips_disk_gen __chips_disk_hash < "$__chips_gen_file" || true
+      # Accept the older multi-field marker format; only the monotonic
+      # generation is relevant now that setup hooks always run.
+      read -r __chips_disk_gen _ < "$__chips_gen_file" || true
       case "$__chips_disk_gen" in
         ""|*[!0-9]*) ;;
         *)
-          if [ "$__chips_disk_gen" -gt "$__chips_our_gen" ] \
-            && [ -z "''${CHIPS_DEV_SHELL_FORCE:-}" ]; then
+          if [ "$__chips_disk_gen" -gt "$__chips_our_gen" ]; then
             echo "nix-chips: skipping stale devShell setup (gen=$__chips_our_gen < disk=$__chips_disk_gen)" >&2
             return 0 2>/dev/null || exit 0
           fi
@@ -57,31 +40,12 @@ with lib; let
     fi
   '';
 
-  completedGenGate = optionalString hasGenGate ''
-    if [ -f "$__chips_pwd_gen_file" ]; then
-      read -r __chips_disk_gen __chips_disk_hash __chips_disk_boot_id < "$__chips_pwd_gen_file" || true
-      case "$__chips_disk_gen" in
-        ""|*[!0-9]*) ;;
-        *)
-          if [ "$__chips_disk_gen" -eq "$__chips_our_gen" ] \
-            && [ "''${__chips_disk_hash:-}" = "$__chips_our_hash" ] \
-            && [ "''${__chips_disk_boot_id:-}" = "$__chips_our_boot_id" ] \
-            && [ -z "''${CHIPS_DEV_SHELL_FORCE:-}" ]; then
-            # This exact configuration already completed in this directory.
-            return 0 2>/dev/null || exit 0
-          fi
-          ;;
-      esac
-    fi
-  '';
-
   genStamp = optionalString hasGenGate ''
-    mkdir -p "$(dirname "$__chips_pwd_gen_file")"
+    mkdir -p "$__chips_data_dir"
     ${optionalString (config.dir.project == "/dev/null") ''
       printf '*\n' > "$__chips_data_dir/.gitignore"
     ''}
-    printf '%s %s %s\n' "$__chips_our_gen" "$__chips_our_hash" "$__chips_our_boot_id" > "$__chips_gen_file"
-    printf '%s %s %s\n' "$__chips_our_gen" "$__chips_our_hash" "$__chips_our_boot_id" > "$__chips_pwd_gen_file"
+    printf '%s\n' "$__chips_our_gen" > "$__chips_gen_file"
   '';
 
   shellHook = pkgs.writeShellScriptBin "dev-shell.init.sh" ''
@@ -107,7 +71,6 @@ with lib; let
     # even when stale setup hooks are prevented from writing project files.
     ${cfg.activationHooks}
     ${staleGenGate}
-    ${completedGenGate}
     ${cfg.shellHooks}
     ${genStamp}
   '';
@@ -131,26 +94,15 @@ in {
         description = ''
           Monotonic generation marker for the devShell init script. On
           shell entry, if an older generation has stamped a newer marker
-          at <dir.data>/.dev-shell.gen, the entire init hook short-
-          circuits — stale direnv loads no longer overwrite files
-          (decrypted secrets, symlinks, generated configs, etc.) written
-          by a newer shell.
+          at <dir.data>/.dev-shell.gen, its setup hooks short-circuit so a
+          stale direnv load cannot overwrite files written by a newer shell.
 
-          Completed runs are additionally stamped per entry directory
-          under <dir.data>/.dev-shell.gen.d/ (keyed by a hash of $PWD),
-          because hooks write $PWD-relative outputs (Taskfile.yml,
-          lefthook config, ...). A re-entry whose generation, hook hash,
-          and boot session match the marker for the same directory skips
-          the hooks entirely (fast path); entering after a reboot or from
-          a directory that has not completed this exact configuration
-          re-runs them.
-          The hooks embed the store paths of everything they produce,
-          so any flake/config/secret change re-runs them automatically.
-          Tradeoff: hook *outputs* deleted by hand (a decrypted secret,
-          a symlink) are not recreated until forced.
+          Setup hooks run on every accepted activation. Consequently,
+          `direnv reload` always reapplies the evaluated configuration and
+          recreates deleted generated files without a separate force flag.
 
-          Cache markers are stored under <dir.data>, or under $PWD/.chips
-          when dir.project is unset.
+          The marker is stored under <dir.data>, or under $PWD/.chips when
+          dir.project is unset.
 
           Defaults to the newer of the consuming flake's lastModified
           and the nix-chips input's lastModified. When the consuming flake
@@ -159,14 +111,6 @@ in {
           monotonic source generation, comparing against an older marker can
           incorrectly suppress a newer configuration. Set to 0 to disable the
           gate explicitly.
-
-          To force re-run: CHIPS_DEV_SHELL_FORCE=1 direnv reload
-          (or delete the markers: rm -r <dir.data>/.dev-shell.gen*).
-
-          Note: two shells sharing one dir.data (e.g. per-host variants)
-          entered from the same directory write the same marker and will
-          re-run hooks when switching between them; harmless, just not
-          skipped.
         '';
       };
 
