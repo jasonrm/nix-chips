@@ -102,8 +102,10 @@ with lib; let
       esac
     fi
 
-    ${staleGenGate}
+    # Activation hooks populate the current process environment and must run
+    # even when stale setup hooks are prevented from writing project files.
     ${cfg.activationHooks}
+    ${staleGenGate}
     ${completedGenGate}
     ${cfg.shellHooks}
     ${genStamp}
