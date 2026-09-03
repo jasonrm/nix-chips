@@ -47,7 +47,8 @@ with lib; let
       case "$__chips_disk_gen" in
         ""|*[!0-9]*) ;;
         *)
-          if [ "$__chips_disk_gen" -gt "$__chips_our_gen" ]; then
+          if [ "$__chips_disk_gen" -gt "$__chips_our_gen" ] \
+            && [ -z "''${CHIPS_DEV_SHELL_FORCE:-}" ]; then
             echo "nix-chips: skipping stale devShell setup (gen=$__chips_our_gen < disk=$__chips_disk_gen)" >&2
             return 0 2>/dev/null || exit 0
           fi
@@ -124,9 +125,9 @@ in {
       generationId = mkOption {
         type = int;
         default =
-          max
-          (inputs.self.lastModified or 0)
-          (chips.lastModified or 0);
+          if inputs.self ? lastModified
+          then max inputs.self.lastModified (chips.lastModified or 0)
+          else 0;
         description = ''
           Monotonic generation marker for the devShell init script. On
           shell entry, if an older generation has stamped a newer marker
@@ -152,8 +153,12 @@ in {
           when dir.project is unset.
 
           Defaults to the newer of the consuming flake's lastModified
-          and the nix-chips input's lastModified. Set to 0 to disable
-          the gate.
+          and the nix-chips input's lastModified. When the consuming flake
+          has no lastModified (for example, an explicit `path:` flake
+          reference), this defaults to 0 and disables the gate: without a
+          monotonic source generation, comparing against an older marker can
+          incorrectly suppress a newer configuration. Set to 0 to disable the
+          gate explicitly.
 
           To force re-run: CHIPS_DEV_SHELL_FORCE=1 direnv reload
           (or delete the markers: rm -r <dir.data>/.dev-shell.gen*).
