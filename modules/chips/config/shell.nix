@@ -31,12 +31,22 @@ with lib; let
   # script belongs to. Setup hooks run once per generation per entry directory
   # (hooks write $PWD-relative outputs such as Taskfile.yml), and a cached
   # shell that is older than a generation already applied elsewhere is refused
-  # so it cannot overwrite newer files. Without a profile rc (nix develop,
-  # stock direnv) every activation is its own generation and hooks always run.
+  # so it cannot overwrite newer files. Concurrent activations are serialized
+  # across the complete check/run/stamp transaction. Without a profile rc (nix
+  # develop, stock direnv) every activation is its own generation and hooks run
+  # once they acquire the lock.
   setupGate = ''
     ${dataDirInit}
     __chips_hash=${hooksHash}
     __chips_rc=""
+
+    # The generation markers are a cache, not a mutex: two activations can
+    # otherwise both observe a stale marker and concurrently modify the same
+    # project files. Keep the descriptor open until setup has been stamped;
+    # flock releases it automatically if an activation exits or is killed.
+    ${coreutils}/mkdir -p "$__chips_data_dir"
+    exec {__chips_lock_fd}>"$__chips_data_dir/.dev-shell.lock"
+    ${pkgs.flock}/bin/flock -x "$__chips_lock_fd"
     # nix-direnv evals the profile rc inside _nix_import_env, where profile_rc
     # is a local variable; fall back to the newest rc in the layout dir.
     if [ -f "''${profile_rc:-}" ]; then
@@ -118,6 +128,9 @@ with lib; let
       ${cfg.shellHooks}
       __chips_stamp_generation
     fi
+    ${pkgs.flock}/bin/flock -u "$__chips_lock_fd"
+    exec {__chips_lock_fd}>&-
+    unset __chips_lock_fd
     unset -f __chips_read_stamp __chips_when __chips_setup_needed __chips_stamp_generation
   '';
 
@@ -189,7 +202,8 @@ in {
           (Taskfile.yml, lefthook.yml, ...), decrypted secrets, mutable files.
 
           Under nix-direnv these run once per cache generation per entry
-          directory. A generation is one fresh evaluation of the flake, which
+          directory. Concurrent setup runs sharing dir.data are serialized.
+          A generation is one fresh evaluation of the flake, which
           happens on `direnv reload` or when flake.nix / flake.lock is newer
           than the cache; merely entering the directory or opening a new
           terminal never re-runs them. `direnv reload` therefore re-applies the

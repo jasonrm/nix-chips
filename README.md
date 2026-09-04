@@ -78,14 +78,14 @@ use flake ".#${USER}${PROFILE:+.${PROFILE}}"
 
 Modules contribute two kinds of hooks. `devShell.activationHooks` run on every activation and only export environment (for example loading decrypted env files). `devShell.shellHooks` are the setup hooks that write project state: symlinked generated configs (`Taskfile.yml`, `lefthook.yml`, ...), decrypted secrets, mutable files.
 
-Setup hooks run once per *generation* per entry directory. A generation is one fresh evaluation of the flake by nix-direnv, which happens on `direnv reload` or when `flake.nix` / `flake.lock` is newer than the cache. Entering the directory again or opening a new terminal only reloads the cached environment. Consequences:
+Setup hooks run once per *generation* per entry directory. A generation is one fresh evaluation of the flake by nix-direnv, which happens on `direnv reload` or when `flake.nix` / `flake.lock` is newer than the cache. Entering the directory again or opening a new terminal only reloads the cached environment. Concurrent setup runs that share `dir.data` are serialized across the generation check, hooks, and marker update. Consequences:
 
 - `direnv reload` re-applies the configuration and recreates deleted generated files. There is no force flag.
 - Edits to files nix-direnv does not watch (for example `nix/devShells/*.nix`) take effect on the next `direnv reload`.
 - A cached shell that is older than a generation already applied from another directory prints `nix-chips: setup hooks skipped ...` and writes nothing until it is reloaded.
 - `nix develop` runs the setup hooks on every entry.
 
-Markers live at `<dir.data>/.dev-shell.gen` and `<dir.data>/.dev-shell.gen.d/`. Delete `.dev-shell.gen` to reset.
+Markers live at `<dir.data>/.dev-shell.gen` and `<dir.data>/.dev-shell.gen.d/`; the setup lock is `<dir.data>/.dev-shell.lock`. Delete `.dev-shell.gen` to reset.
 
 ### Sibling checkouts sharing one flake
 
