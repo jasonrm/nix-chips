@@ -2,8 +2,6 @@
   pkgs,
   lib,
   config,
-  chips,
-  inputs ? {},
   ...
 }:
 with lib; let
@@ -14,38 +12,113 @@ with lib; let
   # For example, MYSQL_UNIX_PORT wasn't able to be set to `${config.services.mysql.settings.mysqld.socket}`
   envFile = pkgs.writeText "chips.shell.env" (concatStringsSep "\n" cfg.environment);
 
-  hasGenGate = cfg.generationId > 0;
+  coreutils = "${pkgs.coreutils}/bin";
+  isPwdData = config.dir.project == "/dev/null";
   dataDirInit =
-    if config.dir.project == "/dev/null"
+    if isPwdData
     then ''__chips_data_dir="$PWD/.chips"''
     else ''__chips_data_dir=${escapeShellArg config.dir.data}'';
 
-  staleGenGate = optionalString hasGenGate ''
-    __chips_our_gen="${toString cfg.generationId}"
-    ${dataDirInit}
-    __chips_gen_file="$__chips_data_dir/.dev-shell.gen"
-    if [ -f "$__chips_gen_file" ]; then
-      # Accept the older multi-field marker format; only the monotonic
-      # generation is relevant now that setup hooks always run.
-      read -r __chips_disk_gen _ < "$__chips_gen_file" || true
-      case "$__chips_disk_gen" in
-        ""|*[!0-9]*) ;;
-        *)
-          if [ "$__chips_disk_gen" -gt "$__chips_our_gen" ]; then
-            echo "nix-chips: skipping stale devShell setup (gen=$__chips_our_gen < disk=$__chips_disk_gen)" >&2
-            return 0 2>/dev/null || exit 0
-          fi
-          ;;
-      esac
-    fi
-  '';
+  # Any config change that affects the setup hooks (secrets, symlink targets,
+  # generated files, ...) changes the store paths embedded in them, and
+  # therefore this hash.
+  hooksHash = builtins.hashString "sha256" cfg.shellHooks;
 
-  genStamp = optionalString hasGenGate ''
-    mkdir -p "$__chips_data_dir"
-    ${optionalString (config.dir.project == "/dev/null") ''
-      printf '*\n' > "$__chips_data_dir/.gitignore"
-    ''}
-    printf '%s\n' "$__chips_our_gen" > "$__chips_gen_file"
+  # A generation is one fresh nix-direnv evaluation. nix-direnv deletes and
+  # recreates its profile rc on every renewal (`direnv reload`, or flake.nix /
+  # flake.lock newer than the cache) but only touches the existing file on
+  # cached entries, so the rc's birth time identifies the generation this
+  # script belongs to. Setup hooks run once per generation per entry directory
+  # (hooks write $PWD-relative outputs such as Taskfile.yml), and a cached
+  # shell that is older than a generation already applied elsewhere is refused
+  # so it cannot overwrite newer files. Without a profile rc (nix develop,
+  # stock direnv) every activation is its own generation and hooks always run.
+  setupGate = ''
+    ${dataDirInit}
+    __chips_hash=${hooksHash}
+    __chips_rc=""
+    # nix-direnv evals the profile rc inside _nix_import_env, where profile_rc
+    # is a local variable; fall back to the newest rc in the layout dir.
+    if [ -f "''${profile_rc:-}" ]; then
+      __chips_rc=$profile_rc
+    elif declare -F direnv_layout_dir >/dev/null 2>&1; then
+      for __chips_f in "$(direnv_layout_dir)"/*.rc; do
+        if [ -f "$__chips_f" ]; then
+          if [ -z "$__chips_rc" ] || [ "$__chips_f" -nt "$__chips_rc" ]; then
+            __chips_rc=$__chips_f
+          fi
+        fi
+      done
+      unset __chips_f
+    fi
+
+    __chips_read_stamp() {
+      __chips_stamp_gen=0
+      __chips_stamp_hash=""
+      if [ -f "$1" ]; then
+        read -r __chips_stamp_gen __chips_stamp_hash _ < "$1" || true
+      fi
+      case "$__chips_stamp_gen" in
+        "" | *[!0-9]*) __chips_stamp_gen=0 ;;
+      esac
+    }
+
+    __chips_when() {
+      ${coreutils}/date -d "@$(($1 / 1000000000))" '+%F %T'
+    }
+
+    __chips_setup_needed() {
+      __chips_gen=""
+      if [ -n "$__chips_rc" ]; then
+        read -r __chips_birth __chips_gen __chips_mtime \
+          < <(${coreutils}/stat -c '%W %.9W %.9Y' "$__chips_rc") || true
+        # Filesystems without birth times report 0 (or "-"); mtime still
+        # orders generations, it just re-runs hooks on cached entries.
+        case "''${__chips_birth:-}" in
+          "" | 0 | -) __chips_gen=''${__chips_mtime:-} ;;
+        esac
+        __chips_gen=''${__chips_gen/./}
+      fi
+      case "$__chips_gen" in
+        "" | *[!0-9]*) __chips_gen=$(${coreutils}/date +%s%N) ;;
+      esac
+
+      __chips_dir_stamp="$__chips_data_dir/.dev-shell.gen.d/$(printf %s "$PWD" | ${coreutils}/sha256sum | ${coreutils}/cut -c1-16)"
+      __chips_read_stamp "$__chips_dir_stamp"
+      if [ "$__chips_stamp_gen" = "$__chips_gen" ] && [ "$__chips_stamp_hash" = "$__chips_hash" ]; then
+        # This generation already ran from this directory.
+        return 1
+      fi
+
+      __chips_read_stamp "$__chips_data_dir/.dev-shell.gen"
+      if [ "$__chips_stamp_gen" -gt "$(${coreutils}/date +%s%N)" ]; then
+        # A marker from the future can only come from a clock jump; ignore it.
+        __chips_stamp_gen=0
+      fi
+      __chips_shared_gen=$__chips_stamp_gen
+      # Identical hooks are harmless to re-run (they only refresh this
+      # directory's outputs), so only refuse when the hooks actually differ.
+      if [ "$__chips_shared_gen" -gt "$__chips_gen" ] && [ "$__chips_stamp_hash" != "$__chips_hash" ]; then
+        echo "nix-chips: setup hooks skipped: this cached devShell ($(__chips_when "$__chips_gen")) is older than the one applied at $(__chips_when "$__chips_shared_gen"); run 'direnv reload' here" >&2
+        return 1
+      fi
+      return 0
+    }
+
+    __chips_stamp_generation() {
+      ${coreutils}/mkdir -p "$__chips_data_dir/.dev-shell.gen.d"
+      ${optionalString isPwdData ''printf '*\n' > "$__chips_data_dir/.gitignore"''}
+      printf '%s %s\n' "$__chips_gen" "$__chips_hash" > "$__chips_dir_stamp"
+      if [ "$__chips_gen" -ge "$__chips_shared_gen" ]; then
+        printf '%s %s\n' "$__chips_gen" "$__chips_hash" > "$__chips_data_dir/.dev-shell.gen"
+      fi
+    }
+
+    if __chips_setup_needed; then
+      ${cfg.shellHooks}
+      __chips_stamp_generation
+    fi
+    unset -f __chips_read_stamp __chips_when __chips_setup_needed __chips_stamp_generation
   '';
 
   shellHook = pkgs.writeShellScriptBin "dev-shell.init.sh" ''
@@ -67,16 +140,19 @@ with lib; let
       esac
     fi
 
-    # Activation hooks populate the current process environment and must run
-    # even when stale setup hooks are prevented from writing project files.
+    ${setupGate}
+
+    # Activation hooks populate the current process environment on every
+    # activation. They run after the setup hooks so files those just produced
+    # (decrypted env files, ...) are available on the first activation too.
     ${cfg.activationHooks}
-    ${staleGenGate}
-    ${cfg.shellHooks}
-    ${genStamp}
   '';
 in {
   imports = [
-    # paths to other modules
+    (mkRemovedOptionModule ["devShell" "generationId"] ''
+      Setup hooks are now gated on the nix-direnv cache generation instead of
+      a flake timestamp; see the devShell.shellHooks description and README.
+    '')
   ];
 
   options = with lib.types; {
@@ -84,35 +160,6 @@ in {
       enable = mkEnableOption "Enable Developer Shell";
 
       requireProjectDirectory = mkEnableOption "Require the project directory to be set";
-
-      generationId = mkOption {
-        type = int;
-        default =
-          if inputs.self ? lastModified
-          then max inputs.self.lastModified (chips.lastModified or 0)
-          else 0;
-        description = ''
-          Monotonic generation marker for the devShell init script. On
-          shell entry, if an older generation has stamped a newer marker
-          at <dir.data>/.dev-shell.gen, its setup hooks short-circuit so a
-          stale direnv load cannot overwrite files written by a newer shell.
-
-          Setup hooks run on every accepted activation. Consequently,
-          `direnv reload` always reapplies the evaluated configuration and
-          recreates deleted generated files without a separate force flag.
-
-          The marker is stored under <dir.data>, or under $PWD/.chips when
-          dir.project is unset.
-
-          Defaults to the newer of the consuming flake's lastModified
-          and the nix-chips input's lastModified. When the consuming flake
-          has no lastModified (for example, an explicit `path:` flake
-          reference), this defaults to 0 and disables the gate: without a
-          monotonic source generation, comparing against an older marker can
-          incorrectly suppress a newer configuration. Set to 0 to disable the
-          gate explicitly.
-        '';
-      };
 
       environment = mkOption {
         type = listOf str;
@@ -137,12 +184,36 @@ in {
       shellHooks = mkOption {
         type = lines;
         default = "";
+        description = ''
+          Setup hooks that write project state: symlinked generated configs
+          (Taskfile.yml, lefthook.yml, ...), decrypted secrets, mutable files.
+
+          Under nix-direnv these run once per cache generation per entry
+          directory. A generation is one fresh evaluation of the flake, which
+          happens on `direnv reload` or when flake.nix / flake.lock is newer
+          than the cache; merely entering the directory or opening a new
+          terminal never re-runs them. `direnv reload` therefore re-applies the
+          configuration and recreates deleted generated files. A cached shell
+          that is older than a generation already applied from another
+          directory (for example a sibling checkout sharing this flake) skips
+          the hooks with a warning until it is reloaded. Under `nix develop`
+          the hooks run on every entry.
+
+          Markers live at <dir.data>/.dev-shell.gen (newest generation applied)
+          and <dir.data>/.dev-shell.gen.d/ (per entry directory), or under
+          $PWD/.chips when dir.project is unset. Delete .dev-shell.gen to reset.
+        '';
       };
 
       activationHooks = mkOption {
         type = lines;
         default = "";
-        description = "Shell hooks that run on every devShell activation, including when cached setup hooks are skipped.";
+        description = ''
+          Hooks that run on every devShell activation, after the setup hooks
+          whether or not those ran. Use this for anything that only exports
+          environment (for example loading decrypted env files); it must not
+          write project files.
+        '';
       };
 
       directories = mkOption {

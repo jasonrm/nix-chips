@@ -74,6 +74,33 @@ use flake ".#${USER}${PROFILE:+.${PROFILE}}"
 
 `.envrc` is committed to the repository. Use `.envrc.private` for local overrides.
 
+### devShell hooks
+
+Modules contribute two kinds of hooks. `devShell.activationHooks` run on every activation and only export environment (for example loading decrypted env files). `devShell.shellHooks` are the setup hooks that write project state: symlinked generated configs (`Taskfile.yml`, `lefthook.yml`, ...), decrypted secrets, mutable files.
+
+Setup hooks run once per *generation* per entry directory. A generation is one fresh evaluation of the flake by nix-direnv, which happens on `direnv reload` or when `flake.nix` / `flake.lock` is newer than the cache. Entering the directory again or opening a new terminal only reloads the cached environment. Consequences:
+
+- `direnv reload` re-applies the configuration and recreates deleted generated files. There is no force flag.
+- Edits to files nix-direnv does not watch (for example `nix/devShells/*.nix`) take effect on the next `direnv reload`.
+- A cached shell that is older than a generation already applied from another directory prints `nix-chips: setup hooks skipped ...` and writes nothing until it is reloaded.
+- `nix develop` runs the setup hooks on every entry.
+
+Markers live at `<dir.data>/.dev-shell.gen` and `<dir.data>/.dev-shell.gen.d/`. Delete `.dev-shell.gen` to reset.
+
+### Sibling checkouts sharing one flake
+
+When several sibling directories use the same flake (`use flake path:../dev-env#...`), give them one nix-direnv cache so that a `direnv reload` in any of them renews the environment for all; the others pick it up on their next entry and refresh their per-directory outputs once. nix-direnv keys its cache file on the exact `use flake` string and stores it in `direnv_layout_dir`, so every sibling must use the identical string and the same layout dir:
+
+```
+flake_dir=$(realpath ../dev-env)   # inside the flake repository itself: realpath .
+direnv_layout_dir() {
+  echo "${XDG_CACHE_HOME:-$HOME/.cache}/direnv/layouts/$(sha1sum <<<"$flake_dir" | head -c40)-$(basename "$flake_dir")"
+}
+use flake "path:$flake_dir#${USER}${PROFILE:+.${PROFILE}}"
+```
+
+`--override-input` arguments are not part of that key. Prefer `direnv reload` over `nix-direnv-reload`, which is written for whichever sibling evaluated last. Do not mix different `use flake` strings in one layout dir; nix-direnv clears the whole cache on renewal, so they would evict each other.
+
 ## Mutable project files
 
 Use `project.mutableFiles` for repository-local configuration that an application must be able to modify. Unlike a Nix store symlink, each file is copied into the project. Existing files are diffed and backed up as `<name>.<hash>.bak` before replacement.
