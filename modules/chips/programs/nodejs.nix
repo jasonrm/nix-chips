@@ -265,7 +265,7 @@ in {
             }
             else {
               dir = cfg.workingDirectory;
-              cmds = ["${cfg.pkg}/bin/npm install"];
+              cmds = ["${cfg.pkg}/bin/npm clean-install"];
               generates = ["node_modules/.package-lock.json"];
               desc = "Install Node.JS Dependencies (npm)";
               run = "once";
@@ -313,14 +313,8 @@ in {
               ];
             }
             else {
-              dir = cfg.workingDirectory;
-              cmds = ["${cfg.pkg}/bin/npm ci"];
-              generates = ["node_modules/.package-lock.json"];
               desc = "Check Node.JS Project";
-              sources = [
-                "package.json"
-                "package-lock.json"
-              ];
+              deps = ["install-npm"];
             };
 
           check-tsc = {
