@@ -305,6 +305,7 @@ in {
             then {
               dir = cfg.workingDirectory;
               cmds = ["${pnpmPkg}/bin/pnpm install --frozen-lockfile"];
+              generates = ["node_modules/.modules.yaml"];
               desc = "Check Node.JS Project";
               sources = [
                 "package.json"
@@ -314,6 +315,7 @@ in {
             else {
               dir = cfg.workingDirectory;
               cmds = ["${cfg.pkg}/bin/npm ci"];
+              generates = ["node_modules/.package-lock.json"];
               desc = "Check Node.JS Project";
               sources = [
                 "package.json"
