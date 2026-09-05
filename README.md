@@ -67,7 +67,11 @@ if ! has nix_direnv_version || ! nix_direnv_version 3.1.2; then
   source_url "https://raw.githubusercontent.com/nix-community/nix-direnv/3.1.2/direnvrc" "sha256-Di03ad3a0ueGi6CGrfhrQzyGdQIg9APXIPCAMNQgWYM="
 fi
 source_env_if_exists .envrc.private
-use flake ".#${USER}${PROFILE:+.${PROFILE}}"
+dev_shell="${USER}${PROFILE:+.${PROFILE}}"
+if [[ -z "${PROFILE:-}" && ! -f "nix/devShells/${USER}.nix" && ! -f "nix/devShells/${USER}/default.nix" ]]; then
+  dev_shell=default
+fi
+use flake ".#${dev_shell}"
 # layout php
 # layout node
 ```
