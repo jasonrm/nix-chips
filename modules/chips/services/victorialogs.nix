@@ -150,11 +150,15 @@ in {
         };
       };
 
-      services.phpfpm.extraPhpEnv = lib.mkIf cfg.syslogUdp.enable {
-        SYSLOG_HOST = cfg.syslogUdpHost;
-        SYSLOG_PORT_UDP = cfg.syslogUdpPort;
-        VICTORIALOGS_URL = "http://${httpAddress}";
-      };
+      services.phpfpm.extraPhpEnv = mkMerge [
+        {
+          VICTORIALOGS_URL = "http://${httpAddress}";
+        }
+        (mkIf cfg.syslogUdp.enable {
+          SYSLOG_HOST = cfg.syslogUdpHost;
+          SYSLOG_PORT_UDP = cfg.syslogUdpPort;
+        })
+      ];
 
       services.haproxy = {
         virtualHosts.logs = {
