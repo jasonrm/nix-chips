@@ -25,6 +25,10 @@ with lib; let
       cfg.email
       "--path"
       certStoreDir
+      "--dns.resolvers"
+      "1.1.1.1:53"
+      "--dns.resolvers"
+      "8.8.8.8:53"
     ]
     ++ (optionals cfg.acceptTermsOfService ["--accept-tos"])
     ++ cfg.additionalArgs
