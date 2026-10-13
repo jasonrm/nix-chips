@@ -462,14 +462,15 @@ in {
       {
         programs.zed.settings = {
           languages.PHP.language_servers = [
-            "phpantom_lsp"
+            "phpantom"
             "!intelephense"
             "!phpactor"
             "!phpsense"
             "!phptools"
             "..."
           ];
-          lsp.phpantom_lsp.binary.path = "${pkgs.phpantom-lsp}/bin/phpantom_lsp";
+          # PHPantom is provided by Zed's official PHP extension.
+          lsp.phpantom.binary.path = "${pkgs.phpantom-lsp}/bin/phpantom_lsp";
         };
         devShell.contents = [pkgs.phpantom-lsp];
       }
