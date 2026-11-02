@@ -140,6 +140,26 @@ supervisord-debug
 task lego-renew
 ```
 
+### Task terminal titles
+
+Every task defined through `programs.taskfile.config.tasks` gets a silent first
+command in the generated Taskfile. When stderr is a terminal, it reports
+`task <task-name>` as the terminal title and sends a working-status sequence.
+No wrapper, Rex CLI, or pane-label changes are involved. Task names are sanitized
+and shell-quoted; variable values and CLI arguments are not included.
+
+This runs after dependencies, before the task's own commands, including when
+`cmds` uses `mkForce`. Tasks with only dependencies and the single-`cmd` shorthand
+are supported. Normal up-to-date checks still skip commands; list, summary, and
+status operations do not execute the title command. External included Taskfiles
+are not rewritten. Parallel tasks share the terminal, so the last report wins.
+The terminal controls display and cleanup; Rex's generated-title preference may
+hide application titles. Task command definitions in Nix remain unchanged.
+
+Reload the development shell to regenerate `Taskfile.yml`. Project-specific title
+commands can then be removed. Run `nix build .#checks.aarch64-darwin.taskfile` to
+check generation and real Task execution (substitute your system as needed).
+
 ## Docs
 
 ```shell

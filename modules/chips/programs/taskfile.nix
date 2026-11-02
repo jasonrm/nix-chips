@@ -18,7 +18,35 @@ with lib; let
     };
   };
 
-  taskfileConfigFile = pkgs.writeText "Taskfile.yml" (builtins.toJSON cfg.config);
+  titleCommand = {
+    silent = true;
+    cmd = ''
+      if [ -t 2 ]; then
+        printf '\033]0;task %s\007\033]7501;state=working:app=task\033\\' {{regexReplaceAll "[\\p{Cc}\\p{Cf}]" .TASK "" | shellQuote}} >&2
+      fi
+    '';
+  };
+
+  # Add this after module merging, so even mkForce command lists get the title.
+  # Task still owns dependency ordering, caching, and command execution.
+  taskfileConfig =
+    cfg.config
+    // {
+      tasks = mapAttrs (_: task:
+        assert !(task ? cmd && task ? cmds);
+          removeAttrs task ["cmd"]
+          // {
+            cmds =
+              [titleCommand]
+              ++ (
+                if task ? cmd
+                then [task.cmd]
+                else task.cmds or []
+              );
+          })
+      cfg.config.tasks;
+    };
+  taskfileConfigFile = pkgs.writeText "Taskfile.yml" (builtins.toJSON taskfileConfig);
 in {
   options = {
     programs.taskfile = with types; {

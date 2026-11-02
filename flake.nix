@@ -27,6 +27,7 @@
         ...
       }: {
         formatter = pkgs.alejandra;
+        checks.taskfile = import ./tests/taskfile.nix {inherit pkgs;};
         packages.docs-data = pkgs.callPackage ./docs/generate-options.nix {
           inherit self;
         };
