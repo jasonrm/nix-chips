@@ -54,7 +54,14 @@ test('native status reports execution and completion', () => {
     const status = reports(result.stdout);
     assert.ok(status.some(report => report.includes('state=working')), result.stdout);
     assert.ok(status.some(report => report.includes('state=done')), result.stdout);
-    assert.ok(status.every(report => report.includes('app=task')));
+    for (const report of status) {
+      const fields = Object.fromEntries(report.split(':').map(field => field.split('=')));
+      if (fields.state === 'clear') {
+        assert.ok(fields.id, 'cleanup must target a record, not the terminal root');
+      } else {
+        assert.equal(fields.app, 'task');
+      }
+    }
     assert.ok(result.stdout.includes('prepare'));
     assert.ok(result.stdout.includes('body'));
   }

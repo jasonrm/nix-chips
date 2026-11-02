@@ -101,11 +101,11 @@
     "task-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1793605199,
-        "narHash": "sha256-Evo0p8H12/IHz+W7mHaKiu6aJ+rzh/NsVHWbMraX69A=",
+        "lastModified": 1793609129,
+        "narHash": "sha256-ao6MbqBKporXOTGcsCj4qFWTPn63kmjq8VZoxMr5qe0=",
         "owner": "jasonrm",
         "repo": "task",
-        "rev": "692094f8a404448c2a5de7c796e798bffd540917",
+        "rev": "7d9eddb93046c789081508a9a4163f6eb847bd4e",
         "type": "github"
       },
       "original": {
