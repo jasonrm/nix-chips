@@ -2,6 +2,7 @@
   self,
   nixpkgs,
   nixpkgs-staging,
+  task-src,
   ...
 }: cfg:
 with nixpkgs.lib; let
@@ -366,6 +367,13 @@ with nixpkgs.lib; let
       (mkPackagesOverlay cfg.sources.packages)
       unstableOverlay
       nixpkgs-staging.overlays.default
+      (final: prev: {
+        go-task = (prev.go-task.override {buildGoModule = final.buildGo126Module;}).overrideAttrs {
+          version = "3.54.0-osc-7501";
+          src = task-src;
+          vendorHash = "sha256-9owxjtfbx6GAPGTiMJkCt8NAmWyhIUy7GhMYp4VGBrM=";
+        };
+      })
     ]
     ++ cfg.nixpkgs.overlays
   );

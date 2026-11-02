@@ -1,8 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, writeFileSync, mkdtempSync, rmSync, existsSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 
 const task = process.env.TASK_BIN;
@@ -10,78 +8,73 @@ const taskfile = process.env.TASKFILE;
 assert.ok(task && taskfile, 'Run via the taskfile Nix check (TASK_BIN and TASKFILE required)');
 const config = JSON.parse(readFileSync(taskfile, 'utf8'));
 
-function run(name, { terminal = false, file = taskfile, cwd } = {}) {
-  const args = ['--taskfile', file, name, 'VALUE=private', '--', 'private argument'];
+function run(name, { terminal = false, mode = 'auto', env = {} } = {}) {
+  const args = ['--terminal-status', mode, '--taskfile', taskfile, name];
   const quote = value => `'${value.replaceAll("'", "'\\''")}'`;
+  const options = {
+    encoding: 'utf8', timeout: 10000,
+    env: { ...process.env, TERM: 'xterm-256color', CI: '', ...env },
+  };
   const result = terminal
     ? spawnSync('script', process.platform === 'darwin'
       ? ['-q', '/dev/null', task, ...args]
       : ['-qec', [task, ...args].map(quote).join(' '), '/dev/null'], {
-      cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 10000,
+      ...options, stdio: ['ignore', 'pipe', 'pipe'],
     })
-    : spawnSync(task, args, { cwd, encoding: 'utf8', timeout: 10000 });
+    : spawnSync(task, args, options);
   assert.equal(result.error, undefined);
   return result;
 }
 
-const titles = output => [...output.matchAll(/\x1b\]0;([^\x07]*)\x07/g)].map(match => match[1]);
+const reports = output => [...output.matchAll(/\x1b\]7501;([^\x07\x1b]*)(?:\x07|\x1b\\)/g)].map(match => match[1]);
 
-test('every generated task gets the same silent command, including mkForce and cmd shorthand', () => {
-  const title = config.tasks.example.cmds[0];
-  assert.equal(title.silent, true);
-  for (const task of Object.values(config.tasks)) {
-    assert.deepEqual(task.cmds[0], title);
-  }
+test('generated tasks preserve commands, dependencies, and aliases', () => {
   assert.deepEqual(config.tasks.example.deps, ['prepare']);
   assert.deepEqual(config.tasks.example.aliases, ['alias']);
-  assert.equal(config.tasks.example.cmds[1], "printf 'body\\n'");
-  assert.equal(config.tasks.prepare.cmd, undefined);
-  assert.equal(config.tasks.prepare.cmds[1], "printf 'prepare\\n'");
+  assert.deepEqual(config.tasks.example.cmds, ["printf 'body\\n'"]);
+  assert.equal(config.tasks.prepare.cmd, "printf 'prepare\\n'");
+  assert.equal(config.tasks.prepare.cmds, undefined);
+  assert.equal(config.tasks.aggregate.cmds, undefined);
 });
 
-test('redirected output stays clean and task failures still fail', () => {
-  const result = run('example');
-  assert.equal(result.status, 0, result.stderr);
-  assert.equal(result.stdout, 'prepare\nbody\n');
-  assert.ok(!result.stderr.includes('\x1b]'));
-  assert.ok(!result.stderr.includes('7501'));
+test('redirected output stays clean even with always, and failures still fail', () => {
+  for (const mode of ['auto', 'always']) {
+    const result = run('example', { mode });
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.stdout, 'prepare\nbody\n');
+    assert.deepEqual(reports(result.stdout + result.stderr), []);
+  }
   assert.notEqual(run('failure').status, 0);
 });
 
-test('titles follow dependencies and aliases without exposing CLI arguments', () => {
-  for (const [name, expected] of [
-    ['example', ['task prepare', 'task example']],
-    ['alias', ['task prepare', 'task example']],
-    ['aggregate', ['task prepare', 'task example', 'task aggregate']],
-  ]) {
+test('native status reports execution and completion', () => {
+  for (const name of ['example', 'alias', 'aggregate']) {
     const result = run(name, { terminal: true });
     assert.equal(result.status, 0, result.stdout + result.stderr);
-    assert.deepEqual(titles(result.stdout), expected);
-    assert.ok(result.stdout.includes('\x1b]7501;state=working:app=task\x1b\\'));
-    assert.ok(!result.stdout.includes('private'));
-    assert.ok(!result.stdout.includes('regexReplaceAll'));
+    const status = reports(result.stdout);
+    assert.ok(status.some(report => report.includes('state=working')), result.stdout);
+    assert.ok(status.some(report => report.includes('state=done')), result.stdout);
+    assert.ok(status.every(report => report.includes('app=task')));
+    assert.ok(result.stdout.includes('prepare'));
+    assert.ok(result.stdout.includes('body'));
   }
 });
 
-test('up-to-date tasks are not forced to run for a title', () => {
+test('native status reports failures', () => {
+  const result = run('failure', { terminal: true });
+  assert.ok(reports(result.stdout).some(report => report.includes('state=error')), result.stdout);
+});
+
+test('never, CI, and dumb terminals suppress automatic status', () => {
+  for (const options of [{ mode: 'never' }, { env: { CI: 'true' } }, { env: { TERM: 'dumb' } }]) {
+    const result = run('example', { terminal: true, ...options });
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    assert.deepEqual(reports(result.stdout), []);
+  }
+});
+
+test('up-to-date tasks are not forced to execute', () => {
   const result = run('cached', { terminal: true });
   assert.equal(result.status, 0, result.stdout + result.stderr);
-  assert.deepEqual(titles(result.stdout), []);
-});
-
-test('task names are shell-quoted and control characters cannot escape the title', () => {
-  const dir = mkdtempSync(join(tmpdir(), 'task-title-'));
-  try {
-    const name = "odd:'$(touch injected)%\\name\n\x07\x1b\u0085\u202e";
-    const file = join(dir, 'Taskfile.yml');
-    writeFileSync(file, JSON.stringify({
-      version: '3', tasks: { [name]: { cmds: [config.tasks.example.cmds[0]] } },
-    }).replace(/[\u007f-\uffff]/g, char => `\\u${char.charCodeAt(0).toString(16).padStart(4, '0')}`));
-    const result = run(name, { terminal: true, file, cwd: dir });
-    assert.equal(result.status, 0, result.stdout + result.stderr);
-    assert.deepEqual(titles(result.stdout), ["task odd:'$(touch injected)%\\name"]);
-    assert.equal(existsSync(join(dir, 'injected')), false);
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
-  }
+  assert.ok(!result.stdout.includes('exit 99'));
 });

@@ -58,7 +58,8 @@
     "root": {
       "inputs": {
         "nixpkgs": "nixpkgs",
-        "nixpkgs-staging": "nixpkgs-staging"
+        "nixpkgs-staging": "nixpkgs-staging",
+        "task-src": "task-src"
       }
     },
     "rust-overlay": {
@@ -94,6 +95,23 @@
       "original": {
         "owner": "nix-systems",
         "repo": "default",
+        "type": "github"
+      }
+    },
+    "task-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1793602259,
+        "narHash": "sha256-ihaJlRq8XLM64Ey3AK8sP9ufT8NGiAg+eykAXMMMlQQ=",
+        "owner": "jasonrm",
+        "repo": "task",
+        "rev": "6981c7d9dbcf45423d6e93533da234b4532d48a9",
+        "type": "github"
+      },
+      "original": {
+        "owner": "jasonrm",
+        "ref": "osc-7501",
+        "repo": "task",
         "type": "github"
       }
     },

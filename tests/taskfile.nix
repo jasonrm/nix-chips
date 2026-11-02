@@ -39,7 +39,7 @@
     ];
   };
 in
-  pkgs.runCommand "taskfile-titles-test" {
+  pkgs.runCommand "taskfile-status-test" {
     nativeBuildInputs = [pkgs.go-task pkgs.nodejs pkgs.unixtools.script];
   } ''
     ${evaluated.config.devShell.shellHooks}

@@ -4,6 +4,11 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
 
+    task-src = {
+      url = "github:jasonrm/task/osc-7501";
+      flake = false;
+    };
+
     nixpkgs-staging.url = "github:jasonrm/nixpkgs-staging";
     nixpkgs-staging.inputs.nixpkgs.follows = "nixpkgs";
   };
